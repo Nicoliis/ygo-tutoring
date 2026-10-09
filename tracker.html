@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Progression Series Pack Puller</title>
+<link rel="stylesheet" href="tracker.css">
+</head>
+<body>
+<div id="trackerRoot">
+  <header class="app-header">
+    <h1>Progression Series Pack Puller</h1>
+    <nav class="app-nav"><a href="collection.html">&larr; Draft Collection Manager</a></nav>
+  </header>
+
+  <main class="app-single">
+    <section id="setPickerSection" class="panel set-picker-panel">
+      <div class="panel-head">
+        <h2>Set Picker</h2>
+        <button type="button" id="setPickerToggle" class="btn btn-secondary btn-small" aria-expanded="false" aria-label="Show set picker">+ Pick a set</button>
+      </div>
+      <div id="selectedSetBadge" class="selected-set-badge" hidden></div>
+      <div id="setPickerBody" class="set-picker-body collapsed">
+        <input type="text" id="setSearchInput" class="search-input" placeholder="Search sets&hellip;" aria-label="Search card sets">
+        <div id="setResultsList" class="set-results-list"></div>
+      </div>
+    </section>
+
+    <section id="trackersSection" class="panel">
+      <h2>Trackers</h2>
+
+      <form id="createTrackerForm" class="inline-form">
+        <input id="trackerNameInput" type="text" placeholder="Box name" aria-label="Tracker name" autocomplete="off" required>
+        <button type="submit" class="btn btn-primary">Create tracker</button>
+      </form>
+
+      <div id="trackersList" class="trackers-list"></div>
+    </section>
+  </main>
+
+  <div id="modalRoot" hidden></div>
+</div>
+
+<script src="tracker.js"></script>
+</body>
+</html>

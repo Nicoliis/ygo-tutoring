@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Draft Collection Manager</title>
+<link rel="stylesheet" href="collection.css">
+</head>
+<body>
+<div id="collectionRoot">
+  <header class="app-header">
+    <h1>Draft Collection Manager</h1>
+    <nav class="app-nav">
+      <a href="index.html">&larr; Proxy Sheet Builder</a>
+      <a href="tracker.html">Progression Series Pack Puller &rarr;</a>
+    </nav>
+  </header>
+
+  <main class="app">
+
+    <section id="backlogSection" class="panel">
+      <h2>Backlog</h2>
+
+      <div class="card-search">
+        <input id="cardSearchInput" type="text" class="search-input" placeholder="Search card database to add&hellip;" aria-label="Search card database to add a new card" autocomplete="off">
+        <div id="cardSearchStatus" class="card-search-status" aria-live="polite"></div>
+        <div id="cardSearchResults" class="card-search-results"></div>
+      </div>
+
+      <input id="backlogSearchInput" type="text" class="search-input" placeholder="Search backlog&hellip;" aria-label="Search backlog" autocomplete="off">
+
+      <div id="backlogList" class="backlog-list"></div>
+    </section>
+
+    <section id="enginesSection" class="panel">
+      <div class="panel-head">
+        <h2>Engines</h2>
+        <button type="button" id="engineFormToggle" class="btn btn-secondary btn-small" aria-expanded="false">+ New engine</button>
+      </div>
+
+      <form id="engineForm" class="inline-form engine-form" hidden>
+        <input id="engineNameInput" type="text" placeholder="Engine name" aria-label="Engine name" autocomplete="off" required>
+        <button type="submit" class="btn btn-primary">Create engine</button>
+      </form>
+
+      <div id="engineList" class="engine-list"></div>
+    </section>
+
+    <section id="decksSection" class="panel">
+      <h2>Decks</h2>
+
+      <form id="deckCreateForm" class="inline-form">
+        <input id="newDeckNameInput" type="text" placeholder="New deck name" aria-label="New deck name" autocomplete="off" required>
+        <button type="submit" class="btn btn-primary">Create</button>
+      </form>
+
+      <div id="deckList" class="deck-list"></div>
+    </section>
+
+  </main>
+
+  <div id="modalRoot" hidden></div>
+</div>
+
+<script src="collection.js"></script>
+</body>
+</html>
