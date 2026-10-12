@@ -1,0 +1,311 @@
+/* Booster Draft page styles — see specs/008-booster-draft/ */
+:root {
+  --bg: #14161c;
+  --panel: #1e2129;
+  --panel-alt: #262a34;
+  --border: #333844;
+  --text: #eef0f4;
+  --text-dim: #9aa1b0;
+  --accent: #5b8cff;
+  --accent-hover: #7aa2ff;
+  --danger: #e05263;
+  --radius: 8px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.app-header { padding: 20px 24px 8px; }
+.app-header h1 { margin: 0 0 4px; font-size: 1.5rem; }
+
+.app-single {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px 24px 32px;
+  max-width: 900px;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+.panel h2 { margin: 0 0 12px; font-size: 1.1rem; }
+
+.search-input {
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  padding: 8px 10px;
+  font-size: 0.9rem;
+  width: 100%;
+}
+
+.btn {
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.btn:hover { border-color: var(--accent); }
+.btn-primary { background: var(--accent); color: #0b1020; border-color: var(--accent); font-weight: 600; }
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-secondary:hover { border-color: var(--danger); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn:focus-visible, input:focus-visible, select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.status { margin-top: 8px; color: var(--text-dim); font-size: 0.85rem; }
+.status.error { color: var(--danger); }
+
+/* ---------------- Config fields ---------------- */
+
+.config-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-end;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: relative;
+}
+.field label, .field-label { font-size: 0.78rem; color: var(--text-dim); }
+
+#amountInput, #cardpoolInput { width: 90px; }
+#groupingSelect {
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  padding: 8px 10px;
+  font-size: 0.9rem;
+}
+
+.kept-total-field { justify-content: flex-end; }
+.kept-total-preview { font-size: 1rem; font-weight: 600; color: var(--accent); }
+
+.config-actions { flex-direction: row; gap: 8px; }
+
+.set-results-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 6px;
+  background: var(--panel-alt);
+  margin-top: 2px;
+}
+.set-results-list[hidden] { display: none; }
+
+.set-result-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 0.85rem;
+  width: 100%;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text);
+  font-family: inherit;
+  text-align: left;
+}
+.set-result-row:hover, .set-result-row:focus-visible { background: var(--panel); border-color: var(--accent); }
+
+/* ---------------- Draft area ---------------- */
+
+.chosen-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px;
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border: 1px dashed var(--border);
+  border-bottom: 1px dashed var(--border);
+  border-radius: var(--radius);
+  min-height: 2.4rem;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.chosen-strip:empty::before {
+  content: "No cards kept yet — drag a card here, or open one to pick it.";
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  align-self: center;
+}
+.chosen-strip.drag-over {
+  border-color: var(--accent);
+  background: var(--panel-alt);
+}
+
+.chosen-chip {
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+
+.pick-group-area {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: center;
+  padding: 16px 0;
+}
+
+.pick-card {
+  --glow-color: transparent;
+  width: 140px;
+  background: var(--panel-alt);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: inherit;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  text-align: center;
+  box-shadow: 0 0 8px 1px var(--glow-color), 0 0 16px 3px var(--glow-color);
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+.pick-card:hover, .pick-card:focus-visible {
+  border-color: var(--accent);
+  outline: none;
+  box-shadow: 0 0 10px 2px var(--glow-color), 0 0 22px 5px var(--glow-color);
+}
+.pick-card:active { cursor: grabbing; }
+.pick-card.dragging { opacity: 0.4; }
+
+/* Rarity glow ladder: white -> blue -> yellow -> red -> ... (see draft-data.js
+   RARITY_GLOW_TIERS); Starlight Rare — the rarest regular tier — gets an animated
+   rainbow glow instead of a single --glow-color. */
+.pick-card.glow-starlight {
+  animation: rarity-rainbow-glow 3s linear infinite;
+}
+@keyframes rarity-rainbow-glow {
+  0%   { box-shadow: 0 0 10px 2px #ff4545, 0 0 20px 4px #ff4545; }
+  20%  { box-shadow: 0 0 10px 2px #ffd83d, 0 0 20px 4px #ffd83d; }
+  40%  { box-shadow: 0 0 10px 2px #4ae07a, 0 0 20px 4px #4ae07a; }
+  60%  { box-shadow: 0 0 10px 2px #4aa3ff, 0 0 20px 4px #4aa3ff; }
+  80%  { box-shadow: 0 0 10px 2px #b24aff, 0 0 20px 4px #b24aff; }
+  100% { box-shadow: 0 0 10px 2px #ff4545, 0 0 20px 4px #ff4545; }
+}
+.pick-card img {
+  width: 100%;
+  aspect-ratio: 59 / 86;
+  object-fit: cover;
+  border-radius: 4px;
+  background: #000;
+}
+.pick-card .pick-card-name { font-size: 0.8rem; }
+
+.finished-area {
+  text-align: center;
+  padding: 24px 0;
+}
+
+/* ---------------- Modal ---------------- */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 16px;
+}
+.modal-backdrop[hidden] { display: none; }
+
+.modal-dialog {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  max-width: 420px;
+  width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+.modal-dialog h2 { margin: 0 0 10px; font-size: 1rem; }
+.modal-dialog .modal-body { font-size: 0.88rem; color: var(--text-dim); margin-bottom: 14px; }
+.modal-dialog .modal-body img {
+  display: block;
+  max-width: 180px;
+  margin: 0 auto 10px;
+  border-radius: 6px;
+  background: #000;
+}
+.modal-dialog .modal-body strong { color: var(--text); }
+.modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+.card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.card-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.74rem;
+  line-height: 1.2;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+.card-tag strong { color: var(--text); font-weight: 600; }
+
+.card-effect-block { margin-bottom: 10px; }
+.card-effect-block:last-child { margin-bottom: 0; }
+.card-effect-block strong {
+  display: block;
+  color: var(--text);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  margin-bottom: 2px;
+}
+.card-effect-block p {
+  margin: 0;
+  white-space: pre-line;
+}

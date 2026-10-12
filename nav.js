@@ -1,5 +1,5 @@
 /* Shared sidebar navigation — included identically by index.html, collection.html,
-   and tracker.html. See specs/007-sidebar-navigation/contracts/nav-component.md. */
+   tracker.html, and draft.html. See specs/007-sidebar-navigation/contracts/nav-component.md. */
 (() => {
   "use strict";
 
@@ -10,6 +10,7 @@
     { label: "Proxy Sheet Builder", href: "index.html" },
     { label: "Draft Collection Manager", href: "collection.html" },
     { label: "Progression Series Pack Puller", href: "tracker.html" },
+    { label: "Booster Draft", href: "draft.html" },
   ];
 
   function currentPage() {
