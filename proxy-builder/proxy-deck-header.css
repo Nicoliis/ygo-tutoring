@@ -1,0 +1,27 @@
+.deck-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.deck-header h2 { margin: 0; font-size: 1.1rem; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+.count-badge {
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+.count-badge-accent {
+  background: var(--accent);
+  color: #0b1020;
+  border-color: var(--accent);
+}
+.count-sep { color: var(--text-dim); }
+.count-label { font-size: 0.75rem; font-weight: 400; color: var(--text-dim); }
+
+.deck-actions { display: flex; gap: 8px; flex-wrap: wrap; }

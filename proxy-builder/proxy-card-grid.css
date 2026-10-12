@@ -1,0 +1,35 @@
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 12px;
+  max-height: 50vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.result-card {
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.1s, border-color 0.1s;
+  text-align: center;
+}
+.result-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+.result-card img {
+  width: 100%;
+  display: block;
+  aspect-ratio: 59 / 86;
+  object-fit: cover;
+  background: #000;
+}
+.result-card .result-name {
+  font-size: 0.72rem;
+  padding: 5px 4px;
+  line-height: 1.2;
+  color: var(--text-dim);
+}

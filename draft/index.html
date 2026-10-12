@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Booster Draft</title>
+<link rel="stylesheet" href="../shared/theme.css">
+<link rel="stylesheet" href="../shared/modal-dialog.css">
+<link rel="stylesheet" href="../shared/card-tags.css">
+<link rel="stylesheet" href="draft-base.css">
+<link rel="stylesheet" href="draft-buttons.css">
+<link rel="stylesheet" href="draft-config-fields.css">
+<link rel="stylesheet" href="draft-booster-autocomplete.css">
+<link rel="stylesheet" href="draft-chosen-strip.css">
+<link rel="stylesheet" href="draft-pick-card.css">
+<link rel="stylesheet" href="draft-pick-card-glow.css">
+<link rel="stylesheet" href="draft-finished.css">
+<link rel="stylesheet" href="../shared/nav-layout.css">
+<link rel="stylesheet" href="../shared/nav-links.css">
+<link rel="stylesheet" href="../shared/nav-responsive.css">
+</head>
+<body>
+<div id="draftRoot">
+  <header class="app-header">
+    <h1>Booster Draft</h1>
+  </header>
+
+  <main class="app-single">
+    <section id="configSection" class="panel">
+      <h2>Draft Setup</h2>
+      <div class="config-fields">
+        <div class="field">
+          <label for="boosterInput">Booster</label>
+          <input type="text" id="boosterInput" class="search-input" placeholder="Search for a set&hellip;" aria-label="Booster (card set)" autocomplete="off">
+          <div id="boosterResultsList" class="set-results-list" hidden></div>
+        </div>
+        <div class="field">
+          <label for="amountInput">Amount</label>
+          <input type="number" id="amountInput" min="1" step="1" value="1" aria-label="Amount of boosters to open">
+        </div>
+        <div class="field">
+          <label for="cardpoolInput">Cardpool</label>
+          <input type="number" id="cardpoolInput" min="1" step="1" value="3" aria-label="Cardpool size (cards shown per pick)">
+        </div>
+        <div class="field">
+          <label for="groupingSelect">Grouping</label>
+          <select id="groupingSelect" aria-label="Grouping criterion">
+            <option value="rarity">Rarity</option>
+            <option value="price">Price</option>
+          </select>
+        </div>
+        <div class="field kept-total-field">
+          <span class="field-label">Kept / Total</span>
+          <span id="keptTotalPreview" class="kept-total-preview">0/0</span>
+        </div>
+        <div class="field config-actions">
+          <button type="button" id="startDraftBtn" class="btn btn-primary">Start Draft</button>
+          <button type="button" id="cancelDraftBtn" class="btn btn-secondary" hidden>Cancel Draft</button>
+        </div>
+      </div>
+      <div id="configStatus" class="status" aria-live="polite"></div>
+    </section>
+
+    <section id="draftSection" class="panel" hidden>
+      <div id="chosenStrip" class="chosen-strip" aria-label="Cards kept so far — drag a card here to keep it"></div>
+
+      <div id="pickGroupArea" class="pick-group-area"></div>
+
+      <div id="finishedArea" class="finished-area" hidden>
+        <p>Draft finished! You kept <span id="finishedCount">0</span> cards.</p>
+        <button type="button" id="addToBacklogBtn" class="btn btn-primary">Add to Backlog</button>
+      </div>
+    </section>
+  </main>
+
+  <div id="modalRoot" hidden></div>
+</div>
+
+<script src="../shared/dom-utils.js"></script>
+<script src="../shared/focus-trap.js"></script>
+<script src="../shared/modal-buttons.js"></script>
+<script src="../shared/modal.js"></script>
+<script src="../shared/card-api.js"></script>
+<script src="../shared/card-tags-builder.js"></script>
+<script src="../shared/card-effect-builder.js"></script>
+<script src="../shared/card-detail-modal.js"></script>
+<script src="../shared/nav-entries.js"></script>
+<script src="../shared/nav-collapse-state.js"></script>
+<script src="../shared/nav-sidebar-item.js"></script>
+<script src="../shared/nav-sidebar.js"></script>
+<script src="../shared/nav-init.js"></script>
+<script src="mainline-boosters.js"></script>
+<script src="booster-size-overrides.js"></script>
+<script src="rarity-glow-tiers.js"></script>
+<script src="draft-grouping.js"></script>
+<script src="draft-dom-refs.js"></script>
+<script src="draft-session.js"></script>
+<script src="draft-rarity-glow.js"></script>
+<script src="draft-booster-size.js"></script>
+<script src="draft-price.js"></script>
+<script src="draft-card-pool.js"></script>
+<script src="draft-weighted-pick.js"></script>
+<script src="draft-booster-autocomplete.js"></script>
+<script src="draft-preview.js"></script>
+<script src="draft-validation.js"></script>
+<script src="draft-render-pick-group.js"></script>
+<script src="draft-render-chosen-strip.js"></script>
+<script src="draft-render-finished.js"></script>
+<script src="draft-config-lock.js"></script>
+<script src="draft-render-all.js"></script>
+<script src="draft-pick-handling.js"></script>
+<script src="draft-start.js"></script>
+<script src="draft-reset-cancel.js"></script>
+<script src="draft-backlog-storage.js"></script>
+<script src="draft-backlog-merge.js"></script>
+<script src="draft-init.js"></script>
+</body>
+</html>

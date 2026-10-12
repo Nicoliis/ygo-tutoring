@@ -1,0 +1,33 @@
+.card-tag-image-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 25;
+  width: 130px;
+  background: var(--panel-alt);
+  border: 2px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 4px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+.card-tag-image-overlay img {
+  width: 100%;
+  aspect-ratio: 59 / 86;
+  object-fit: cover;
+  display: block;
+  border-radius: 4px;
+  background: #000;
+}
+.card-tag-image-overlay .card-tag-image-placeholder {
+  width: 100%;
+  aspect-ratio: 59 / 86;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  background: #000;
+  border-radius: 4px;
+  padding: 6px;
+}

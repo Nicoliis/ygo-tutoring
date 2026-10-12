@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YGO Proxy Sheet Builder</title>
+<link rel="stylesheet" href="../shared/theme.css">
+<link rel="stylesheet" href="proxy-base.css">
+<link rel="stylesheet" href="proxy-search-controls.css">
+<link rel="stylesheet" href="proxy-card-grid.css">
+<link rel="stylesheet" href="proxy-deck-header.css">
+<link rel="stylesheet" href="proxy-buttons.css">
+<link rel="stylesheet" href="proxy-deck-grid.css">
+<link rel="stylesheet" href="proxy-deck-tile.css">
+<link rel="stylesheet" href="proxy-deck-tile-badges.css">
+<link rel="stylesheet" href="proxy-footer.css">
+<link rel="stylesheet" href="proxy-print.css">
+<link rel="stylesheet" href="../shared/nav-layout.css">
+<link rel="stylesheet" href="../shared/nav-links.css">
+<link rel="stylesheet" href="../shared/nav-responsive.css">
+</head>
+<body>
+<div id="appRoot">
+  <header class="app-header">
+    <h1>YGO Proxy Sheet Builder</h1>
+    <p class="subtitle">Search cards via YGOPRODeck, build your deck, mark which cards to print.</p>
+  </header>
+
+  <main class="app">
+    <section class="search-panel">
+      <div class="search-controls">
+        <input id="searchInput" type="text" placeholder="Search card name (min 3 characters)&hellip;" autocomplete="off">
+        <select id="typeFilter">
+          <option value="all">All types</option>
+          <option value="Monster">Monster</option>
+          <option value="Spell">Spell</option>
+          <option value="Trap">Trap</option>
+        </select>
+      </div>
+      <div id="searchStatus" class="status" aria-live="polite"></div>
+      <div id="searchResults" class="card-grid"></div>
+    </section>
+
+    <section class="deck-panel">
+      <div class="deck-header">
+        <h2>
+          Deck
+          <span id="deckCount" class="count-badge">0</span>
+          <span class="count-sep">&middot;</span>
+          <span id="markedCount" class="count-badge count-badge-accent">0</span>
+          <span class="count-label">marked to print</span>
+        </h2>
+        <div class="deck-actions">
+          <button id="markAllBtn" class="btn btn-secondary" type="button">Mark all</button>
+          <button id="unmarkAllBtn" class="btn btn-secondary" type="button">Unmark all</button>
+          <button id="clearDeckBtn" class="btn btn-secondary" type="button">Clear deck</button>
+          <button id="printBtn" class="btn btn-primary" type="button">Print marked / Save as PDF</button>
+        </div>
+      </div>
+      <p class="hint">Click a card to mark or unmark it for printing. Each click on a search result adds one physical copy to the deck. Marked cards print at real size (63&times;88mm, 9 per A4 sheet).</p>
+      <div id="deckGrid" class="deck-grid"></div>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    Card data &amp; images courtesy of <a href="https://ygoprodeck.com" target="_blank" rel="noopener">YGOPRODeck</a>.
+  </footer>
+</div>
+
+<div id="printArea"></div>
+
+<script src="../shared/dom-utils.js"></script>
+<script src="../shared/nav-entries.js"></script>
+<script src="../shared/nav-collapse-state.js"></script>
+<script src="../shared/nav-sidebar-item.js"></script>
+<script src="../shared/nav-sidebar.js"></script>
+<script src="../shared/nav-init.js"></script>
+<script src="proxy-dom-refs.js"></script>
+<script src="proxy-deck-storage.js"></script>
+<script src="proxy-search-input.js"></script>
+<script src="proxy-run-search.js"></script>
+<script src="proxy-render-results.js"></script>
+<script src="proxy-deck-mutations.js"></script>
+<script src="proxy-render-deck.js"></script>
+<script src="proxy-print.js"></script>
+<script src="proxy-init.js"></script>
+</body>
+</html>

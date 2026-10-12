@@ -1,0 +1,38 @@
+#appSidebar.collapsed {
+  width: 56px;
+}
+#appSidebar.collapsed .sidebar-link {
+  font-size: 0;
+  padding: 10px 0;
+  text-align: center;
+}
+#appSidebar.collapsed .sidebar-link::first-letter {
+  font-size: 0.9rem;
+}
+
+@media (max-width: 640px) {
+  #appSidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 100;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.4);
+  }
+
+  #appSidebar.collapsed {
+    width: 56px;
+  }
+
+  #appSidebar:not(.collapsed) {
+    width: 220px;
+  }
+  #appSidebar:not(.collapsed) .sidebar-link {
+    font-size: 0.9rem;
+    padding: 10px 16px;
+    text-align: left;
+  }
+
+  body.has-app-sidebar > *:not(#appSidebar) {
+    margin-left: 56px;
+  }
+}

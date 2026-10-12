@@ -1,0 +1,19 @@
+.pending-pull-review {
+  margin-top: 8px;
+  margin-bottom: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--panel);
+}
+.pending-pull-review h4 {
+  margin: 0 0 8px;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.pending-pull-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}

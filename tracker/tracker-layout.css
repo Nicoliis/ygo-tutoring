@@ -1,0 +1,38 @@
+html, body {
+  height: 100%;
+}
+
+body {
+  overflow: hidden;
+}
+
+#trackerRoot {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.app-header {
+  padding: 12px 20px;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.app-header h1 { margin: 0; font-size: 1.05rem; font-weight: 600; }
+
+.app-single {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  overflow: hidden;
+  align-items: center;
+}
+
+.empty-msg { color: var(--text-dim); font-size: 0.85rem; padding: 8px 2px; }

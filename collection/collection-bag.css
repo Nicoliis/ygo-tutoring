@@ -1,0 +1,36 @@
+.engine-list, .deck-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.bag {
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 7px 10px;
+  flex: 0 0 auto;
+}
+.bag.drop-target-active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent) inset;
+}
+
+.bag-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  cursor: pointer;
+  border-radius: var(--radius);
+}
+.bag-header:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.bag-toggle-icon { color: var(--text-dim); flex: 0 0 auto; width: 1em; text-align: center; }
+.bag-name { margin: 0; font-size: 1rem; flex: 1 1 auto; min-width: 0; }
+.bag-header .deck-name-input { flex: 1 1 160px; font-weight: 600; }

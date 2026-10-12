@@ -1,0 +1,30 @@
+.deck-section {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.deck-section h4 {
+  margin: 0 0 6px;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.deck-section.drop-target-active {
+  box-shadow: 0 0 0 2px var(--accent) inset;
+}
+.deck-main-list, .deck-extra-list {
+  margin: 0 0 6px;
+  max-height: 160px;
+  padding: 8px 4px 4px;
+}
+
+.ydk-import-textarea {
+  width: 100%;
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  margin-top: 8px;
+}

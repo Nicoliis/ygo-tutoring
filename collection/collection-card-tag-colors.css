@@ -1,0 +1,10 @@
+/* Card-type colors on the compact card-tag name, matching real card-frame conventions */
+.card-tag-name.type-color-normal { color: #e8c874; }
+.card-tag-name.type-color-effect { color: #ff9d5c; }
+.card-tag-name.type-color-fusion { color: #c08cff; }
+.card-tag-name.type-color-synchro { color: #d8e2ee; }
+.card-tag-name.type-color-xyz { color: #9099b0; }
+.card-tag-name.type-color-ritual { color: #6ea8ff; }
+.card-tag-name.type-color-link { color: #4fc3f7; }
+.card-tag-name.type-color-spell { color: #58c278; }
+.card-tag-name.type-color-trap { color: #ff6fa5; }

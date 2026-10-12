@@ -1,0 +1,11 @@
+@media (max-width: 900px) {
+  html, body { height: auto; overflow: visible; }
+  #collectionRoot { height: auto; overflow: visible; }
+  .app { grid-template-columns: 1fr; overflow: visible; }
+  .panel { overflow: visible; }
+  .backlog-list, .engine-list, .deck-list {
+    flex: none;
+    max-height: 50vh;
+    overflow-y: auto;
+  }
+}

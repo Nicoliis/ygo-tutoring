@@ -1,0 +1,19 @@
+.card-search { flex: 0 0 auto; margin-bottom: 4px; }
+
+.card-search-status {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  min-height: 1.1em;
+  margin: 2px 0 6px;
+}
+.card-search-status.error { color: var(--danger); }
+
+.card-search-results {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-height: 220px;
+  overflow-y: auto;
+  margin-bottom: 8px;
+}
+.card-search-results:empty { margin-bottom: 0; }

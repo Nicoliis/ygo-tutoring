@@ -1,0 +1,27 @@
+.app-header { padding: 20px 24px 8px; }
+.app-header h1 { margin: 0 0 4px; font-size: 1.5rem; }
+.subtitle { margin: 0; color: var(--text-dim); font-size: 0.9rem; }
+
+.welcome-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  padding: 16px 24px 32px;
+  max-width: 900px;
+}
+
+.tool-card {
+  display: block;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  color: var(--text);
+  text-decoration: none;
+}
+.tool-card:hover, .tool-card:focus-visible {
+  border-color: var(--accent);
+  outline: none;
+}
+.tool-card h2 { margin: 0 0 6px; font-size: 1.05rem; }
+.tool-card p { margin: 0; color: var(--text-dim); font-size: 0.85rem; }

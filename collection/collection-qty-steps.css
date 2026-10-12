@@ -1,0 +1,37 @@
+.backlog-qty-steps {
+  display: flex;
+  flex-direction: column;
+  width: 19px;
+  flex: 0 0 auto;
+}
+.backlog-qty-step {
+  flex: 1 1 0;
+  min-height: 0;
+  padding: 0;
+  margin: 0;
+  border: 1px solid var(--border);
+  border-left: 0;
+  background: var(--panel-alt);
+  color: var(--text-dim);
+  font-size: 0.5rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.backlog-qty-step-up {
+  border-radius: 0 var(--radius) 0 0;
+  border-bottom-width: 0;
+}
+.backlog-qty-step-down {
+  border-radius: 0 0 var(--radius) 0;
+}
+.backlog-qty-step:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--text);
+}
+.backlog-qty-step:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

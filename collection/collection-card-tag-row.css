@@ -1,0 +1,25 @@
+.card-tag-row {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.card-tag-row .btn-remove-item {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  z-index: 5;
+  width: 16px;
+  height: 16px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 0.6rem;
+  line-height: 1;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.card-tag-row .btn-remove-item:hover { color: #fff; background: var(--danger); border-color: var(--danger); }

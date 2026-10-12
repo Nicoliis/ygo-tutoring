@@ -1,0 +1,32 @@
+.search-controls {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#searchInput {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--panel-alt);
+  color: var(--text);
+  font-size: 0.95rem;
+}
+#searchInput:focus, #typeFilter:focus { outline: 2px solid var(--accent); }
+
+#typeFilter {
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--panel-alt);
+  color: var(--text);
+}
+
+.status {
+  min-height: 20px;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+.status.error { color: var(--danger); }

@@ -1,0 +1,7 @@
+@media (max-width: 900px) {
+  html, body { height: auto; overflow: visible; }
+  #trackerRoot { height: auto; overflow: visible; }
+  .app-single { overflow: visible; }
+  .panel { overflow: visible; }
+  .trackers-list { flex: none; max-height: 70vh; overflow-y: auto; }
+}

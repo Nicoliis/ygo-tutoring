@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Progression Series Pack Puller</title>
+<link rel="stylesheet" href="../shared/theme.css">
+<link rel="stylesheet" href="../shared/modal-dialog.css">
+<link rel="stylesheet" href="../shared/card-tags.css">
+<link rel="stylesheet" href="tracker-layout.css">
+<link rel="stylesheet" href="tracker-panel.css">
+<link rel="stylesheet" href="tracker-form-controls.css">
+<link rel="stylesheet" href="tracker-set-picker.css">
+<link rel="stylesheet" href="tracker-set-results.css">
+<link rel="stylesheet" href="tracker-list.css">
+<link rel="stylesheet" href="tracker-card-header.css">
+<link rel="stylesheet" href="tracker-pull-logger.css">
+<link rel="stylesheet" href="tracker-checklist.css">
+<link rel="stylesheet" href="tracker-checklist-entries.css">
+<link rel="stylesheet" href="tracker-pending-pull.css">
+<link rel="stylesheet" href="tracker-minicard.css">
+<link rel="stylesheet" href="tracker-responsive.css">
+<link rel="stylesheet" href="../shared/nav-layout.css">
+<link rel="stylesheet" href="../shared/nav-links.css">
+<link rel="stylesheet" href="../shared/nav-responsive.css">
+</head>
+<body>
+<div id="trackerRoot">
+  <header class="app-header">
+    <h1>Progression Series Pack Puller</h1>
+  </header>
+
+  <main class="app-single">
+    <section id="setPickerSection" class="panel set-picker-panel">
+      <div class="panel-head">
+        <h2>Set Picker</h2>
+        <button type="button" id="setPickerToggle" class="btn btn-secondary btn-small" aria-expanded="false" aria-label="Show set picker">+ Pick a set</button>
+      </div>
+      <div id="selectedSetBadge" class="selected-set-badge" hidden></div>
+      <div id="setPickerBody" class="set-picker-body collapsed">
+        <input type="text" id="setSearchInput" class="search-input" placeholder="Search sets&hellip;" aria-label="Search card sets">
+        <div id="setResultsList" class="set-results-list"></div>
+      </div>
+    </section>
+
+    <section id="trackersSection" class="panel">
+      <h2>Trackers</h2>
+
+      <form id="createTrackerForm" class="inline-form">
+        <input id="trackerNameInput" type="text" placeholder="Box name" aria-label="Tracker name" autocomplete="off" required>
+        <button type="submit" class="btn btn-primary">Create tracker</button>
+      </form>
+
+      <div id="trackersList" class="trackers-list"></div>
+    </section>
+  </main>
+
+  <div id="modalRoot" hidden></div>
+</div>
+
+<script src="../shared/dom-utils.js"></script>
+<script src="../shared/focus-trap.js"></script>
+<script src="../shared/modal-buttons.js"></script>
+<script src="../shared/modal.js"></script>
+<script src="../shared/card-api.js"></script>
+<script src="../shared/card-tags-builder.js"></script>
+<script src="../shared/card-effect-builder.js"></script>
+<script src="../shared/card-detail-modal.js"></script>
+<script src="../shared/nav-entries.js"></script>
+<script src="../shared/nav-collapse-state.js"></script>
+<script src="../shared/nav-sidebar-item.js"></script>
+<script src="../shared/nav-sidebar.js"></script>
+<script src="../shared/nav-init.js"></script>
+<script src="tracker-dom-refs.js"></script>
+<script src="tracker-storage.js"></script>
+<script src="tracker-state.js"></script>
+<script src="tracker-add-card.js"></script>
+<script src="tracker-fetch-sets.js"></script>
+<script src="tracker-fetch-pool.js"></script>
+<script src="tracker-weighted-pick.js"></script>
+<script src="tracker-draw-pull.js"></script>
+<script src="tracker-pending-pull.js"></script>
+<script src="tracker-crud.js"></script>
+<script src="tracker-delete.js"></script>
+<script src="tracker-log-pull.js"></script>
+<script src="tracker-checklist-crud.js"></script>
+<script src="tracker-progress.js"></script>
+<script src="tracker-render-minicard.js"></script>
+<script src="tracker-render-set-badge.js"></script>
+<script src="tracker-render-set-results.js"></script>
+<script src="tracker-render-set-picker.js"></script>
+<script src="tracker-card-markup.js"></script>
+<script src="tracker-card-wire-basics.js"></script>
+<script src="tracker-card-wire-simulate.js"></script>
+<script src="tracker-render-checklist-entries.js"></script>
+<script src="tracker-card-wire-checklist.js"></script>
+<script src="tracker-card-build.js"></script>
+<script src="tracker-render-trackers.js"></script>
+<script src="tracker-init.js"></script>
+</body>
+</html>

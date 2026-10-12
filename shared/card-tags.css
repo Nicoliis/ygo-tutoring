@@ -1,0 +1,35 @@
+.card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.card-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.74rem;
+  line-height: 1.2;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+.card-tag strong { color: var(--text); font-weight: 600; }
+
+.card-effect-block { margin-bottom: 10px; }
+.card-effect-block:last-child { margin-bottom: 0; }
+.card-effect-block strong {
+  display: block;
+  color: var(--text);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  margin-bottom: 2px;
+}
+.card-effect-block p {
+  margin: 0;
+  white-space: pre-line;
+}

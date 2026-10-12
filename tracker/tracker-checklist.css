@@ -1,0 +1,15 @@
+.checklist-body { margin-top: 8px; }
+.checklist-section.collapsed .checklist-body {
+  display: none;
+}
+
+.checklist-add-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.checklist-name-input { flex: 1 1 160px; }
+
+.outstanding { margin-top: 8px; border-top: 1px solid var(--border); padding-top: 6px; }
+.outstanding h4 { margin: 0 0 4px; font-size: 0.85rem; color: var(--text-dim); }

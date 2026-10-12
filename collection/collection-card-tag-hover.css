@@ -1,0 +1,18 @@
+.card-tag-hover-overlay {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 20;
+  min-width: 180px;
+  max-width: 240px;
+  background: var(--panel-alt);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  font-size: 0.78rem;
+  color: var(--text);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+}
+.card-tag-hover-overlay .card-tag-hover-name { font-weight: 600; margin-bottom: 4px; }
+.card-tag-hover-overlay .card-tag-hover-detail { color: var(--text-dim); }

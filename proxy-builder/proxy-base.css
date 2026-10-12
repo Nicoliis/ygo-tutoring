@@ -1,0 +1,19 @@
+.app-header {
+  padding: 20px 24px 8px;
+}
+.app-header h1 { margin: 0 0 4px; font-size: 1.5rem; }
+.subtitle { margin: 0; color: var(--text-dim); font-size: 0.9rem; }
+
+.app {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 16px 24px 24px;
+}
+
+.search-panel, .deck-panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}

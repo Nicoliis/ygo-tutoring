@@ -1,0 +1,31 @@
+.set-results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 6px;
+  background: var(--panel-alt);
+}
+
+.set-result-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 0.85rem;
+  width: 100%;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text);
+  font-family: inherit;
+  text-align: left;
+}
+.set-result-row:hover { background: var(--panel); }
+.set-result-row.selected { border: 1px solid var(--accent); }
+.set-result-date { color: var(--text-dim); white-space: nowrap; }

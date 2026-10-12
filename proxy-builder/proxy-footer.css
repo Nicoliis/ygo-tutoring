@@ -1,0 +1,9 @@
+.empty-msg { color: var(--text-dim); font-size: 0.85rem; padding: 8px 2px; grid-column: 1 / -1; }
+
+.app-footer {
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  padding: 10px 24px 24px;
+}
+.app-footer a { color: var(--accent); }

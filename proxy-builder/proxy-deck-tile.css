@@ -1,0 +1,22 @@
+.deck-tile {
+  position: relative;
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 2px solid transparent;
+  outline: 1px solid var(--border);
+  outline-offset: -1px;
+  background: #000;
+  transition: border-color 0.1s, transform 0.1s;
+}
+.deck-tile:hover { transform: translateY(-2px); }
+.deck-tile.marked { border-color: var(--accent); }
+.deck-tile img {
+  width: 100%;
+  aspect-ratio: 59 / 86;
+  object-fit: cover;
+  display: block;
+  opacity: 0.55;
+  transition: opacity 0.1s;
+}
+.deck-tile.marked img { opacity: 1; }

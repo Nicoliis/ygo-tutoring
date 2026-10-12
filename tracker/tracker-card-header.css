@@ -1,0 +1,21 @@
+.header-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 auto;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+.header-actions { display: flex; gap: 8px; flex: 0 0 auto; }
+
+.tracker-name-input { font-weight: 600; flex: 1 1 160px; }
+
+.item-count-badge {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  white-space: nowrap;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 2px 8px;
+}

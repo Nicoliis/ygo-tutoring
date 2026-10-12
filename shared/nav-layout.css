@@ -1,0 +1,42 @@
+body.has-app-sidebar {
+  display: flex;
+  align-items: flex-start;
+  min-height: 100vh;
+}
+
+body.has-app-sidebar > #appSidebar {
+  flex: 0 0 auto;
+}
+
+body.has-app-sidebar > *:not(#appSidebar) {
+  flex: 1;
+  min-width: 0;
+}
+
+#appSidebar {
+  width: 220px;
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  box-sizing: border-box;
+  padding: 12px 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  transition: width 0.2s ease;
+}
+
+#appSidebarToggle {
+  display: block;
+  margin: 0 12px 12px;
+  background: var(--panel-alt);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  width: 36px;
+  height: 36px;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+#appSidebarToggle:hover { border-color: var(--accent); }

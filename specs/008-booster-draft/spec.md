@@ -283,3 +283,12 @@ drafted cards.
 - Adding a finished draft to the backlog is an all-or-nothing action covering every kept card in
   that draft; there is no requirement to add kept cards individually or to exclude specific kept
   cards from the backlog addition.
+
+## Post-implementation note (2026-10-12 site restructure)
+
+The Booster Draft page moved to `draft/index.html` (from root `draft.html`), with
+`draft-data.js`/`draft-grouping.js`/`draft.js` alongside it. The card-detail modal
+(`showModal`/`openCardDetailModal`/`buildCardTags`/`buildEffectHtml`) and the card-field
+extraction (`extractCardFields`, `getWeightForRarity`) were extracted further, out of this
+feature's own files, into `shared/` so `tracker/tracker.js` reuses the same implementations
+rather than maintaining independent copies. Functional behavior described above is unchanged.

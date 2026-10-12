@@ -1,0 +1,19 @@
+.set-picker-body { margin-top: 8px; }
+.set-picker-body.collapsed { display: none; }
+
+.selected-set-badge {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 6px 10px;
+  margin-top: 8px;
+}
+.selected-set-badge[hidden] { display: none; }
+.selected-set-badge strong { color: var(--text); }

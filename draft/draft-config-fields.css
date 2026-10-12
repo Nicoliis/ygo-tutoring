@@ -1,0 +1,29 @@
+.config-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-end;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: relative;
+}
+.field label, .field-label { font-size: 0.78rem; color: var(--text-dim); }
+
+#amountInput, #cardpoolInput { width: 90px; }
+#groupingSelect {
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  padding: 8px 10px;
+  font-size: 0.9rem;
+}
+
+.kept-total-field { justify-content: flex-end; }
+.kept-total-preview { font-size: 1rem; font-weight: 600; color: var(--accent); }
+
+.config-actions { flex-direction: row; gap: 8px; }

@@ -1,0 +1,30 @@
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  flex: 1 1 auto;
+  width: 100%;
+  max-width: 760px;
+}
+.panel h2 { margin: 0 0 8px; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-dim); flex: 0 0 auto; }
+.panel > form { flex: 0 0 auto; }
+
+.set-picker-panel {
+  flex: 0 0 auto;
+  width: 100%;
+  max-width: 760px;
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+.panel-head h2 { margin: 0; }

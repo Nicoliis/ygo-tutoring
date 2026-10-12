@@ -1,0 +1,33 @@
+.pull-logger {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+.pull-input {
+  flex: 1 1 260px;
+  min-height: 60px;
+  resize: vertical;
+}
+
+.simulate-pull {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.simulate-pack-count { width: 60px; }
+.simulate-hint { font-size: 0.78rem; color: var(--text-dim); }
+
+.btn-toggle {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  border-radius: var(--radius);
+  padding: 4px 9px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.btn-toggle:hover { border-color: var(--accent); color: var(--text); }

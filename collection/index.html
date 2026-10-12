@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Draft Collection Manager</title>
+<link rel="stylesheet" href="../shared/theme.css">
+<link rel="stylesheet" href="../shared/modal-dialog.css">
+<link rel="stylesheet" href="../shared/card-tags.css">
+<link rel="stylesheet" href="collection-layout.css">
+<link rel="stylesheet" href="collection-qty-input.css">
+<link rel="stylesheet" href="collection-qty-steps.css">
+<link rel="stylesheet" href="collection-panel.css">
+<link rel="stylesheet" href="collection-form-controls.css">
+<link rel="stylesheet" href="collection-card-search.css">
+<link rel="stylesheet" href="collection-search-result-card.css">
+<link rel="stylesheet" href="collection-backlog-list.css">
+<link rel="stylesheet" href="collection-bag.css">
+<link rel="stylesheet" href="collection-bag-body.css">
+<link rel="stylesheet" href="collection-card-tag-row.css">
+<link rel="stylesheet" href="collection-deck-sections.css">
+<link rel="stylesheet" href="collection-card-tag.css">
+<link rel="stylesheet" href="collection-card-tag-colors.css">
+<link rel="stylesheet" href="collection-card-tag-hover.css">
+<link rel="stylesheet" href="collection-card-tag-image.css">
+<link rel="stylesheet" href="collection-card-effect.css">
+<link rel="stylesheet" href="collection-toast.css">
+<link rel="stylesheet" href="collection-responsive.css">
+<link rel="stylesheet" href="../shared/nav-layout.css">
+<link rel="stylesheet" href="../shared/nav-links.css">
+<link rel="stylesheet" href="../shared/nav-responsive.css">
+</head>
+<body>
+<div id="collectionRoot">
+  <header class="app-header">
+    <h1>Draft Collection Manager</h1>
+  </header>
+
+  <main class="app">
+
+    <section id="backlogSection" class="panel">
+      <h2>Backlog</h2>
+
+      <div class="card-search">
+        <input id="cardSearchInput" type="text" class="search-input" placeholder="Search card database to add&hellip;" aria-label="Search card database to add a new card" autocomplete="off">
+        <div id="cardSearchStatus" class="card-search-status" aria-live="polite"></div>
+        <div id="cardSearchResults" class="card-search-results"></div>
+      </div>
+
+      <input id="backlogSearchInput" type="text" class="search-input" placeholder="Search backlog&hellip;" aria-label="Search backlog" autocomplete="off">
+
+      <div id="backlogList" class="backlog-list"></div>
+    </section>
+
+    <section id="enginesSection" class="panel">
+      <div class="panel-head">
+        <h2>Engines</h2>
+        <button type="button" id="engineFormToggle" class="btn btn-secondary btn-small" aria-expanded="false">+ New engine</button>
+      </div>
+
+      <form id="engineForm" class="inline-form engine-form" hidden>
+        <input id="engineNameInput" type="text" placeholder="Engine name" aria-label="Engine name" autocomplete="off" required>
+        <button type="submit" class="btn btn-primary">Create engine</button>
+      </form>
+
+      <div id="engineList" class="engine-list"></div>
+    </section>
+
+    <section id="decksSection" class="panel">
+      <h2>Decks</h2>
+
+      <form id="deckCreateForm" class="inline-form">
+        <input id="newDeckNameInput" type="text" placeholder="New deck name" aria-label="New deck name" autocomplete="off" required>
+        <button type="submit" class="btn btn-primary">Create</button>
+      </form>
+
+      <div id="deckList" class="deck-list"></div>
+    </section>
+
+  </main>
+
+  <div id="modalRoot" hidden></div>
+</div>
+
+<script src="../shared/dom-utils.js"></script>
+<script src="../shared/focus-trap.js"></script>
+<script src="../shared/modal-buttons.js"></script>
+<script src="../shared/modal.js"></script>
+<script src="../shared/card-api.js"></script>
+<script src="../shared/nav-entries.js"></script>
+<script src="../shared/nav-collapse-state.js"></script>
+<script src="../shared/nav-sidebar-item.js"></script>
+<script src="../shared/nav-sidebar.js"></script>
+<script src="../shared/nav-init.js"></script>
+<script src="collection.js"></script>
+</body>
+</html>

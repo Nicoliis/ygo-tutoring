@@ -1,0 +1,23 @@
+#backlogSection {
+    max-width: 310px;
+}
+.backlog-qty-stepper {
+  display: flex;
+  align-items: stretch;
+  max-width: 55px;
+  flex: 0 0 auto;
+}
+
+input[type="number"].backlog-qty-input {
+  width: 100%;
+  max-width: 36px;
+  padding: 4px 2px;
+  text-align: center;
+  border-radius: var(--radius) 0 0 var(--radius);
+  -moz-appearance: textfield;
+}
+input[type="number"].backlog-qty-input::-webkit-inner-spin-button,
+input[type="number"].backlog-qty-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}

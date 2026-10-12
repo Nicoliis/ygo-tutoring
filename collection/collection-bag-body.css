@@ -1,0 +1,22 @@
+.item-count-badge {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+.header-actions button { font-size: 0.75rem; }
+
+.bag-body { margin-top: 8px; }
+
+.engine-card-contents {
+  margin: 4px 0 8px;
+  max-height: 160px;
+  padding: 8px 4px 4px;
+}
+
+.rename-input { width: 100%; }

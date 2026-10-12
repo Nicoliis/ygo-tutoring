@@ -96,3 +96,13 @@ A user expects the same sidebar, in the same state, behaving the same way, regar
 - Sidebar state persistence is scoped to the user's browser (e.g., local storage) and does not require any server-side account or backend, consistent with this being a static, client-side tool.
 - No authentication or per-user permissions are involved; all visitors see the same navigation entries.
 - Visual styling of the sidebar should be consistent with the site's existing look and feel, but exact visual design is an implementation decision for the planning phase, not a specification requirement.
+
+## Post-implementation note (2026-10-12 site restructure)
+
+The site was later reorganized so each tool lives in its own folder (`proxy-builder/`,
+`collection/`, `tracker/`, `draft/`, each as that folder's `index.html`), with shared files
+(`nav.js`, `nav.css`, and other cross-page behavior) moved to `shared/`. `nav.js`'s `NAV_ENTRIES`
+now addresses pages by folder slug rather than a fixed filename, and a new `index.html` at the
+site root is a welcome/landing page (also using the shared sidebar). This spec's file-path
+references (`index.html`, `collection.html`, etc.) describe the structure as it existed before
+that restructure; the sidebar's behavior and requirements above are unchanged.
