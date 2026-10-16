@@ -13,6 +13,10 @@
 
 * { box-sizing: border-box; }
 
+html {
+  font-size: 18px; /* every component size below is in rem, so this scales the whole app */
+}
+
 body {
   margin: 0;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
