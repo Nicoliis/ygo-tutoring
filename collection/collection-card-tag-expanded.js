@@ -14,6 +14,7 @@ function wireCardTagExpanded(el, card, hideHoverOverlay) {
   imageOverlay.style.cursor = "pointer";
   imageOverlay.addEventListener("click", (e) => {
     e.stopPropagation();
+    clearFloatingOverlays();
     openCardDetailModal(card);
   });
   floatingOverlays.push(imageOverlay);

@@ -1,6 +1,6 @@
 function maybeBackfillCardDetails(card) {
   const hasEffect = Boolean(card.effect || card.desc || card.pendDesc || card.monsterDesc);
-  if (hasEffect || backfillAttemptedCardIds.has(card.id)) return;
+  if (hasEffect || card.detailsTried || backfillAttemptedCardIds.has(card.id)) return;
   backfillAttemptedCardIds.add(card.id);
   const url = `${API_URL}?name=${encodeURIComponent(card.name)}`;
   fetch(url)
@@ -22,4 +22,66 @@ function maybeBackfillCardDetails(card) {
       }
     })
     .catch(() => {});
+}
+
+/*
+ * Completes cards that lack their details (race, attribute, level, effect...): requests the card data in batches by id
+ * (50 per request; one request by name for a card with no id), fills only what the card is missing and marks every
+ * card it tried with detailsTried so it is requested at most once, ever. Network failures leave cards unmarked so a
+ * later visit can retry. Resolves when done; makes no request when there is nothing to complete.
+ */
+let completionInFlight = null;
+
+function completeMissingCardDetails(cards) {
+  const todo = cards.filter((card) => !card.race && !card.detailsTried);
+  if (todo.length === 0) return Promise.resolve();
+  if (completionInFlight) return completionInFlight;
+
+  const mergeInto = (card, apiCard) => {
+    const extracted = extractCardDataFromApiResult(apiCard);
+    Object.keys(extracted).forEach((key) => {
+      if ((card[key] === undefined || card[key] === null) && extracted[key] !== null && extracted[key] !== undefined) {
+        card[key] = extracted[key];
+      }
+    });
+  };
+  const fetchJson = (url) => fetch(url).then((res) => (res.ok ? res.json() : { data: [] }));
+
+  const withId = todo.filter((card) => card.apiId);
+  const withoutId = todo.filter((card) => !card.apiId);
+  const requests = [];
+
+  for (let i = 0; i < withId.length; i += 50) {
+    const chunk = withId.slice(i, i + 50);
+    const url = `${API_URL}?id=${chunk.map((c) => c.apiId).join(",")}`;
+    requests.push(
+      fetchJson(url).then((data) => {
+        const found = new Map((Array.isArray(data.data) ? data.data : []).map((apiCard) => [apiCard.id, apiCard]));
+        chunk.forEach((card) => {
+          const apiCard = found.get(card.apiId);
+          if (apiCard) mergeInto(card, apiCard);
+          card.detailsTried = true;
+        });
+      })
+    );
+  }
+  withoutId.forEach((card) => {
+    requests.push(
+      fetchJson(`${API_URL}?name=${encodeURIComponent(card.name)}`).then((data) => {
+        const apiCard = Array.isArray(data.data) ? data.data[0] : null;
+        if (apiCard) mergeInto(card, apiCard);
+        card.detailsTried = true;
+      })
+    );
+  });
+
+  completionInFlight = Promise.all(requests.map((p) => p.catch(() => {})))
+    .then(() => {
+      saveCollection();
+      renderAll();
+    })
+    .finally(() => {
+      completionInFlight = null;
+    });
+  return completionInFlight;
 }

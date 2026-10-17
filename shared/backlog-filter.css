@@ -1,0 +1,75 @@
+/* Search box + filter button on one row (the panel's direct-child search rule no longer applies to the input). */
+.backlog-search-row { display: flex; gap: 6px; align-items: center; flex: 0 0 auto; margin-bottom: 8px; }
+.backlog-search-row .search-input { flex: 1 1 auto; min-width: 0; }
+
+.backlog-filter-btn {
+  position: relative;
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-dim);
+  cursor: pointer;
+}
+.backlog-filter-btn:hover, .backlog-filter-btn:focus-visible { border-color: var(--accent); color: var(--text); outline: none; }
+.backlog-filter-btn.bf-active { border-color: var(--accent); color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.backlog-filter-btn .bf-count {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--bg);
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+.backlog-filter-btn .bf-count:empty { display: none; }
+
+/* The filter window */
+.bf-root { min-width: min(560px, 80vw); }
+.bf-tabs { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 10px; }
+.bf-tab {
+  background: none;
+  border: 1px solid transparent;
+  border-bottom: 0;
+  border-radius: var(--radius) var(--radius) 0 0;
+  color: var(--text-dim);
+  font: inherit;
+  font-size: 0.8rem;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+.bf-tab:hover { color: var(--text); }
+.bf-tab[aria-selected="true"] { color: var(--text); background: var(--panel-alt); border-color: var(--border); }
+.bf-tab.bf-tab-on { color: var(--accent); }
+.bf-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.bf-include { display: flex; align-items: center; gap: 6px; font-weight: 600; margin-bottom: 8px; cursor: pointer; }
+.bf-values.bf-dim { opacity: 0.55; }
+.bf-group { border: 0; padding: 0; margin: 0 0 10px; display: flex; flex-wrap: wrap; gap: 6px; max-height: 120px; overflow-y: auto; }
+.bf-group legend { width: 100%; padding: 0; margin-bottom: 4px; color: var(--text-dim); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.bf-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--panel-alt);
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+.bf-chip:has(input:checked) { border-color: var(--accent); color: var(--accent); }
+.bf-empty, .bf-note { color: var(--text-dim); font-size: 0.82rem; margin: 6px 0; }
+
+/* The shared dialog is 420 px wide; the filter window has nine tabs and needs more room. */
+.modal-dialog:has(.bf-root) { max-width: 680px; }

@@ -355,6 +355,86 @@ function runContractTests() {
     expect(Object.keys(buildBackup().data).includes(`ygoRun_${profile.id}`), "exported with the rest of the save");
   });
 
+  /* ---- Backlog type filter (spec 012) ---- */
+
+  check("groupOf: every card lands in exactly one tab, Pendulum first", () => {
+    const g = (type, frameType) => groupOf({ type, frameType });
+    expect(g("Effect Monster") === "monster" && g("Normal Monster") === "monster" && g("Flip Effect Monster") === "monster");
+    expect(g("Normal Tuner Monster") === "monster" && g("Token") === "monster");
+    expect(g("Spell Card") === "spell" && g("Trap Card") === "trap");
+    expect(g("Ritual Effect Monster") === "ritual" && g("Fusion Monster") === "fusion" && g("Synchro Tuner Monster") === "synchro");
+    expect(g("XYZ Monster") === "xyz" && g("Link Monster") === "link");
+    expect(g("Pendulum Effect Monster") === "pendulum" && g("Pendulum Effect Fusion Monster") === "pendulum");
+    expect(g("XYZ Pendulum Effect Monster") === "pendulum" && g("Synchro Pendulum Effect Monster") === "pendulum");
+    expect(g(null, "fusion") === "fusion" && g(undefined, "effect_pendulum") === "pendulum", "frameType fallback");
+    expect(g("Skill Card") === null && g(null, null) === null && groupOf({}) === null, "unrecognizable");
+  });
+
+  check("availableValues: only values present in cards of that tab, sorted", () => {
+    const cards = [
+      { type: "Effect Monster", attribute: "DARK", race: "Fiend", level: 4 },
+      { type: "Normal Monster", attribute: "LIGHT", race: "Fiend", level: 10 },
+      { type: "Normal Monster", attribute: "DARK", race: "Dragon", level: 2 },
+      { type: "Spell Card", race: "Quick-Play" },
+      { type: "Spell Card", race: "Continuous" },
+      { type: "Trap Card", race: "Counter" },
+      { type: "XYZ Monster", attribute: "WATER", race: "Aqua", level: 4 },
+      { type: "Effect Monster" },
+    ];
+    const monster = availableValues(cards, "monster");
+    expect(monster.attribute.join() === "DARK,LIGHT" && monster.race.join() === "Dragon,Fiend" && monster.level.join() === "2,4,10");
+    expect(availableValues(cards, "spell").subtype.join() === "Continuous,Quick-Play");
+    expect(availableValues(cards, "trap").subtype.join() === "Counter");
+    expect(availableValues(cards, "xyz").rank.join() === "4");
+    expect(availableValues(cards, "link").linkval.length === 0 && availableValues(cards, "link").attribute.length === 0, "empty tab");
+    expect(Object.keys(availableValues(cards, "nope")).length === 0);
+  });
+
+  check("matchesFilter: tabs OR, groups AND, values OR, missing values never match", () => {
+    const dark4 = { type: "Effect Monster", attribute: "DARK", race: "Fiend", level: 4 };
+    const light4 = { type: "Effect Monster", attribute: "LIGHT", race: "Fiend", level: 4 };
+    const noDetails = { type: "Effect Monster" };
+    const spell = { type: "Spell Card", race: "Quick-Play" };
+    const trap = { type: "Trap Card", race: "Counter" };
+    const unknown = { name: "?" };
+    expect([dark4, spell, unknown].every((c) => matchesFilter(c, emptyFilter())), "no filter lists everything");
+    const onlySpell = { types: ["spell"], values: {} };
+    expect(matchesFilter(spell, onlySpell) && !matchesFilter(dark4, onlySpell) && !matchesFilter(trap, onlySpell) && !matchesFilter(unknown, onlySpell));
+    const spellOrTrap = { types: ["spell", "trap"], values: {} };
+    expect(matchesFilter(spell, spellOrTrap) && matchesFilter(trap, spellOrTrap) && !matchesFilter(dark4, spellOrTrap));
+    const darkLevel4 = { types: ["monster"], values: { monster: { attribute: ["DARK"], level: [4, 5] } } };
+    expect(matchesFilter(dark4, darkLevel4) && !matchesFilter(light4, darkLevel4), "groups combine with AND");
+    expect(!matchesFilter(noDetails, darkLevel4), "a card missing the value does not match");
+    expect(matchesFilter(noDetails, { types: ["monster"], values: {} }), "no value selected: type alone is enough");
+    const attrs = { types: ["monster"], values: { monster: { attribute: ["DARK", "LIGHT"] } } };
+    expect(matchesFilter(dark4, attrs) && matchesFilter(light4, attrs), "values in a group are OR");
+    expect(matchesFilter(spell, { types: ["spell", "monster"], values: { monster: { attribute: ["WIND"] }, spell: { subtype: ["Quick-Play"] } } }), "each tab uses its own values");
+    expect(activeTypeCount(spellOrTrap) === 2 && activeTypeCount(emptyFilter()) === 0 && isFilterActive(onlySpell));
+  });
+
+  check("backlog filter: saved per profile, malformed data is harmless, unknown fields survive", () => {
+    createProfile("FilterA", "progression");
+    expect(!isFilterActive(loadBacklogFilter()), "nothing saved yet");
+    saveBacklogFilter({ types: ["spell", "bogus"], values: { spell: { subtype: ["Continuous"], nope: ["x"] }, ghost: { a: [1] } } });
+    const stored = loadBacklogFilter();
+    expect(stored.types.join() === "spell" && stored.values.spell.subtype.join() === "Continuous");
+    expect(!("nope" in stored.values.spell) && !("ghost" in stored.values), "unknown groups dropped");
+    saveData({ types: ["spell"], values: {}, futureField: "keep" }, profileKey("ygoBacklogFilter"));
+    saveBacklogFilter({ types: ["trap"], values: {} });
+    expect(loadData(profileKey("ygoBacklogFilter")).futureField === "keep", "unknown fields preserved");
+    const profileA = getActiveProfile().id;
+    createProfile("FilterB", "progression");
+    expect(!isFilterActive(loadBacklogFilter()), "the other profile has its own (empty) filter");
+    setActiveProfile(profileA);
+    expect(loadBacklogFilter().types.join() === "trap");
+    saveData("garbage", profileKey("ygoBacklogFilter"));
+    expect(!isFilterActive(loadBacklogFilter()), "malformed record reads as no filter");
+    saveBacklogFilter({ types: ["monster"], values: {} });
+    expect(Object.keys(buildBackup().data).includes(`ygoBacklogFilter_${profileA}`), "exported with the rest of the save");
+    saveBacklogFilter({ types: [], values: {} });
+    expect(loadData(profileKey("ygoBacklogFilter")) === null, "an empty filter clears the key");
+  });
+
   /* ---- Pull history, rarity and pack opening (spec 010) ---- */
 
   check("printings: same set+rarity increments, different set/rarity adds, price stays at first pull", () => {

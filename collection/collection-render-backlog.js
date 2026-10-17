@@ -8,7 +8,7 @@ function buildBacklogRow(card) {
   const row = document.createElement("div");
   row.className = "backlog-row";
 
-  row.appendChild(renderCardTag(card, { draggable: true }));
+  row.appendChild(renderCardTag(card, { draggable: true, directDetails: true }));
   if (panelAllows("allowQtyEdit")) {
     row.appendChild(buildBacklogQtyStepper(card));
   } else {
@@ -43,12 +43,23 @@ function renderBacklog() {
   }
 
   const filterLower = backlogFilter.trim().toLowerCase();
-  const filtered = collection.cards.filter(
-    (c) => !filterLower || c.name.toLowerCase().includes(filterLower)
-  );
+  const bySearch = collection.cards.filter((c) => !filterLower || c.name.toLowerCase().includes(filterLower));
+  // The type filter only exists when the Backlog panel was mounted; without it every card is listed.
+  const typeFilter = typeof appliedBacklogFilter !== "undefined" ? appliedBacklogFilter : null;
+  const filtered = typeFilter ? bySearch.filter((c) => matchesFilter(c, typeFilter)) : bySearch;
 
   if (filtered.length === 0) {
-    backlogListEl.innerHTML = '<p class="empty-msg">No cards match your search.</p>';
+    if (bySearch.length > 0 && typeFilter && isFilterActive(typeFilter)) {
+      backlogListEl.innerHTML = '<p class="empty-msg">No cards match your filter. <button type="button" class="btn btn-secondary btn-small" id="clearBacklogFilterBtn">Clear filter</button></p>';
+      document.getElementById("clearBacklogFilterBtn").addEventListener("click", () => {
+        clearBacklogFilter();
+        appliedBacklogFilter = loadBacklogFilter();
+        if (typeof updateBacklogFilterButton === "function") updateBacklogFilterButton();
+        renderAll();
+      });
+    } else {
+      backlogListEl.innerHTML = '<p class="empty-msg">No cards match your search.</p>';
+    }
     return;
   }
 

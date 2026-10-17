@@ -39,3 +39,6 @@
 - **Decision**: `scrollbar-width: thin` with `scrollbar-color` for Firefox and `::-webkit-scrollbar` rules (6–8 px, rounded thumb in the border/accent colors, hover brighter) for Chromium/Safari, scoped to the Backlog list.
 - **Rationale**: Pure CSS, theme-aware via the existing variables, no JavaScript.
 - **Alternatives**: A scrollbar library (violates Principle III).
+
+## Implementation note (T001): stored `type` values and the tab they map to
+The card data's `type` strings seen in the app: "Normal Monster", "Effect Monster", "Flip Effect Monster", "Spirit Monster", "Toon Monster", "Union Effect Monster", "Gemini Monster", "Tuner Monster", "Normal Tuner Monster", "Token" → Monster; "Ritual Monster", "Ritual Effect Monster" → Ritual; "Fusion Monster" → Fusion; "Synchro Monster", "Synchro Tuner Monster" → Synchro; "XYZ Monster" → Xyz; "Link Monster" → Link; every "...Pendulum..." type (including "XYZ Pendulum Effect Monster", "Pendulum Effect Fusion Monster", "Synchro Pendulum Effect Monster") → Pendulum; "Spell Card" → Spell; "Trap Card" → Trap; "Skill Card" → unclassified. The check is done on the lowercased `type` text plus `frameType`, so "XYZ" is matched as "xyz". Selectors confirmed: `.card-tag` (132 px, in `collection-card-tag.css`), `.backlog-row`, `.backlog-list`.

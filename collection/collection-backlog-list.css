@@ -20,3 +20,22 @@
 .backlog-row .backlog-name { flex: 1 1 160px; font-weight: 600; }
 .backlog-row .backlog-available { font-size: 0.8rem; color: var(--text-dim); }
 .backlog-row .backlog-available.warning { color: var(--danger); font-weight: 700; }
+
+/* Slim, themed vertical scrollbar for the Backlog list. */
+.backlog-list {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.backlog-list::-webkit-scrollbar { width: 8px; }
+.backlog-list::-webkit-scrollbar-track { background: transparent; }
+.backlog-list::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+.backlog-list::-webkit-scrollbar-thumb:hover,
+.backlog-list::-webkit-scrollbar-thumb:active {
+  background: var(--accent);
+  background-clip: content-box;
+}
