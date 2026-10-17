@@ -1,4 +1,4 @@
-const STORAGE_KEY = "ygoCollection";
+const STORAGE_KEY = profileKey("ygoCollection");
 const API_URL = "https://db.ygoprodeck.com/api/v7/cardinfo.php";
 const SEARCH_MIN_LEN = 3;
 const SEARCH_DEBOUNCE_MS = 400;

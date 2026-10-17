@@ -1,8 +1,6 @@
 function loadDeck() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
+    const parsed = loadData(STORAGE_KEY);
     if (!Array.isArray(parsed)) return [];
     return parsed.map((entry) => ({
       uid: entry.uid || nextId("c"),
@@ -19,11 +17,7 @@ function loadDeck() {
 }
 
 function saveDeck() {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(deck));
-  } catch (err) {
-    console.warn("Could not save deck:", err);
-  }
+  saveData(deck, STORAGE_KEY);
 }
 
 let deck = loadDeck();

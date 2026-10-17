@@ -34,3 +34,21 @@
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
+
+#appSidebar .sidebar-profile {
+  padding: 0 0 8px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+#appSidebar .sidebar-profile-name {
+  display: block;
+  padding: 6px 16px 0;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>YGO Tutoring Toolkit</title>
 <link rel="stylesheet" href="shared/theme.css">
+<link rel="stylesheet" href="draft/draft-base.css">
+<link rel="stylesheet" href="draft/draft-buttons.css">
 <link rel="stylesheet" href="welcome.css">
 <link rel="stylesheet" href="shared/nav-layout.css">
 <link rel="stylesheet" href="shared/nav-links.css">
@@ -14,33 +16,61 @@
 <div id="welcomeRoot">
   <header class="app-header">
     <h1>YGO Tutoring Toolkit</h1>
-    <p class="subtitle">Pick a tool to get started.</p>
+    <p class="subtitle">Choose your profile, then pick a tool.</p>
   </header>
 
-  <main class="welcome-grid">
-    <a class="tool-card" href="proxy-builder/index.html">
-      <h2>Proxy Sheet Builder</h2>
-      <p>Search cards, build a deck, and print proxies at real size.</p>
-    </a>
-    <a class="tool-card" href="collection/index.html">
-      <h2>Draft Collection Manager</h2>
-      <p>Track your owned cards, engines, and decks.</p>
-    </a>
-    <a class="tool-card" href="tracker/index.html">
-      <h2>Progression Series Pack Puller</h2>
-      <p>Log and simulate opening Progression Series boxes.</p>
-    </a>
-    <a class="tool-card" href="draft/index.html">
-      <h2>Booster Draft</h2>
-      <p>Draft cards one pick at a time from simulated booster openings.</p>
-    </a>
+  <main>
+    <section class="profiles-section" aria-labelledby="profilesHeading">
+      <h2 id="profilesHeading">Profiles</h2>
+      <div id="profileStatus" class="status" aria-live="polite"></div>
+      <ul id="profileList" class="profile-list"></ul>
+
+      <form id="createProfileForm" class="create-profile-form">
+        <label for="profileNameInput">New profile</label>
+        <input type="text" id="profileNameInput" class="search-input" maxlength="40" placeholder="Profile name" autocomplete="off">
+        <label for="profileModeSelect" class="visually-hidden">Game mode</label>
+        <select id="profileModeSelect" aria-label="Game mode"></select>
+        <button type="submit" class="btn btn-primary">Create profile</button>
+      </form>
+    </section>
+
+    <section id="toolsSection" aria-labelledby="toolsHeading" hidden>
+      <h2 id="toolsHeading" class="tools-heading">Tools</h2>
+      <div class="welcome-grid">
+        <a class="tool-card" href="progression/index.html">
+          <h2>Progression Run</h2>
+          <p>Open one box per main booster in order, build, duel, and advance.</p>
+        </a>
+        <a class="tool-card" href="proxy-builder/index.html">
+          <h2>Proxy Sheet Builder</h2>
+          <p>Search cards, build a deck, and print proxies at real size.</p>
+        </a>
+        <a class="tool-card" href="collection/index.html">
+          <h2>Draft Collection Manager</h2>
+          <p>Track your owned cards, engines, and decks.</p>
+        </a>
+        <a class="tool-card" href="tracker/index.html">
+          <h2>Progression Series Pack Puller</h2>
+          <p>Log and simulate opening Progression Series boxes.</p>
+        </a>
+        <a class="tool-card" href="draft/index.html">
+          <h2>Booster Draft</h2>
+          <p>Draft cards one pick at a time from simulated booster openings.</p>
+        </a>
+      </div>
+    </section>
   </main>
 </div>
 
 <script src="shared/nav-entries.js"></script>
+<script src="shared/save-utils.js"></script>
+<script src="shared/profiles.js"></script>
 <script src="shared/nav-collapse-state.js"></script>
 <script src="shared/nav-sidebar-item.js"></script>
 <script src="shared/nav-sidebar.js"></script>
 <script src="shared/nav-init.js"></script>
+<script src="draft/mainline-boosters.js"></script>
+<script src="progression/progression-state.js"></script>
+<script src="shared/profile-picker.js"></script>
 </body>
 </html>

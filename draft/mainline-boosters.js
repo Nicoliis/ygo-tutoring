@@ -1,8 +1,4 @@
-// Hand-maintained: the API has no product-line field to filter sets by automatically.
-// Excludes structure decks, tins, duelist/battle packs, and reprint-only blind packs.
-// Verified against cardsets.php on 2026-10-12 — add newer mainline boosters here.
 const MAINLINE_BOOSTERS = [
-  /*
   "Legend of Blue Eyes White Dragon",
   "Metal Raiders",
   "Spell Ruler",
@@ -23,7 +19,9 @@ const MAINLINE_BOOSTERS = [
   "Shadow of Infinity",
   "Enemy of Justice",
   "Power of the Duelist",
-  "Cyberdark Impact",*/
+  "Cyberdark Impact",
+  
+  // This is the point where the boosters got interesting.
   "Light of Destruction",
   "The Duelist Genesis",
   "Crossroads of Chaos",

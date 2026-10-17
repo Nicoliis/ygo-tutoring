@@ -32,5 +32,10 @@ startDraftBtn.addEventListener("click", () => {
     session.pickQueue = allGroups;
     draftSection.hidden = false;
     renderAll();
+  }).catch((err) => {
+    console.warn("Could not load set card pool:", err);
+    showConfigStatus("Couldn't load that set's cards — check your connection and try again.", true);
+    session.status = "configuring";
+    renderConfigLockState();
   });
 });

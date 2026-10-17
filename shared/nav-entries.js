@@ -3,6 +3,7 @@ const NAV_ENTRIES = [
   { label: "Draft Collection Manager", slug: "collection" },
   { label: "Booster Draft", slug: "draft" },
   { label: "Progression Series Pack Puller", slug: "tracker" },
+  { label: "Progression Run", slug: "progression" },
   { label: "Proxy Sheet Builder", slug: "proxy-builder" },
 ];
 

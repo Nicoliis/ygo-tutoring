@@ -1,6 +1,4 @@
-const SET_CARDS_URL = CARD_API_BASE + "cardinfo.php";
-const STORAGE_KEY = "ygoCollection";
-const setCardPoolCache = new Map();
+const STORAGE_KEY = profileKey("ygoCollection");
 
 const boosterInput = document.getElementById("boosterInput");
 const boosterResultsList = document.getElementById("boosterResultsList");

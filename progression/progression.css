@@ -1,0 +1,6 @@
+.stage-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.stage-actions a.btn { text-decoration: none; display: inline-block; }
+.run-summary { margin: 0 0 8px; color: var(--text-dim); font-size: 0.85rem; }
+.stage-list { margin: 0 0 12px; padding-left: 24px; font-size: 0.85rem; max-height: 240px; overflow-y: auto; }
+.panel h3 { margin: 12px 0 6px; font-size: 0.95rem; }
+#progressionContent { display: flex; flex-direction: column; gap: 16px; }

@@ -1,5 +1,5 @@
 const API_URL = "https://db.ygoprodeck.com/api/v7/cardinfo.php";
-const STORAGE_KEY = "ygoDeck";
+const STORAGE_KEY = profileKey("ygoDeck");
 const SEARCH_MIN_LEN = 3;
 const SEARCH_DEBOUNCE_MS = 400;
 const CARDS_PER_SHEET = 9;

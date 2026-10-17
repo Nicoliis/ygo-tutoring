@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Contract tests</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #14161c; color: #eef0f4; padding: 16px; }
+  .pass { color: #6fcf97; } .fail { color: #e05263; }
+  li { margin: 4px 0; }
+</style>
+</head>
+<body>
+<h1>Contract tests</h1>
+<p>Runs against a temporary in-memory storage; your real saved data is never touched.</p>
+<ul id="results"></ul>
+<p id="summary"></p>
+
+<script>
+  // Swap in a mock storage BEFORE the app scripts run so the tests cannot affect real data.
+  (function () {
+    const store = new Map();
+    const mock = {
+      getItem: (k) => (store.has(k) ? store.get(k) : null),
+      setItem: (k, v) => store.set(k, String(v)),
+      removeItem: (k) => store.delete(k),
+      clear: () => store.clear(),
+      key: (i) => [...store.keys()][i] ?? null,
+      get length() { return store.size; },
+    };
+    try {
+      Object.defineProperty(window, "localStorage", { value: mock, configurable: true });
+    } catch (err) {
+      document.body.insertAdjacentHTML("beforeend", "<p class='fail'>Could not mock storage; aborting to protect your data.</p>");
+      throw err;
+    }
+  })();
+</script>
+<script src="save-utils.js"></script>
+<script src="profiles.js"></script>
+<script src="../progression/progression-state.js"></script>
+<script src="contract-tests.js"></script>
+<script>
+  const results = runContractTests();
+  const list = document.getElementById("results");
+  results.forEach((r) => {
+    const li = document.createElement("li");
+    li.className = r.ok ? "pass" : "fail";
+    li.textContent = (r.ok ? "PASS  " : "FAIL  ") + r.name + (r.ok ? "" : " -> " + r.error);
+    list.appendChild(li);
+  });
+  const failed = results.filter((r) => !r.ok).length;
+  document.getElementById("summary").textContent = failed ? failed + " failed" : "All " + results.length + " passed";
+</script>
+</body>
+</html>

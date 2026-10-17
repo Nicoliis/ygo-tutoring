@@ -25,3 +25,25 @@
 }
 .tool-card h2 { margin: 0 0 6px; font-size: 1.05rem; }
 .tool-card p { margin: 0; color: var(--text-dim); font-size: 0.85rem; }
+
+main { max-width: 900px; }
+.profiles-section { padding: 8px 24px 0; }
+.profiles-section h2, .tools-heading { margin: 8px 0; font-size: 1.1rem; }
+.tools-heading { padding: 8px 24px 0; }
+.profile-list { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.profile-item {
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px;
+  background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 14px;
+}
+.profile-item-active { border-color: var(--accent); }
+.profile-info { display: flex; flex-direction: column; gap: 2px; }
+.profile-meta { color: var(--text-dim); font-size: 0.8rem; }
+.profile-actions { display: flex; gap: 6px; }
+.profile-empty { color: var(--text-dim); font-size: 0.9rem; }
+.create-profile-form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px; }
+.create-profile-form .search-input { width: 220px; }
+.create-profile-form select {
+  background: var(--panel-alt); border: 1px solid var(--border); border-radius: var(--radius);
+  color: var(--text); padding: 8px 10px; font-size: 0.9rem;
+}
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }

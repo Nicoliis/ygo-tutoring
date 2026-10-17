@@ -1,4 +1,4 @@
-const STORAGE_KEY = "ygoCollection";
+const STORAGE_KEY = profileKey("ygoCollection");
 
 const createTrackerForm = document.getElementById("createTrackerForm");
 const trackerNameInput = document.getElementById("trackerNameInput");
