@@ -4,9 +4,10 @@ function openCardDetailModal(card, buttons) {
     : "";
   const tagsHtml = buildCardTagsHtml(card);
   const effectHtml = buildEffectHtml(card);
+  const printingsHtml = typeof buildPrintingsHtml === "function" ? buildPrintingsHtml(card) : "";
   const bodyHtml =
-    imageHtml || tagsHtml || effectHtml
-      ? `${imageHtml}${tagsHtml}${effectHtml}`
+    imageHtml || tagsHtml || effectHtml || printingsHtml
+      ? `${imageHtml}${tagsHtml}${printingsHtml}${effectHtml}`
       : `<div>No further details available for this card.</div>`;
 
   showModal({

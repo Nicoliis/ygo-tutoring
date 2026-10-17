@@ -8,6 +8,8 @@ function freshSession() {
     grouping: "rarity",
     pickQueue: [],
     keptCards: [],
+    boosters: [], // per opened booster: its cards ordered for the reveal (common first, rarest last)
+    revealed: [], // per booster: true once the face-down reveal is finished
   };
 }
 

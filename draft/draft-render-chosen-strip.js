@@ -4,7 +4,8 @@ function renderChosenStrip() {
   sorted.forEach((card) => {
     const chip = document.createElement("span");
     chip.className = "chosen-chip";
-    chip.textContent = card.name;
+    chip.textContent = card.name + " ";
+    chip.appendChild(buildRarityBadge(card.rarity));
     chosenStripEl.appendChild(chip);
   });
 }

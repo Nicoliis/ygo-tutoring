@@ -33,3 +33,11 @@
   text-overflow: ellipsis;
   max-width: 100%;
 }
+.card-tag .card-tag-name { min-width: 0; }
+.card-tag .rarity-badge {
+  flex: 0 0 auto;
+  max-width: 55%;
+  margin-left: 4px;
+  padding: 0 4px;
+  font-size: 0.6rem;
+}

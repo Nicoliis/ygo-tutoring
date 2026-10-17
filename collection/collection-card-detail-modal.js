@@ -11,10 +11,11 @@ function openCardDetailModal(card) {
     detailLines.push(`<div>No further details available for this card.</div>`);
   }
   const effectHtml = card.effect ? `<div class="card-effect">${escapeHtml(card.effect)}</div>` : "";
+  const printingsHtml = typeof buildPrintingsHtml === "function" ? buildPrintingsHtml(card) : "";
 
   showModal({
     title: card.name,
-    bodyHtml: `${imageHtml}${detailLines.join("")}${effectHtml}`,
+    bodyHtml: `${imageHtml}${detailLines.join("")}${printingsHtml}${effectHtml}`,
     buttons: [{ label: "Close", primary: true }],
   });
 }

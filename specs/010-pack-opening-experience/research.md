@@ -33,6 +33,7 @@
 ## Decision 7: Booster pictures
 - **Decision**: Extend the existing cached `cardsets.php` data to keep a set image URL when the response provides one; render each stage as a pack image (`img` with alt = set name) with CSS state classes: `pack-locked` (light gray/low opacity), `pack-next` (full color), `pack-opened` (darkened). Missing image → CSS placeholder pack showing the set name.
 - **Rationale**: Reuses the one API call already planned (Principle II). Implementation must confirm at build time whether `set_image` is present in the live response; the placeholder path covers absence.
+- **Verified 2026-10-16 (T001)**: the live `cardsets.php` response includes `set_image` (e.g. `https://images.ygoprodeck.com/images/sets/YS15.jpg`) for many sets but NOT all (e.g. "2-Player Starter Set" has none), and several sets share one image by set code. The placeholder path is therefore required, not optional.
 - **Alternatives**: Separate image lookups per set (many requests, violates Principle II).
 
 ## Decision 8: Draft integration

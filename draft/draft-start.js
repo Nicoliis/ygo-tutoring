@@ -19,11 +19,15 @@ startDraftBtn.addEventListener("click", () => {
       return;
     }
     let allGroups = [];
+    session.boosters = [];
+    session.revealed = [];
     for (let b = 0; b < session.amount; b++) {
       const boosterCards = [];
       for (let i = 0; i < session.boosterSize; i++) {
         boosterCards.push(weightedRandomPick(pool));
       }
+      session.boosters.push(sortPackByRarity(boosterCards));
+      session.revealed.push(false);
       const groups = buildPickGroupsForBooster(boosterCards, session.cardpool, session.grouping).map(
         (cards) => ({ boosterIndex: b, cards })
       );

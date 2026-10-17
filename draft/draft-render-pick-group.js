@@ -1,25 +1,56 @@
+let draftPackReveal = null;
+let draftRevealBooster = null;
+
+function hideBoosterReveal() {
+  if (draftPackReveal) draftPackReveal.destroy();
+  draftPackReveal = null;
+  draftRevealBooster = null;
+  draftPulledStripEl.innerHTML = "";
+  revealAreaEl.hidden = true;
+}
+
+/* Face-down reveal of one booster; the pick groups for it are offered once it finishes. */
+function showBoosterReveal(boosterIndex) {
+  revealAreaEl.hidden = false;
+  if (draftRevealBooster === boosterIndex && draftPackReveal) return;
+  hideBoosterReveal();
+  revealAreaEl.hidden = false;
+  draftRevealBooster = boosterIndex;
+  draftPackReveal = createPackReveal(draftPackAreaEl, {
+    pack: { cards: session.boosters[boosterIndex], revealed: session.boosters[boosterIndex].map(() => false) },
+    pulledStripEl: draftPulledStripEl,
+    actionSlotEl: draftPackActionEl,
+    onPackComplete: () => {
+      session.revealed[boosterIndex] = true;
+    },
+    nextAction: () => ({ label: "Start picking", onClick: renderAll }),
+  });
+}
+
 function renderPickGroup() {
   pickGroupAreaEl.innerHTML = "";
   finishedAreaEl.hidden = true;
 
   if (session.status !== "in-progress" || session.pickQueue.length === 0) {
     pickGroupAreaEl.hidden = true;
+    hideBoosterReveal();
     return;
   }
-  pickGroupAreaEl.hidden = false;
   const group = session.pickQueue[0];
+  if (!session.revealed[group.boosterIndex]) {
+    pickGroupAreaEl.hidden = true;
+    showBoosterReveal(group.boosterIndex);
+    return;
+  }
+  hideBoosterReveal();
+  pickGroupAreaEl.hidden = false;
   group.cards.forEach((card, index) => {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "pick-card";
     btn.draggable = true;
-    btn.setAttribute("aria-label", `${card.name} — open to view details and keep`);
-    const glow = getRarityGlow(card.rarity);
-    if (glow.animated) {
-      btn.classList.add("glow-starlight");
-    } else {
-      btn.style.setProperty("--glow-color", glow.color);
-    }
+    btn.setAttribute("aria-label", `${card.name}, ${rarityLabel(card.rarity)} — open to view details and keep`);
+    applyRarityGlow(btn, card.rarity);
     if (card.imageSmall) {
       const img = document.createElement("img");
       img.src = card.imageSmall;
@@ -30,6 +61,7 @@ function renderPickGroup() {
     nameEl.className = "pick-card-name";
     nameEl.textContent = card.name;
     btn.appendChild(nameEl);
+    btn.appendChild(buildRarityBadge(card.rarity));
     btn.addEventListener("click", () =>
       openCardDetailModal(card, [
         { label: "Keep This Card", primary: true, onClick: () => handlePick(card) },

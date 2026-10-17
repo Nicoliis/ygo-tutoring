@@ -1,4 +1,6 @@
 /* Progression Run state (pure logic + persistence). Stages are identified by booster name, never by index. */
+const BOX_PACKS = 24;
+
 function runKey(profileId) {
   return `ygoRun_${profileId}`;
 }
@@ -22,15 +24,66 @@ function newRun(boosterList) {
   };
 }
 
+/* ---- Box progress (the 24 packs of the current stage) ---- */
+
+function emptyBox() {
+  return { packsOpened: 0, pack: null, pulled: [] };
+}
+
+function getBox(run) {
+  return run.box && typeof run.box === "object" ? run.box : emptyBox();
+}
+
+/* "not-started" | "in-progress" | "finished". A legacy run saved with boxOpened:true counts as finished. */
+function boxPhase(run) {
+  const box = getBox(run);
+  if (run.boxOpened || box.packsOpened >= BOX_PACKS) return "finished";
+  if (box.pack !== null || box.packsOpened > 0) return "in-progress";
+  return "not-started";
+}
+
+/* pack = { cards, revealed } with revealed.length === cards.length */
+function startPack(run, pack) {
+  const box = getBox(run);
+  return { ...run, box: { ...box, pack: { cards: pack.cards, revealed: pack.cards.map(() => false) } } };
+}
+
+function revealInPack(run, index) {
+  const box = getBox(run);
+  const pack = box.pack;
+  if (!pack || pack.revealed[index]) return run;
+  const revealed = pack.revealed.slice();
+  revealed[index] = true;
+  return {
+    ...run,
+    box: { ...box, pack: { ...pack, revealed }, pulled: box.pulled.concat(pack.cards[index]) },
+  };
+}
+
+/* Call once every card of the pack is revealed. Returns { run, cards } where cards must be merged into the backlog. */
+function finishPack(run) {
+  const box = getBox(run);
+  const cards = box.pack ? box.pack.cards : [];
+  const packsOpened = box.packsOpened + 1;
+  return {
+    cards,
+    run: {
+      ...run,
+      boxOpened: packsOpened >= BOX_PACKS ? true : run.boxOpened,
+      box: { ...box, packsOpened, pack: null },
+    },
+  };
+}
+
 function canOpenBox(run) {
   if (run.current === null) return { ok: false, reason: "This run is finished." };
-  if (run.boxOpened) return { ok: false, reason: "This stage's box is already opened." };
+  if (boxPhase(run) !== "not-started") return { ok: false, reason: "This stage's box is already started." };
   return { ok: true, reason: "" };
 }
 
 function canCompleteStage(run) {
   if (run.current === null) return { ok: false, reason: "This run is finished." };
-  if (!run.boxOpened) return { ok: false, reason: "Open this stage's box before completing it." };
+  if (!run.boxOpened) return { ok: false, reason: "Open all packs of this stage's box before completing it." };
   return { ok: true, reason: "" };
 }
 
@@ -50,6 +103,7 @@ function completeStage(run, boosterList) {
     completed: run.completed.concat(run.current),
     current: next,
     boxOpened: false,
+    box: emptyBox(),
     finishedAt: next === null ? new Date().toISOString() : null,
   };
 }
@@ -59,6 +113,13 @@ function remainingStages(run, boosterList) {
   if (run.current === null) return [];
   const index = boosterList.indexOf(run.current);
   return boosterList.slice(index + 1).filter((name) => !run.completed.includes(name));
+}
+
+/* "opened" (darkened) | "next" (clean) | "locked" (light gray) */
+function stageState(run, name, boosterList) {
+  if (run.completed.includes(name)) return "opened";
+  if (name === run.current) return run.boxOpened ? "opened" : "next";
+  return "locked";
 }
 
 function runSummary(run, boosterList) {

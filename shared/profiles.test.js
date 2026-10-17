@@ -15,8 +15,12 @@ console.warn = () => {};
 
 const read = (rel) => fs.readFileSync(path.join(__dirname, rel), "utf8");
 const source = [
+  "function nextId(p){ return p + Date.now() + Math.random().toString(36).slice(2); }",
   read("save-utils.js"),
   read("profiles.js"),
+  read("rarity.js"),
+  read("printings.js"),
+  read("backlog-merge.js"),
   read("../progression/progression-state.js"),
   read("contract-tests.js"),
 ].join("\n");

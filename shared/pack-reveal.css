@@ -1,0 +1,139 @@
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Pack on the left (one card back), action ("Next pack" / "See pulled") on the right. */
+.pack-stage {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  min-height: 220px;
+}
+.pack-area {
+  flex: 0 0 auto;
+  min-width: 140px;
+  display: flex;
+  align-items: center;
+}
+.pack-action-slot { flex: 0 0 auto; }
+.pack-next-btn { font-size: 1rem; padding: 12px 20px; }
+
+/* The single card back; each click pulls the next card of the pack. */
+.pack-stack {
+  position: relative;
+  width: 140px;
+  aspect-ratio: 59 / 86;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: url("cardback.png") center / cover no-repeat, #2a1a0a;
+  box-shadow: 3px 3px 0 #1d140a, 6px 6px 0 #150e07, 9px 9px 14px rgba(0, 0, 0, 0.6);
+  cursor: pointer;
+  transition: transform 0.12s ease;
+}
+.pack-stack:hover { transform: translateY(-3px); }
+.pack-stack:active { transform: translateY(0); }
+.pack-stack:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+.pack-stack-count {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  min-width: 26px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.7);
+  color: var(--text);
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+/* The card that flips and flies in one motion. */
+.pack-flier {
+  position: fixed;
+  z-index: 1000;
+  pointer-events: none;
+  transform-style: preserve-3d;
+  transform-origin: center;
+}
+.pack-flier-back,
+.pack-flier-front {
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.pack-flier-back { background: url("cardback.png") center / cover no-repeat, #2a1a0a; }
+.pack-flier-front { transform: rotateY(180deg); background: #000; }
+.pack-flier-front .revealed-card {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: #000;
+  position: relative;
+}
+.pack-flier-front .revealed-card img { height: 100%; aspect-ratio: auto; border-radius: 0; }
+.pack-flier-front .revealed-card-name { display: none; }
+.pack-flier-front .rarity-badge { position: absolute; left: 4px; right: 4px; bottom: 4px; text-align: center; }
+
+.pulled-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  min-height: 40px;
+}
+
+/* A pulled card: click it for its details. */
+.revealed-card {
+  --glow-color: transparent;
+  width: 110px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 4px;
+  background: var(--panel-alt);
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: inherit;
+  text-align: center;
+  font-size: 0.7rem;
+}
+button.revealed-card { cursor: pointer; }
+button.revealed-card:hover, button.revealed-card:focus-visible { border-color: var(--accent); outline: none; }
+.revealed-card img {
+  width: 100%;
+  aspect-ratio: 59 / 86;
+  object-fit: cover;
+  border-radius: 3px;
+  background: #000;
+}
+.revealed-card-name { line-height: 1.15; overflow: hidden; max-height: 2.3em; }
+
+@media (prefers-reduced-motion: reduce) {
+  .pack-stack { transition: none; }
+}
+
+/* "x3" copies tag on grouped cards in See pulled */
+.revealed-card { position: relative; }
+.revealed-card-count {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid var(--accent);
+  color: var(--text);
+  font-size: 0.8rem;
+  font-weight: 700;
+}

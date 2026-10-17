@@ -46,6 +46,7 @@ function fetchSetCardPool(setName) {
         return {
           name: card.name,
           rarity,
+          set: setName,
           weight: getWeightForRarity(rarity),
           price: parsePrice(card),
           ...extractCardFields(card),

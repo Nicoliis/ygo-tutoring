@@ -12,8 +12,9 @@
 <link rel="stylesheet" href="draft-config-fields.css">
 <link rel="stylesheet" href="draft-booster-autocomplete.css">
 <link rel="stylesheet" href="draft-chosen-strip.css">
+<link rel="stylesheet" href="../shared/rarity.css">
 <link rel="stylesheet" href="draft-pick-card.css">
-<link rel="stylesheet" href="draft-pick-card-glow.css">
+<link rel="stylesheet" href="../shared/pack-reveal.css">
 <link rel="stylesheet" href="draft-finished.css">
 <link rel="stylesheet" href="../shared/nav-layout.css">
 <link rel="stylesheet" href="../shared/nav-links.css">
@@ -64,6 +65,15 @@
     <section id="draftSection" class="panel" hidden>
       <div id="chosenStrip" class="chosen-strip" aria-label="Cards kept so far — drag a card here to keep it"></div>
 
+      <div id="revealArea" hidden>
+        <p class="status" aria-live="polite">Click the card back to pull the next card; click a pulled card for its details.</p>
+        <div class="pack-stage">
+          <div id="draftPackArea" class="pack-area"></div>
+          <div id="draftPackAction" class="pack-action-slot"></div>
+        </div>
+        <div id="draftPulledStrip" class="pulled-strip" aria-label="Cards revealed from this booster"></div>
+      </div>
+
       <div id="pickGroupArea" class="pick-group-area"></div>
 
       <div id="finishedArea" class="finished-area" hidden>
@@ -80,7 +90,10 @@
 <script src="../shared/focus-trap.js"></script>
 <script src="../shared/modal-buttons.js"></script>
 <script src="../shared/modal.js"></script>
+<script src="../shared/pack-reveal.js"></script>
 <script src="../shared/card-api.js"></script>
+<script src="../shared/rarity.js"></script>
+<script src="../shared/printings.js"></script>
 <script src="../shared/pack-pool.js"></script>
 <script src="../shared/backlog-merge.js"></script>
 <script src="../shared/card-tags-builder.js"></script>
@@ -96,11 +109,9 @@
 <script src="../shared/nav-init.js"></script>
 <script src="../shared/profile-switcher.js"></script>
 <script src="mainline-boosters.js"></script>
-<script src="rarity-glow-tiers.js"></script>
 <script src="draft-grouping.js"></script>
 <script src="draft-dom-refs.js"></script>
 <script src="draft-session.js"></script>
-<script src="draft-rarity-glow.js"></script>
 <script src="draft-booster-autocomplete.js"></script>
 <script src="draft-preview.js"></script>
 <script src="draft-validation.js"></script>

@@ -157,5 +157,145 @@ function runContractTests() {
     expect(stored.future === "keep" && stored.current === "B");
   });
 
+  /* ---- Pull history, rarity and pack opening (spec 010) ---- */
+
+  check("printings: same set+rarity increments, different set/rarity adds, price stays at first pull", () => {
+    const card = { name: "X", quantityOwned: 0 };
+    addPrinting(card, { set: "S1", rarity: "Ultra Rare", price: 5 });
+    addPrinting(card, { set: "S1", rarity: "Ultra Rare", price: 9 });
+    addPrinting(card, { set: "S2", rarity: "Common", price: 0.1 });
+    expect(card.printings.length === 2);
+    expect(card.printings[0].quantity === 2 && card.printings[0].price === 5);
+    expect(card.printings[1].set === "S2" && card.printings[1].rarity === "Common");
+  });
+
+  check("printingSummary: unknown copies for old cards, none for fresh ones", () => {
+    expect(printingSummary({ quantityOwned: 3 }).unknownQuantity === 3);
+    const card = { quantityOwned: 3, printings: [{ set: "S", rarity: "Rare", price: 1, quantity: 2 }] };
+    const summary = printingSummary(card);
+    expect(summary.unknownQuantity === 1 && summary.printings.length === 1);
+    expect(printingSummary({ quantityOwned: 0, printings: [] }).unknownQuantity === 0);
+  });
+
+  check("trimPrintings keeps quantityOwned >= sum of printings (oldest trimmed first)", () => {
+    const card = {
+      quantityOwned: 2,
+      printings: [
+        { set: "A", rarity: "Rare", price: 1, quantity: 2 },
+        { set: "B", rarity: "Common", price: 0, quantity: 2 },
+      ],
+    };
+    trimPrintings(card);
+    expect(printingsTotal(card) === 2);
+    expect(card.printings.length === 1 && card.printings[0].set === "B");
+    card.quantityOwned = 0;
+    trimPrintings(card);
+    expect(card.printings.length === 0);
+  });
+
+  check("rarityRank orders rarities and treats unknown as common", () => {
+    expect(rarityRank("Common") === 0 && rarityRank(null) === 0 && rarityRank("") === 0);
+    expect(rarityRank("Rare") > rarityRank("Common"));
+    expect(rarityRank("Super Rare") > rarityRank("Rare"));
+    expect(rarityRank("Secret Rare") > rarityRank("Super Rare"));
+    expect(rarityRank("Ultra Secret Rare") > rarityRank("Secret Rare"));
+    expect(rarityLabel(null) === "Unknown rarity" && rarityLabel("Ultra Rare") === "Ultra Rare");
+  });
+
+  check("every rarity tier has its own look and specific names beat generic ones", () => {
+    const looks = RARITY_GLOW_TIERS.map((t) => t.color || (t.shine ? t.shine.join("+") : "rainbow"));
+    expect(new Set(looks).size === looks.length, "two tiers share the same color");
+    expect(!looks.includes(DEFAULT_RARITY_GLOW.color), "a tier reuses the common color");
+    const glow = (r) => getRarityGlow(r).id;
+    expect(glow("Common") === "common" && glow(null) === "common");
+    expect(glow("Short Print") === "short-print" && glow("Super Short Print") === "super-short-print");
+    expect(glow("Rare") === "rare" && glow("Super Rare") === "super-rare" && glow("Ultra Rare") === "ultra-rare");
+    expect(glow("Ultra Rare") !== glow("Rare"), "Ultra Rare must not look like Rare");
+    expect(glow("Secret Rare") === "secret" && glow("Ultra Secret Rare") === "ultra-secret");
+    expect(glow("Duel Terminal Normal Parallel Rare") === "normal-parallel");
+    expect(glow("Ultra Parallel Rare") === "ultra-parallel" && glow("Secret Parallel Rare") === "secret-parallel");
+    expect(glow("Starlight Rare") === "starlight" && glow("Gold Secret Rare") === "gold-secret");
+    expect(rarityRank("Short Print") > rarityRank("Common") && rarityRank("Rare") > rarityRank("Short Print"));
+    expect(rarityRank("Ultra Rare") > rarityRank("Super Rare") && rarityRank("Ultimate Rare") > rarityRank("Ultra Rare"));
+  });
+
+  check("sortPackByRarity: rarest last, ties by price, input untouched", () => {
+    const pack = [
+      { name: "a", rarity: "Secret Rare", price: 1 },
+      { name: "b", rarity: "Common", price: 2 },
+      { name: "c", rarity: "Common", price: 1 },
+      { name: "d", rarity: "Rare", price: 1 },
+      { name: "e", rarity: null, price: 0 },
+    ];
+    const sorted = sortPackByRarity(pack);
+    expect(sorted.map((c) => c.name).join("") === "ecbda");
+    expect(pack[0].name === "a");
+  });
+
+  check("mergeCardsIntoBacklog records printings and preserves unknown fields", () => {
+    createProfile("Merge", "progression");
+    const key = profileKey("ygoCollection");
+    saveData({ cards: [], decks: [{ x: 1 }], futureField: "keep" }, key);
+    const ok = mergeCardsIntoBacklog([
+      { name: "Dragon", set: "S1", rarity: "Ultra Rare", price: 5 },
+      { name: "Dragon", set: "S2", rarity: "Common", price: 0.2 },
+      { name: "Dragon", set: "S1", rarity: "Ultra Rare", price: 7 },
+    ]);
+    expect(ok === true);
+    const blob = loadData(key);
+    expect(blob.futureField === "keep" && blob.decks.length === 1);
+    expect(blob.cards.length === 1 && blob.cards[0].quantityOwned === 3);
+    expect(blob.cards[0].printings.length === 2 && blob.cards[0].printings[0].quantity === 2);
+    expect(blob.cards[0].printings[0].price === 5);
+  });
+
+  check("box: phases, reveal, finish and stage completion", () => {
+    let run = newRun(LIST);
+    expect(boxPhase(run) === "not-started" && canOpenBox(run).ok);
+    const pack = { cards: [{ name: "a" }, { name: "b" }] };
+    run = startPack(run, pack);
+    expect(boxPhase(run) === "in-progress" && !canOpenBox(run).ok);
+    expect(run.box.pack.revealed.length === 2 && run.box.pack.revealed.every((r) => r === false));
+    run = revealInPack(run, 0);
+    run = revealInPack(run, 0); // revealing twice changes nothing
+    expect(run.box.pulled.length === 1 && run.box.pack.revealed[0] === true);
+    run = revealInPack(run, 1);
+    const finished = finishPack(run);
+    expect(finished.cards.length === 2 && finished.run.box.packsOpened === 1 && finished.run.box.pack === null);
+    expect(!finished.run.boxOpened && boxPhase(finished.run) === "in-progress");
+    expect(!canCompleteStage(finished.run).ok);
+  });
+
+  check("box: the 24th pack opens the box; stage completion resets box progress", () => {
+    let run = newRun(LIST);
+    for (let i = 0; i < BOX_PACKS; i++) {
+      run = startPack(run, { cards: [{ name: "a" }] });
+      run = revealInPack(run, 0);
+      run = finishPack(run).run;
+    }
+    expect(run.boxOpened === true && boxPhase(run) === "finished" && run.box.packsOpened === BOX_PACKS);
+    expect(canCompleteStage(run).ok);
+    run = completeStage(run, LIST);
+    expect(run.current === "B" && run.box.packsOpened === 0 && run.box.pulled.length === 0);
+    expect(boxPhase(run) === "not-started");
+  });
+
+  check("box: legacy runs (boxOpened without box, or no box at all) still work", () => {
+    const legacyOpened = { completed: [], current: "A", boxOpened: true };
+    expect(boxPhase(legacyOpened) === "finished" && canCompleteStage(legacyOpened).ok);
+    const legacyClosed = { completed: [], current: "A", boxOpened: false };
+    expect(boxPhase(legacyClosed) === "not-started");
+  });
+
+  check("stageState: opened / next / locked", () => {
+    let run = newRun(LIST);
+    expect(stageState(run, "A", LIST) === "next");
+    expect(stageState(run, "B", LIST) === "locked");
+    run = openBoxApplied(run);
+    expect(stageState(run, "A", LIST) === "opened");
+    run = completeStage(run, LIST);
+    expect(stageState(run, "A", LIST) === "opened" && stageState(run, "B", LIST) === "next" && stageState(run, "C", LIST) === "locked");
+  });
+
   return results;
 }

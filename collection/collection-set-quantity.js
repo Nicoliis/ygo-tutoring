@@ -7,6 +7,7 @@ function setCardQuantity(cardId, quantityInput) {
     return false;
   }
   card.quantityOwned = n;
+  trimPrintings(card);
   saveCollection();
   return true;
 }

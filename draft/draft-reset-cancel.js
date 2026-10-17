@@ -6,6 +6,7 @@ function resetSession() {
   groupingSelect.value = "rarity";
   updatePreview();
   showConfigStatus("");
+  hideBoosterReveal();
   draftSection.hidden = true;
   renderConfigLockState();
 }

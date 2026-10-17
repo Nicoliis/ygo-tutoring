@@ -7,6 +7,10 @@
 <link rel="stylesheet" href="../shared/theme.css">
 <link rel="stylesheet" href="../draft/draft-base.css">
 <link rel="stylesheet" href="../draft/draft-buttons.css">
+<link rel="stylesheet" href="../shared/modal-dialog.css">
+<link rel="stylesheet" href="../shared/card-tags.css">
+<link rel="stylesheet" href="../shared/rarity.css">
+<link rel="stylesheet" href="../shared/pack-reveal.css">
 <link rel="stylesheet" href="progression.css">
 <link rel="stylesheet" href="../shared/nav-layout.css">
 <link rel="stylesheet" href="../shared/nav-links.css">
@@ -22,10 +26,21 @@
     <div id="progressionStatus" class="status" aria-live="polite"></div>
     <div id="progressionContent"></div>
   </main>
+
+  <div id="modalRoot" hidden></div>
 </div>
 
 <script src="../shared/dom-utils.js"></script>
+<script src="../shared/focus-trap.js"></script>
+<script src="../shared/modal-buttons.js"></script>
+<script src="../shared/modal.js"></script>
 <script src="../shared/card-api.js"></script>
+<script src="../shared/card-tags-builder.js"></script>
+<script src="../shared/card-effect-builder.js"></script>
+<script src="../shared/card-detail-modal.js"></script>
+<script src="../shared/rarity.js"></script>
+<script src="../shared/printings.js"></script>
+<script src="../shared/pack-reveal.js"></script>
 <script src="../shared/pack-pool.js"></script>
 <script src="../shared/backlog-merge.js"></script>
 <script src="../shared/nav-entries.js"></script>

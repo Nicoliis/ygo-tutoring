@@ -18,5 +18,12 @@ function buildCardTagElement(card, draggable) {
   nameSpan.textContent = card.name;
   el.appendChild(nameSpan);
 
+  // Glow + explicit rarity name of the rarest known printing (cards without printings get neither).
+  const rarest = typeof rarestPrinting === "function" ? rarestPrinting(card) : null;
+  if (rarest) {
+    applyRarityGlow(el, rarest.rarity);
+    el.appendChild(buildRarityBadge(rarest.rarity));
+  }
+
   return el;
 }
