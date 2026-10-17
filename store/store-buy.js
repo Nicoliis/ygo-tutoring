@@ -113,14 +113,15 @@ function renderOffers() {
   content.appendChild(panel);
 }
 
-function onBuy(name, amount, button) {
+async function onBuy(name, amount, button) {
   if (buying) return;
   const check = canBuy(storeRun, name, amount, MAINLINE_BOOSTERS);
   if (!check.ok) {
     setStoreStatus(check.reason, true);
     return;
   }
-  if (!confirm(`Buy ${amount} × ${name} for ${formatMoney(check.totalCents)}?`)) return;
+  const ok = await confirmDialog(`Buy ${amount} × ${name} for ${formatMoney(check.totalCents)}?`, { title: "Buy boosters", confirmLabel: "Buy" });
+  if (!ok || buying) return;
 
   buying = true;
   button.disabled = true;

@@ -6,7 +6,7 @@ function logPull(trackerId, rawText) {
     .map((line) => line.trim())
     .filter((line) => line.length > 0);
   if (lines.length === 0) {
-    alert("Enter at least one card name (one per line) to log a pull.");
+    alertDialog("Enter at least one card name (one per line) to log a pull.");
     return false;
   }
   lines.forEach((name) => addOrIncrementCard(name, 1));

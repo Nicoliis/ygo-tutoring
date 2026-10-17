@@ -134,14 +134,15 @@ function buildSellToolbar() {
   return bar;
 }
 
-function onSellExtras() {
+async function onSellExtras() {
   if (selling) return;
   const preview = previewExtras(storeRun, storeCollection);
   if (preview.soldCount === 0) return;
-  const ok = confirm(
-    `Sell ${preview.soldCount} extra cop${preview.soldCount === 1 ? "y" : "ies"} of ${preview.cardCount} card${preview.cardCount === 1 ? "" : "s"} for ${formatMoney(preview.totalCents)}?\n\nYou keep 3 of each card (the most valuable ones).`
+  const ok = await confirmDialog(
+    `Sell ${preview.soldCount} extra cop${preview.soldCount === 1 ? "y" : "ies"} of ${preview.cardCount} card${preview.cardCount === 1 ? "" : "s"} for ${formatMoney(preview.totalCents)}?\n\nYou keep 3 of each card (the most valuable ones).`,
+    { title: "Sell extras", confirmLabel: "Sell" }
   );
-  if (!ok) return;
+  if (!ok || selling) return;
 
   selling = true;
   const snapshot = JSON.parse(JSON.stringify(storeCollection));
@@ -162,7 +163,7 @@ function onSellExtras() {
   }
 }
 
-function onSell(cardId, printingIndex) {
+async function onSell(cardId, printingIndex) {
   if (selling) return;
   const card = storeCollection.cards.find((c) => c.id === cardId);
   if (!card) return;
@@ -175,10 +176,11 @@ function onSell(cardId, printingIndex) {
   // A sale can leave an engine or deck with more copies than are owned: say so before doing it.
   const affected = allocationsOverLimit(storeCollection, cardId, card.quantityOwned - 1);
   if (affected.length > 0) {
-    const ok = confirm(
-      `You need this copy of "${card.name}" in: ${affected.join(", ")}. Selling it reduces those to the copies you still own. Sell anyway?`
+    const ok = await confirmDialog(
+      `You need this copy of "${card.name}" in: ${affected.join(", ")}. Selling it reduces those to the copies you still own. Sell anyway?`,
+      { title: "Sell card", confirmLabel: "Sell anyway" }
     );
-    if (!ok) return;
+    if (!ok || selling) return;
   }
 
   selling = true;

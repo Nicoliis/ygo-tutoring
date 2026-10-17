@@ -31,7 +31,7 @@ function buildPrintArea(cards) {
 printBtn.addEventListener("click", () => {
   const marked = deck.filter((c) => c.marked);
   if (marked.length === 0) {
-    alert("Mark at least one card in the deck before printing.");
+    alertDialog("Mark at least one card in the deck before printing.");
     return;
   }
   buildPrintArea(marked);

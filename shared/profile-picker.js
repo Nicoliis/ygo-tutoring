@@ -9,6 +9,12 @@ function setProfileStatus(message, isError) {
   profileStatusEl.classList.toggle("error", Boolean(isError));
 }
 
+function saveFileLabel(state, name) {
+  if (state === "granted") return `Save file: ${name || "linked"} (auto-saving)`;
+  if (state === "prompt") return `Save file: ${name || "linked"} (needs reconnecting)`;
+  return "No save file yet";
+}
+
 function describeProfile(profile) {
   const modeLabel = GAME_MODES[profile.mode] ? GAME_MODES[profile.mode].label : profile.mode;
   if (profile.mode !== "progression") return modeLabel;
@@ -21,6 +27,16 @@ function runAction(action) {
     setProfileStatus("");
   } catch (err) {
     setProfileStatus(err.message, true);
+  }
+  renderProfiles();
+}
+
+async function runAsyncAction(action) {
+  try {
+    await action();
+    setProfileStatus("");
+  } catch (err) {
+    if (err.name !== "AbortError") setProfileStatus(err.message, true);
   }
   renderProfiles();
 }
@@ -46,7 +62,22 @@ function buildProfileItem(profile, isActive) {
   const meta = document.createElement("span");
   meta.className = "profile-meta";
   meta.textContent = describeProfile(profile);
-  info.append(name, meta);
+  const fileMeta = document.createElement("span");
+  fileMeta.className = "profile-meta";
+  fileMeta.textContent = "Save file: …";
+  Promise.all([saveFileState(profile), linkedSaveFileName(profile)]).then(([state, fileName]) => {
+    fileMeta.textContent = saveFileLabel(state, fileName);
+    if (state === "granted") return;
+    const label = state === "prompt" ? "Reconnect save file" : "Create save file";
+    actions.children[0].after(
+      buildProfileButton(label, `${label} for ${profile.name}`, () => runAsyncAction(async () => {
+        await (state === "prompt" ? reconnectSaveFile(profile) : createSaveFile(profile));
+        setActiveProfile(profile.id);
+        window.location.href = "menu.html";
+      }))
+    );
+  });
+  info.append(name, meta, fileMeta);
 
   const actions = document.createElement("div");
   actions.className = "profile-actions";
@@ -59,14 +90,16 @@ function buildProfileItem(profile, isActive) {
         setProfileStatus(err.message, true);
       }
     }, true),
-    buildProfileButton("Rename", `Rename ${profile.name}`, () => {
-      const input = prompt("New name for this profile:", profile.name);
+    buildProfileButton("Rename", `Rename ${profile.name}`, async () => {
+      const input = await promptDialog("New name for this profile:", profile.name, { title: "Rename profile" });
       if (input === null) return;
       runAction(() => renameProfile(profile.id, input));
     }),
-    buildProfileButton("Delete", `Delete ${profile.name}`, () => {
+    buildProfileButton("Delete", `Delete ${profile.name}`, async () => {
       const extra = profile.id === SANDBOX_ID ? " This removes your pre-existing collection and deck data." : "";
-      if (!confirm(`Delete profile "${profile.name}" and all its data? This can't be undone.${extra}`)) return;
+      const ok = await confirmDialog(`Delete profile "${profile.name}" and all its data? This can't be undone.${extra}`, { title: "Delete profile", confirmLabel: "Delete" });
+      if (!ok) return;
+      clearSaveHandle(profile.id); // the file on disk is left alone
       runAction(() => deleteProfile(profile.id));
     })
   );
@@ -111,6 +144,13 @@ createProfileForm.addEventListener("submit", (e) => {
   }
   renderProfiles();
 });
+
+document.getElementById("importSaveBtn").addEventListener("click", () =>
+  runAsyncAction(async () => {
+    const profile = await importSaveFile();
+    setProfileStatus(`Imported "${profile.name}".`);
+  })
+);
 
 buildModeOptions();
 renderProfiles();

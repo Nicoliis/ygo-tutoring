@@ -11,7 +11,8 @@ function resetSession() {
   renderConfigLockState();
 }
 
-cancelDraftBtn.addEventListener("click", () => {
-  if (!confirm("Abandon this draft? Any cards already picked will be discarded.")) return;
+cancelDraftBtn.addEventListener("click", async () => {
+  const ok = await confirmDialog("Abandon this draft? Any cards already picked will be discarded.", { title: "Abandon draft", confirmLabel: "Abandon" });
+  if (!ok) return;
   resetSession();
 });

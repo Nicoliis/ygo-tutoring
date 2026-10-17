@@ -41,9 +41,10 @@ unmarkAllBtn.addEventListener("click", () => {
   renderDeck();
 });
 
-clearDeckBtn.addEventListener("click", () => {
+clearDeckBtn.addEventListener("click", async () => {
   if (deck.length === 0) return;
-  if (!confirm("Remove all cards from the deck?")) return;
+  const ok = await confirmDialog("Remove all cards from the deck?", { title: "Clear deck", confirmLabel: "Remove all" });
+  if (!ok) return;
   deck = [];
   saveDeck();
   renderDeck();

@@ -27,7 +27,7 @@ function fetchAllSets() {
       console.warn("Could not load card sets:", err);
       isFetchingSets = false;
       renderSetPicker();
-      alert("Couldn't load the set list — check your connection and try again.");
+      alertDialog("Couldn't load the set list — check your connection and try again.");
       throw err;
     });
 }

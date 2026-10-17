@@ -3,12 +3,12 @@
 function drawSimulatedPull(setName, packCountInput) {
   const packCount = Math.floor(Number(packCountInput));
   if (!Number.isFinite(packCount) || packCount < 1) {
-    alert("Enter a pack count of at least 1.");
+    alertDialog("Enter a pack count of at least 1.");
     return Promise.resolve(null);
   }
   return fetchSetCardPool(setName).then((pool) => {
     if (!pool || pool.length === 0) {
-      alert("That set has no cards to draw from.");
+      alertDialog("That set has no cards to draw from.");
       return null;
     }
     const packs = [];

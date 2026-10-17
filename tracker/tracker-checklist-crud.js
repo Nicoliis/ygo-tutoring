@@ -3,7 +3,7 @@ function addChecklistEntry(trackerId, name) {
   if (!tracker) return false;
   const trimmed = (name || "").trim();
   if (!trimmed) {
-    alert("Enter a card name to add to the checklist.");
+    alertDialog("Enter a card name to add to the checklist.");
     return false;
   }
   const exists = tracker.checklist.some((n) => n.toLowerCase() === trimmed.toLowerCase());

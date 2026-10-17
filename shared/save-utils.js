@@ -28,6 +28,11 @@ function readRaw(key) {
   }
 }
 
+/* Lets savefile.js (when loaded) mirror writes to the profile's save file. */
+function notifySaved(key) {
+  if (typeof onSaveCommitted === "function") onSaveCommitted(key);
+}
+
 function saveData(data, key) {
   try {
     let toStore = data;
@@ -39,6 +44,7 @@ function saveData(data, key) {
       }
     }
     localStorage.setItem(key, JSON.stringify(toStore));
+    notifySaved(key);
     return true;
   } catch (err) {
     console.warn(`Could not save "${key}":`, err);
@@ -114,6 +120,7 @@ async function importAll(file) {
 function removeData(key) {
   try {
     localStorage.removeItem(key);
+    notifySaved(key);
     return true;
   } catch (err) {
     console.warn(`Could not remove "${key}":`, err);

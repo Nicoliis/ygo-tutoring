@@ -17,7 +17,29 @@ function buildProfileSwitcher() {
 
   box.appendChild(label);
   box.appendChild(link);
+  if (typeof saveFileState === "function") addSaveFileLink(box, profile);
   return box;
+}
+
+/* Shown only when the save file needs action: not created yet, or permission must be re-granted. */
+function addSaveFileLink(box, profile) {
+  saveFileState(profile).then((state) => {
+    if (state === "granted") return;
+    const btn = document.createElement("a");
+    btn.className = "sidebar-link";
+    btn.href = "#";
+    btn.textContent = state === "prompt" ? "Reconnect save file" : "Create save file";
+    btn.addEventListener("click", async (e) => {
+      e.preventDefault();
+      try {
+        await (state === "prompt" ? reconnectSaveFile(profile) : createSaveFile(profile));
+        btn.remove();
+      } catch (err) {
+        if (err.name !== "AbortError") alertDialog(err.message);
+      }
+    });
+    box.appendChild(btn);
+  });
 }
 
 function initProfileSwitcher() {

@@ -28,7 +28,7 @@ function fetchSetCardPool(setName) {
       console.warn("Could not load set card pool:", err);
       isFetchingSetPool = false;
       renderTrackers();
-      alert("Couldn't load that set's cards — check your connection and try again.");
+      alertDialog("Couldn't load that set's cards — check your connection and try again.");
       throw err;
     });
 }

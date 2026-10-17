@@ -146,13 +146,14 @@ function startNewPack() {
     });
 }
 
-function onStartBox() {
+async function onStartBox() {
   const check = canOpenBox(currentRun);
   if (!check.ok) {
     setProgressionStatus(check.reason, true);
     return;
   }
-  if (!confirm(`Start the box for "${currentRun.current}"? This can't be undone.`)) return;
+  const ok = await confirmDialog(`Start the box for "${currentRun.current}"? This can't be undone.`, { title: "Start box", confirmLabel: "Start" });
+  if (!ok) return;
   startNewPack().then(renderRun);
 }
 
@@ -170,13 +171,14 @@ function onNextPack() {
   });
 }
 
-function onCompleteStage() {
+async function onCompleteStage() {
   const check = canCompleteStage(currentRun);
   if (!check.ok) {
     setProgressionStatus(check.reason, true);
     return;
   }
-  if (!confirm(`Complete "${currentRun.current}" and move to the next booster? This can't be undone.`)) return;
+  const ok = await confirmDialog(`Complete "${currentRun.current}" and move to the next booster? This can't be undone.`, { title: "Complete stage", confirmLabel: "Complete" });
+  if (!ok) return;
   if (persistRun(completeStage(currentRun, MAINLINE_BOOSTERS))) setProgressionStatus("");
   renderRun();
 }

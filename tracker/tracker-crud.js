@@ -1,7 +1,7 @@
 function createTracker(name) {
   const trimmed = (name || "").trim();
   if (!trimmed) {
-    alert("Enter a tracker name.");
+    alertDialog("Enter a tracker name.");
     return false;
   }
   collection.trackers.push({ id: nextId("tracker"), name: trimmed, checklist: [], pulls: [] });
@@ -15,7 +15,7 @@ function updateTracker(trackerId, changes) {
   if (changes.name !== undefined) {
     const trimmed = (changes.name || "").trim();
     if (!trimmed) {
-      alert("Enter a tracker name.");
+      alertDialog("Enter a tracker name.");
       return false;
     }
     tracker.name = trimmed;
