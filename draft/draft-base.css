@@ -1,12 +1,12 @@
-.app-header { padding: 20px 24px 8px; }
+.app-header { padding: 20px var(--page-gutter) 8px; }
 .app-header h1 { margin: 0 0 4px; font-size: 1.5rem; }
 
 .app-single {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding: 16px 24px 32px;
-  max-width: 900px;
+  padding: 16px var(--page-gutter) 32px;
+  width: 100%;
 }
 
 .panel {

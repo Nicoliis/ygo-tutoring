@@ -43,7 +43,8 @@ function renderBacklog() {
   }
 
   const filterLower = backlogFilter.trim().toLowerCase();
-  const bySearch = collection.cards.filter((c) => !filterLower || c.name.toLowerCase().includes(filterLower));
+  // the search looks at the name, the effect text, the attribute, the race and the type of each card
+  const bySearch = collection.cards.filter((c) => !filterLower || cardMatchesSearch(c, filterLower));
   // The type filter only exists when the Backlog panel was mounted; without it every card is listed.
   const typeFilter = typeof appliedBacklogFilter !== "undefined" ? appliedBacklogFilter : null;
   const filtered = typeFilter ? bySearch.filter((c) => matchesFilter(c, typeFilter)) : bySearch;
@@ -63,5 +64,6 @@ function renderBacklog() {
     return;
   }
 
-  filtered.forEach((card) => backlogListEl.appendChild(buildBacklogRow(card)));
+  const sortId = typeof appliedBacklogSort !== "undefined" ? appliedBacklogSort : "added";
+  sortBacklogCards(filtered, sortId).forEach((card) => backlogListEl.appendChild(buildBacklogRow(card)));
 }

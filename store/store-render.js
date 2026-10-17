@@ -19,7 +19,7 @@ function renderNoBalance() {
   document.getElementById("storeContent").innerHTML =
     '<section class="panel"><h2>No balance in this profile</h2>' +
     "<p>The Store belongs to Progression Run profiles. This profile has no run rules, so there is no balance to spend.</p>" +
-    '<p><a href="../workshop/backlog.html">Go to the Workshop</a> · <a href="../index.html">Back to the menu</a></p></section>';
+    '<p><a href="../workshop/backlog.html">Go to the Workshop</a> · <a href="../menu.html">Back to the menu</a></p></section>';
   document.getElementById("storeBalance").hidden = true;
 }
 

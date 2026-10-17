@@ -127,6 +127,9 @@
 - [X] T040 Backlog compression: each card is listed once with its rarest rarity; opening it lists the copies per rarity (`rarityCounts`, `buildRarityCountsHtml` in `shared/printings.js`).
 - [X] T041 Set information in the Store: printings keep the set code (`setCode`, from the card data's `set_code`) and each Sell row shows "Set · CODE"; the card-details window shows set and code on Store pages.
 
+- [X] T042 Profile selection and the main menu are two separate screens: `index.html` is only the profile screen (Play or create leads to the menu), `menu.html` is the main menu with the four areas and a "Switch profile" button; "Back to menu" links go to `menu.html`, "Switch profile" goes to `index.html`, and the guard sends a missing profile to the profile screen from any page.
+- [X] T043 No more fixed maximum widths: pages use the whole screen with a fluid side margin (`--page-gutter`), card grids fill the row (`auto-fill`), the Store lists use the room, and the Tracker panels are no longer capped at 760 px.
+
 ---
 
 ## Dependencies & Execution Order

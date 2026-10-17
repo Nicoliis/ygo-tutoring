@@ -9,6 +9,7 @@
   --accent-hover: #7aa2ff;
   --danger: #e05263;
   --radius: 8px;
+  --page-gutter: clamp(12px, 2.4vw, 40px); /* side margin of every page: grows with the screen */
 }
 
 * { box-sizing: border-box; }

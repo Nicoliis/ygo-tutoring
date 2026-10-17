@@ -3,8 +3,6 @@ const profileStatusEl = document.getElementById("profileStatus");
 const createProfileForm = document.getElementById("createProfileForm");
 const profileNameInput = document.getElementById("profileNameInput");
 const profileModeSelect = document.getElementById("profileModeSelect");
-const toolsSectionEl = document.getElementById("toolsSection");
-const toolsHeadingEl = document.getElementById("toolsHeading");
 
 function setProfileStatus(message, isError) {
   profileStatusEl.textContent = message || "";
@@ -53,7 +51,14 @@ function buildProfileItem(profile, isActive) {
   const actions = document.createElement("div");
   actions.className = "profile-actions";
   actions.append(
-    buildProfileButton("Play", `Play as ${profile.name}`, () => runAction(() => setActiveProfile(profile.id)), true),
+    buildProfileButton("Play", `Play as ${profile.name}`, () => {
+      try {
+        setActiveProfile(profile.id);
+        window.location.href = "menu.html";
+      } catch (err) {
+        setProfileStatus(err.message, true);
+      }
+    }, true),
     buildProfileButton("Rename", `Rename ${profile.name}`, () => {
       const input = prompt("New name for this profile:", profile.name);
       if (input === null) return;
@@ -82,33 +87,6 @@ function renderProfiles() {
   }
   profiles.forEach((p) => profileListEl.appendChild(buildProfileItem(p, Boolean(active) && active.id === p.id)));
 
-  toolsSectionEl.hidden = !active;
-  if (active) {
-    toolsHeadingEl.textContent = `Choose an area — playing as ${active.name}`;
-    renderAreaCards();
-  }
-}
-
-/* The main menu: one card per area, each leading to that area's first screen. */
-function renderAreaCards() {
-  const grid = document.getElementById("areaGrid");
-  grid.innerHTML = "";
-  AREAS.forEach((area) => {
-    if (area.pages.length === 0) return;
-    const link = document.createElement("a");
-    link.className = "tool-card area-card";
-    link.dataset.area = area.id;
-    link.href = area.pages[0].href;
-    const title = document.createElement("h2");
-    title.textContent = area.label;
-    const description = document.createElement("p");
-    description.textContent = area.description;
-    const pages = document.createElement("p");
-    pages.className = "area-card-pages";
-    pages.textContent = area.pages.map((page) => page.label).join(" · ");
-    link.append(title, description, pages);
-    grid.appendChild(link);
-  });
 }
 
 function buildModeOptions() {
@@ -126,8 +104,8 @@ createProfileForm.addEventListener("submit", (e) => {
   e.preventDefault();
   try {
     createProfile(profileNameInput.value, profileModeSelect.value);
-    profileNameInput.value = "";
-    setProfileStatus("");
+    window.location.href = "menu.html"; // a new profile is active right away: go to the menu
+    return;
   } catch (err) {
     setProfileStatus(err.message, true);
   }

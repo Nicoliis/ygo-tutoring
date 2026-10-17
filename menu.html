@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YGO Tutoring Toolkit · Menu</title>
+<link rel="stylesheet" href="shared/theme.css">
+<link rel="stylesheet" href="draft/draft-base.css">
+<link rel="stylesheet" href="draft/draft-buttons.css">
+<link rel="stylesheet" href="welcome.css">
+<link rel="stylesheet" href="shared/areas.css">
+</head>
+<body>
+<div id="menuRoot">
+  <header class="app-header menu-header">
+    <div>
+      <h1>Main menu</h1>
+      <p class="subtitle" id="menuProfileLine"></p>
+    </div>
+    <a class="btn btn-secondary" id="switchProfileLink" href="index.html">Switch profile</a>
+  </header>
+
+  <main>
+    <h2 class="tools-heading">Choose an area</h2>
+    <div id="areaGrid" class="welcome-grid"></div>
+  </main>
+</div>
+
+<script src="shared/areas.js"></script>
+<script src="shared/save-utils.js"></script>
+<script src="shared/profiles.js"></script>
+<script src="shared/profile-guard.js"></script>
+<script src="shared/main-menu.js"></script>
+</body>
+</html>

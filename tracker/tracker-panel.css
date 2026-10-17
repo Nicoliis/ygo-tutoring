@@ -9,7 +9,6 @@
   overflow: hidden;
   flex: 1 1 auto;
   width: 100%;
-  max-width: 760px;
 }
 .panel h2 { margin: 0 0 8px; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-dim); flex: 0 0 auto; }
 .panel > form { flex: 0 0 auto; }
@@ -17,7 +16,6 @@
 .set-picker-panel {
   flex: 0 0 auto;
   width: 100%;
-  max-width: 760px;
 }
 
 .panel-head {

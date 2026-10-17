@@ -8,7 +8,8 @@
  */
 function openBacklogFilterModal({ getCards, onApply }) {
   const draft = JSON.parse(JSON.stringify(loadBacklogFilter()));
-  let activeTab = draft.types[0] || FILTER_GROUPS[0].id;
+  const firstOn = FILTER_GROUPS.find((g) => filterIncludesOf(g.id).some((inc) => draft.types.includes(inc.id)));
+  let activeTab = firstOn ? firstOn.id : FILTER_GROUPS[0].id;
 
   showModal({
     title: "Filter backlog",
@@ -50,14 +51,19 @@ function openBacklogFilterModal({ getCards, onApply }) {
   const tabButtons = {};
   const panelEls = {};
 
-  function included(id) {
-    return draft.types.includes(id);
+  // "id" below is a tab id; its include boxes are filterIncludesOf(id) (Monster has two).
+  function includeOn(includeId) {
+    return draft.types.includes(includeId);
   }
 
-  function setIncluded(id, on) {
-    const has = included(id);
-    if (on && !has) draft.types.push(id);
-    if (!on && has) draft.types = draft.types.filter((t) => t !== id);
+  function setInclude(includeId, on) {
+    const has = includeOn(includeId);
+    if (on && !has) draft.types.push(includeId);
+    if (!on && has) draft.types = draft.types.filter((t) => t !== includeId);
+  }
+
+  function included(id) {
+    return filterIncludesOf(id).some((inc) => includeOn(inc.id));
   }
 
   function selectedValues(id, valueGroup) {
@@ -70,6 +76,20 @@ function openBacklogFilterModal({ getCards, onApply }) {
     if (on) current.push(value);
     if (current.length > 0) draft.values[id][valueGroup] = current;
     else delete draft.values[id][valueGroup];
+  }
+
+  function getRange(id, valueGroup) {
+    const range = draft.values[id] && draft.values[id][valueGroup];
+    return range && typeof range === "object" ? range : { min: null, max: null };
+  }
+
+  function setRange(id, valueGroup, which, text) {
+    const parsed = text.trim() === "" ? null : Number(text);
+    const value = parsed !== null && Number.isFinite(parsed) ? parsed : null;
+    const range = { ...getRange(id, valueGroup), [which]: value };
+    if (!draft.values[id]) draft.values[id] = {};
+    if (range.min === null && range.max === null) delete draft.values[id][valueGroup];
+    else draft.values[id][valueGroup] = range;
   }
 
   function countCards(id) {
@@ -91,18 +111,25 @@ function openBacklogFilterModal({ getCards, onApply }) {
     const el = panelEls[id];
     el.innerHTML = "";
 
-    const includeLabel = document.createElement("label");
-    includeLabel.className = "bf-include";
-    const includeBox = document.createElement("input");
-    includeBox.type = "checkbox";
-    includeBox.checked = included(id);
-    includeBox.addEventListener("change", () => {
-      setIncluded(id, includeBox.checked);
-      valuesBox.classList.toggle("bf-dim", !includeBox.checked);
-      refreshTabLabels();
+    const includeRow = document.createElement("div");
+    includeRow.className = "bf-includes";
+    const includeBoxes = [];
+    filterIncludesOf(id).forEach((inc) => {
+      const includeLabel = document.createElement("label");
+      includeLabel.className = "bf-include";
+      const includeBox = document.createElement("input");
+      includeBox.type = "checkbox";
+      includeBox.checked = includeOn(inc.id);
+      includeBox.addEventListener("change", () => {
+        setInclude(inc.id, includeBox.checked);
+        valuesBox.classList.toggle("bf-dim", !included(id));
+        refreshTabLabels();
+      });
+      includeLabel.append(includeBox, document.createTextNode(` ${inc.label}`));
+      includeRow.appendChild(includeLabel);
+      includeBoxes.push({ inc, box: includeBox });
     });
-    includeLabel.append(includeBox, document.createTextNode(` Include ${group.label} cards`));
-    el.appendChild(includeLabel);
+    el.appendChild(includeRow);
 
     const valuesBox = document.createElement("div");
     valuesBox.className = "bf-values" + (included(id) ? "" : " bf-dim");
@@ -118,6 +145,42 @@ function openBacklogFilterModal({ getCards, onApply }) {
 
     const options = availableValues(getCards(), id);
     group.valueGroups.forEach((valueGroup) => {
+      if (isRangeGroup(valueGroup)) {
+        const present = options[valueGroup] || { min: null, max: null };
+        if (present.min === null) return; // no card of this tab has this stat
+        const fieldset = document.createElement("fieldset");
+        fieldset.className = "bf-group bf-range";
+        const legend = document.createElement("legend");
+        legend.textContent = `${FILTER_VALUE_LABELS[valueGroup]} (${present.min} – ${present.max})`;
+        fieldset.appendChild(legend);
+        const current = getRange(id, valueGroup);
+        ["min", "max"].forEach((which) => {
+          const label = document.createElement("label");
+          label.className = "bf-range-field";
+          const input = document.createElement("input");
+          input.type = "number";
+          input.min = "0";
+          input.step = "50";
+          input.placeholder = String(which === "min" ? present.min : present.max);
+          input.value = current[which] === null ? "" : String(current[which]);
+          input.setAttribute("aria-label", `${FILTER_VALUE_LABELS[valueGroup]} ${which === "min" ? "minimum" : "maximum"}`);
+          input.addEventListener("input", () => {
+            setRange(id, valueGroup, which, input.value);
+            if (input.value.trim() !== "" && !included(id)) {
+              includeBoxes.forEach(({ inc, box: includeBox }) => {
+                setInclude(inc.id, true);
+                includeBox.checked = true;
+              });
+              valuesBox.classList.remove("bf-dim");
+              refreshTabLabels();
+            }
+          });
+          label.append(document.createTextNode(which === "min" ? "From " : "To "), input);
+          fieldset.appendChild(label);
+        });
+        valuesBox.appendChild(fieldset);
+        return;
+      }
       const values = options[valueGroup] || [];
       if (values.length === 0) return;
       const fieldset = document.createElement("fieldset");
@@ -134,9 +197,11 @@ function openBacklogFilterModal({ getCards, onApply }) {
         box.addEventListener("change", () => {
           toggleValue(id, valueGroup, value, box.checked);
           if (box.checked && !included(id)) {
-            // picking a value means the tab is wanted: tick it so the selection is never silently ignored
-            setIncluded(id, true);
-            includeBox.checked = true;
+            // picking a value means the tab is wanted: tick its include box(es) so the selection is never silently ignored
+            includeBoxes.forEach(({ inc, box: includeBox }) => {
+              setInclude(inc.id, true);
+              includeBox.checked = true;
+            });
             valuesBox.classList.remove("bf-dim");
             refreshTabLabels();
           }

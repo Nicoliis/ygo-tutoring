@@ -1,13 +1,13 @@
-.app-header { padding: 20px 24px 8px; }
+.app-header { padding: 20px var(--page-gutter) 8px; }
 .app-header h1 { margin: 0 0 4px; font-size: 1.5rem; }
 .subtitle { margin: 0; color: var(--text-dim); font-size: 0.9rem; }
 
+/* Cards fill the width: as many columns as fit, each at least 260 px, all equal. */
 .welcome-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 16px;
-  padding: 16px 24px 32px;
-  max-width: 900px;
+  padding: 16px var(--page-gutter) 32px;
 }
 
 .tool-card {
@@ -26,11 +26,17 @@
 .tool-card h2 { margin: 0 0 6px; font-size: 1.05rem; }
 .tool-card p { margin: 0; color: var(--text-dim); font-size: 0.85rem; }
 
-main { max-width: 900px; }
-.profiles-section { padding: 8px 24px 0; }
+.profiles-section { padding: 8px var(--page-gutter) 24px; }
 .profiles-section h2, .tools-heading { margin: 8px 0; font-size: 1.1rem; }
-.tools-heading { padding: 8px 24px 0; }
-.profile-list { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.tools-heading { padding: 8px var(--page-gutter) 0; }
+.profile-list {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 10px;
+}
 .profile-item {
   display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px;
   background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 14px;
@@ -39,16 +45,19 @@ main { max-width: 900px; }
 .profile-info { display: flex; flex-direction: column; gap: 2px; }
 .profile-meta { color: var(--text-dim); font-size: 0.8rem; }
 .profile-actions { display: flex; gap: 6px; }
-.profile-empty { color: var(--text-dim); font-size: 0.9rem; }
+.profile-empty { color: var(--text-dim); font-size: 0.9rem; grid-column: 1 / -1; }
 .create-profile-form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px; }
-.create-profile-form .search-input { width: 220px; }
+.create-profile-form .search-input { width: min(320px, 100%); }
 .create-profile-form select {
   background: var(--panel-alt); border: 1px solid var(--border); border-radius: var(--radius);
   color: var(--text); padding: 8px 10px; font-size: 0.9rem;
 }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 
-.area-card { border-left: 4px solid var(--accent); }
+.menu-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.menu-header .btn { text-decoration: none; }
+
+.area-card { border-left: 4px solid var(--accent); min-height: 110px; }
 .area-card[data-area="run"] { border-left-color: #5b8cff; }
 .area-card[data-area="workshop"] { border-left-color: #e0953a; }
 .area-card[data-area="store"] { border-left-color: #3fb27f; }

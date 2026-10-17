@@ -1,6 +1,7 @@
-/* Search box + filter button on one row (the panel's direct-child search rule no longer applies to the input). */
-.backlog-search-row { display: flex; gap: 6px; align-items: center; flex: 0 0 auto; margin-bottom: 8px; }
-.backlog-search-row .search-input { flex: 1 1 auto; min-width: 0; }
+/* Two rows above the list: the search box alone, then the sort order and the filter icon. */
+.backlog-search-row { flex: 0 0 auto; margin-bottom: 6px; }
+.backlog-search-row .search-input { width: 100%; }
+.backlog-tools-row { display: flex; gap: 6px; align-items: center; flex: 0 0 auto; margin-bottom: 8px; }
 
 .backlog-filter-btn {
   position: relative;
@@ -35,8 +36,8 @@
 .backlog-filter-btn .bf-count:empty { display: none; }
 
 /* The filter window */
-.bf-root { min-width: min(560px, 80vw); }
-.bf-tabs { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 10px; }
+.bf-root { min-width: 0; }
+.bf-tabs { display: flex; flex-wrap: nowrap; gap: 2px; border-bottom: 1px solid var(--border); margin-bottom: 10px; overflow-x: auto; }
 .bf-tab {
   background: none;
   border: 1px solid transparent;
@@ -44,8 +45,10 @@
   border-radius: var(--radius) var(--radius) 0 0;
   color: var(--text-dim);
   font: inherit;
-  font-size: 0.8rem;
-  padding: 6px 10px;
+  font-size: 0.78rem;
+  padding: 6px 8px;
+  white-space: nowrap;
+  flex: 0 0 auto;
   cursor: pointer;
 }
 .bf-tab:hover { color: var(--text); }
@@ -72,4 +75,30 @@
 .bf-empty, .bf-note { color: var(--text-dim); font-size: 0.82rem; margin: 6px 0; }
 
 /* The shared dialog is 420 px wide; the filter window has nine tabs and needs more room. */
-.modal-dialog:has(.bf-root) { max-width: 680px; }
+.modal-dialog:has(.bf-root) { max-width: min(1180px, 96vw); }
+
+.backlog-sort {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 36px;
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-size: 0.8rem;
+  padding: 0 6px;
+}
+.backlog-sort:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.bf-includes { display: flex; flex-wrap: wrap; gap: 4px 18px; margin-bottom: 8px; }
+.bf-includes .bf-include { margin-bottom: 0; }
+
+.bf-range { gap: 12px; align-items: center; max-height: none; }
+.bf-range-field { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; }
+.bf-range-field input {
+  width: 90px;
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  padding: 4px 8px;
+}

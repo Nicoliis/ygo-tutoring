@@ -16,7 +16,14 @@ if (cardSearchInput) {
   });
 }
 
+let searchCompletionStarted = false;
+
 backlogSearchInput.addEventListener("input", () => {
   backlogFilter = backlogSearchInput.value;
   renderBacklog();
+  // Searching also reads effect text: complete cards that lack their details, once (batched, never repeated).
+  if (!searchCompletionStarted && backlogFilter.trim() && typeof completeMissingCardDetails === "function") {
+    searchCompletionStarted = true;
+    completeMissingCardDetails(collection.cards);
+  }
 });

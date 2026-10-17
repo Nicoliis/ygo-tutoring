@@ -13,6 +13,7 @@
  */
 let backlogPanelOptions = { allowAdd: true, allowRemove: true, allowQtyEdit: true };
 let appliedBacklogFilter = emptyFilter();
+let appliedBacklogSort = "added";
 
 const FILTER_ICON_SVG =
   '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">' +
@@ -38,6 +39,7 @@ function updateBacklogFilterButton() {
 function mountBacklogPanel(containerEl, options = {}) {
   backlogPanelOptions = { ...backlogPanelDefaults(), ...options };
   appliedBacklogFilter = loadBacklogFilter();
+  appliedBacklogSort = loadBacklogSort();
 
   const section = document.createElement("section");
   section.id = "backlogSection";
@@ -61,7 +63,12 @@ function mountBacklogPanel(containerEl, options = {}) {
   section.insertAdjacentHTML(
     "beforeend",
     `<div class="backlog-search-row">
-       <input id="backlogSearchInput" type="text" class="search-input" placeholder="Search backlog&hellip;" aria-label="Search backlog" autocomplete="off">
+       <input id="backlogSearchInput" type="text" class="search-input" placeholder="Search name, effect, attribute&hellip;" aria-label="Search backlog by name, effect text, attribute, race or type" autocomplete="off">
+     </div>
+     <div class="backlog-tools-row">
+       <select id="backlogSortSelect" class="backlog-sort" aria-label="Sort backlog">
+         ${BACKLOG_SORTS.map((s) => `<option value="${s.id}">${s.label}</option>`).join("")}
+       </select>
        <button id="backlogFilterBtn" type="button" class="backlog-filter-btn" aria-haspopup="dialog" aria-label="Filter backlog">
          ${FILTER_ICON_SVG}<span class="bf-count" aria-hidden="true"></span>
        </button>
@@ -70,6 +77,14 @@ function mountBacklogPanel(containerEl, options = {}) {
   );
 
   containerEl.prepend(section);
+
+  const sortSelect = document.getElementById("backlogSortSelect");
+  sortSelect.value = appliedBacklogSort;
+  sortSelect.addEventListener("change", () => {
+    appliedBacklogSort = sortSelect.value;
+    saveBacklogSort(appliedBacklogSort);
+    if (typeof renderAll === "function") renderAll();
+  });
 
   document.getElementById("backlogFilterBtn").addEventListener("click", () => {
     openBacklogFilterModal({

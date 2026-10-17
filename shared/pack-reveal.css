@@ -137,3 +137,15 @@ button.revealed-card:hover, button.revealed-card:focus-visible { border-color: v
   font-size: 0.8rem;
   font-weight: 700;
 }
+
+/* Clicking the card back many times in a row must never select text (double-click selects words). */
+.pack-stage,
+.pack-stage *,
+.pack-flier,
+.pulled-strip,
+.pulled-strip *,
+#revealArea {
+  -webkit-user-select: none;
+  user-select: none;
+}
+.pack-stack { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }

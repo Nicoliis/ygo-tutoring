@@ -17,6 +17,14 @@
 - Q: How do cards without detailed data behave when a value is selected in their tab? → A: They do not match the selected value, but their missing details are completed in the background so they can match later.
 - Q: How does the filter window apply changes? → A: With an Apply button: changes take effect only when Apply is pressed, and closing the window without Apply discards them.
 
+### Changes requested after first use (2026-10-17)
+
+- The Monster tab is named "Monster" and has two include checkboxes, "Include normal" and "Include effect" (normal monsters and tokens vs. all other non-special monsters). Every other tab keeps one include checkbox.
+- The filter window is wide enough to show all nine tabs on one line.
+- The monster tabs (Monster, Ritual, Fusion, Synchro, Xyz, Pendulum, Link) also filter by ATK and DEF (Link: ATK only) with a "From / To" range; the range inputs show the lowest and highest value present in the user's cards of that type, and a card without that stat never matches a range.
+- The Backlog gets a sort control (added order, name A→Z / Z→A, rarity rarest/most common first, copies, card type, level/rank, ATK, DEF), saved per profile.
+- The Backlog search looks at the card name, the effect text, the attribute, the race and the type; every word typed must be found. Searching "water" finds WATER monsters, monsters with water in their name and spells and traps whose text mentions water. Cards missing their effect text are completed in the background (once) when the user starts searching.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Wider backlog tags that open the details in one click (Priority: P1)

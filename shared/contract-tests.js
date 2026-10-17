@@ -390,6 +390,33 @@ function runContractTests() {
     expect(Object.keys(availableValues(cards, "nope")).length === 0);
   });
 
+  check("ATK and DEF are ranges: present min/max offered, min/max filter, missing stats never match", () => {
+    const cards = [
+      { type: "Effect Monster", atk: 500, def: 2000 },
+      { type: "Effect Monster", atk: 1800, def: 1000 },
+      { type: "Effect Monster", atk: 3000, def: 0 },
+      { type: "Effect Monster" },
+      { type: "Link Monster", atk: 2300 },
+      { type: "Spell Card" },
+    ];
+    const monster = availableValues(cards, "monster");
+    expect(monster.atk.min === 500 && monster.atk.max === 3000 && monster.def.min === 0 && monster.def.max === 2000);
+    const link = availableValues(cards, "link");
+    expect(link.atk.min === 2300 && link.def === undefined, "Link monsters have no DEF filter");
+    expect(availableValues(cards, "spell").atk === undefined);
+    expect(availableValues([], "monster").atk.min === null, "no cards: empty range");
+    const f = (values) => ({ types: ["monster-effect"], values: { monster: values } });
+    const names = (filter) => cards.filter((c) => matchesFilter(c, filter)).map((c) => c.atk).join();
+    expect(names(f({ atk: { min: 1000, max: null } })) === "1800,3000");
+    expect(names(f({ atk: { min: null, max: 1800 } })) === "500,1800");
+    expect(names(f({ atk: { min: 1000, max: 2000 } })) === "1800");
+    expect(names(f({ atk: { min: 1000, max: null }, def: { min: null, max: 1000 } })) === "1800,3000", "ATK and DEF combine with AND");
+    expect(names(f({ atk: { min: null, max: null } })) === "500,1800,3000," , "an empty range restricts nothing");
+    expect(sanitizeFilter(f({ atk: { min: "x", max: 5 }, def: { min: null, max: null } })).values.monster.atk.max === 5);
+    expect(sanitizeFilter(f({ def: { min: null, max: null } })).values.monster === undefined, "empty ranges are dropped");
+    expect(sanitizeFilter(f({ atk: [1, 2] })).values.monster === undefined, "malformed range ignored");
+  });
+
   check("matchesFilter: tabs OR, groups AND, values OR, missing values never match", () => {
     const dark4 = { type: "Effect Monster", attribute: "DARK", race: "Fiend", level: 4 };
     const light4 = { type: "Effect Monster", attribute: "LIGHT", race: "Fiend", level: 4 };
@@ -402,14 +429,85 @@ function runContractTests() {
     expect(matchesFilter(spell, onlySpell) && !matchesFilter(dark4, onlySpell) && !matchesFilter(trap, onlySpell) && !matchesFilter(unknown, onlySpell));
     const spellOrTrap = { types: ["spell", "trap"], values: {} };
     expect(matchesFilter(spell, spellOrTrap) && matchesFilter(trap, spellOrTrap) && !matchesFilter(dark4, spellOrTrap));
-    const darkLevel4 = { types: ["monster"], values: { monster: { attribute: ["DARK"], level: [4, 5] } } };
+    const darkLevel4 = { types: ["monster-effect"], values: { monster: { attribute: ["DARK"], level: [4, 5] } } };
     expect(matchesFilter(dark4, darkLevel4) && !matchesFilter(light4, darkLevel4), "groups combine with AND");
     expect(!matchesFilter(noDetails, darkLevel4), "a card missing the value does not match");
-    expect(matchesFilter(noDetails, { types: ["monster"], values: {} }), "no value selected: type alone is enough");
-    const attrs = { types: ["monster"], values: { monster: { attribute: ["DARK", "LIGHT"] } } };
+    expect(matchesFilter(noDetails, { types: ["monster-effect"], values: {} }), "no value selected: type alone is enough");
+    const attrs = { types: ["monster-effect"], values: { monster: { attribute: ["DARK", "LIGHT"] } } };
     expect(matchesFilter(dark4, attrs) && matchesFilter(light4, attrs), "values in a group are OR");
-    expect(matchesFilter(spell, { types: ["spell", "monster"], values: { monster: { attribute: ["WIND"] }, spell: { subtype: ["Quick-Play"] } } }), "each tab uses its own values");
+    expect(matchesFilter(spell, { types: ["spell", "monster-effect"], values: { monster: { attribute: ["WIND"] }, spell: { subtype: ["Quick-Play"] } } }), "each tab uses its own values");
     expect(activeTypeCount(spellOrTrap) === 2 && activeTypeCount(emptyFilter()) === 0 && isFilterActive(onlySpell));
+  });
+
+  check("Monster tab: normal and effect monsters are included separately", () => {
+    const normal = { type: "Normal Monster", attribute: "EARTH", level: 4 };
+    const effect = { type: "Effect Monster", attribute: "EARTH", level: 4 };
+    const token = { type: "Token" };
+    const flip = { type: "Flip Effect Monster" };
+    const normalTuner = { type: "Normal Tuner Monster" };
+    expect(monsterKind(normal) === "normal" && monsterKind(token) === "normal" && monsterKind(normalTuner) === "normal");
+    expect(monsterKind(effect) === "effect" && monsterKind(flip) === "effect");
+    expect(includeIdOf(effect) === "monster-effect" && includeIdOf({ type: "Spell Card" }) === "spell");
+    const onlyNormal = { types: ["monster-normal"], values: {} };
+    const onlyEffect = { types: ["monster-effect"], values: {} };
+    const both = { types: ["monster-normal", "monster-effect"], values: {} };
+    expect(matchesFilter(normal, onlyNormal) && !matchesFilter(effect, onlyNormal));
+    expect(matchesFilter(effect, onlyEffect) && !matchesFilter(normal, onlyEffect));
+    expect(matchesFilter(normal, both) && matchesFilter(effect, both) && !matchesFilter({ type: "Spell Card" }, both));
+    const withValues = { types: ["monster-normal"], values: { monster: { attribute: ["EARTH"] } } };
+    expect(matchesFilter(normal, withValues) && !matchesFilter({ type: "Normal Monster", attribute: "FIRE" }, withValues));
+    expect(filterIncludesOf("monster").length === 2 && filterIncludesOf("spell").length === 1 && FILTER_GROUPS[0].label === "Monster");
+    // a filter saved before the split used the single id "monster": it means both kinds
+    expect(sanitizeFilter({ types: ["monster", "spell"] }).types.join() === "monster-normal,monster-effect,spell");
+    expect(activeTypeCount(both) === 2);
+  });
+
+  check("search: name, effect text, attribute, race and type; every word must be found", () => {
+    const cards = [
+      { name: "Water Dragon", type: "Effect Monster", attribute: "WATER", race: "Dragon", effect: "A dragon." },
+      { name: "Aqua Mage", type: "Effect Monster", attribute: "WATER", race: "Spellcaster", effect: "Sea magic." },
+      { name: "Flame Knight", type: "Effect Monster", attribute: "FIRE", race: "Warrior", effect: "Burns." },
+      { name: "Rain Charm", type: "Spell Card", race: "Quick-Play", effect: "Target 1 WATER monster you control." },
+      { name: "Dry Trap", type: "Trap Card", race: "Normal", desc: "Destroy a Water monster." },
+      { name: "Plain" },
+    ];
+    const hits = (q) => cards.filter((c) => cardMatchesSearch(c, q)).map((c) => c.name).join();
+    expect(hits("water") === "Water Dragon,Aqua Mage,Rain Charm,Dry Trap", "name, attribute and effect text all match");
+    expect(hits("WATER destroy") === "Dry Trap" && hits("water target") === "Rain Charm", "case-insensitive, every word needed");
+    expect(hits("dragon") === "Water Dragon" && hits("fire") === "Flame Knight" && hits("quick-play") === "Rain Charm");
+    expect(hits("") === cards.map((c) => c.name).join() && hits("zzz") === "");
+  });
+
+  check("sorting: by name, rarity, copies, type and stats; stable ties; input untouched", () => {
+    const cards = [
+      { name: "B", quantityOwned: 1, type: "Spell Card", level: null, printings: [{ set: "S", rarity: "Common", quantity: 1 }] },
+      { name: "A", quantityOwned: 3, type: "Effect Monster", level: 4, atk: 1800, def: 1000, printings: [{ set: "S", rarity: "Ultra Rare", quantity: 3 }] },
+      { name: "C", quantityOwned: 2, type: "XYZ Monster", level: 8, atk: 3000, def: 2500 },
+      { name: "D", quantityOwned: 2, type: "Trap Card" },
+    ];
+    const names = (id) => sortBacklogCards(cards, id).map((c) => c.name).join("");
+    expect(names("added") === "BACD" && names("nope") === "BACD");
+    expect(names("name-asc") === "ABCD" && names("name-desc") === "DCBA");
+    expect(names("rarity-desc") === "ABCD" || names("rarity-desc") === "ABDC", "Ultra first, unknown last");
+    expect(sortBacklogCards(cards, "rarity-desc")[0].name === "A" && sortBacklogCards(cards, "rarity-asc").slice(-1)[0].name === "A");
+    expect(names("qty-desc") === "ACDB", "3 first, ties by name");
+    const types = sortBacklogCards(cards, "type").map((c) => groupOf(c)).join();
+    expect(types === "monster,spell,trap,xyz", "grouped in the order of the filter tabs");
+    expect(names("level-desc") === "CABD" && names("atk-desc") === "CABD" && names("def-desc") === "CABD");
+    expect(cards.map((c) => c.name).join("") === "BACD", "input array not reordered");
+  });
+
+  check("backlog sort is saved per profile and unknown values fall back", () => {
+    createProfile("SortA", "progression");
+    expect(loadBacklogSort() === "added");
+    saveBacklogSort("name-desc");
+    expect(loadBacklogSort() === "name-desc");
+    createProfile("SortB", "progression");
+    expect(loadBacklogSort() === "added", "the other profile has its own order");
+    saveData("sideways", profileKey("ygoBacklogSort"));
+    expect(loadBacklogSort() === "added", "unknown value ignored");
+    saveBacklogSort("added");
+    expect(loadData(profileKey("ygoBacklogSort")) === null);
   });
 
   check("backlog filter: saved per profile, malformed data is harmless, unknown fields survive", () => {
@@ -429,7 +527,7 @@ function runContractTests() {
     expect(loadBacklogFilter().types.join() === "trap");
     saveData("garbage", profileKey("ygoBacklogFilter"));
     expect(!isFilterActive(loadBacklogFilter()), "malformed record reads as no filter");
-    saveBacklogFilter({ types: ["monster"], values: {} });
+    saveBacklogFilter({ types: ["monster-normal"], values: {} });
     expect(Object.keys(buildBackup().data).includes(`ygoBacklogFilter_${profileA}`), "exported with the rest of the save");
     saveBacklogFilter({ types: [], values: {} });
     expect(loadData(profileKey("ygoBacklogFilter")) === null, "an empty filter clears the key");

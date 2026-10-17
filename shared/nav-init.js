@@ -4,7 +4,7 @@ function addHeaderMenuLink(area) {
   if (!header || header.querySelector(".header-menu-link")) return;
   const link = document.createElement("a");
   link.className = "header-menu-link";
-  link.href = hrefFromRoot("index.html");
+  link.href = hrefFromRoot("menu.html");
   link.textContent = `← Menu · ${area.label}`;
   link.setAttribute("aria-label", `Back to main menu (you are in ${area.label})`);
   header.appendChild(link);

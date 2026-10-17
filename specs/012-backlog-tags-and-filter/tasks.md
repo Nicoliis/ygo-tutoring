@@ -93,6 +93,17 @@
 
 ---
 
+## Phase 9: Changes requested after first use (2026-10-17)
+
+- [X] T023 Monster tab renamed "Monster" with two include boxes ("Include normal", "Include effect"): include ids `monster-normal` / `monster-effect` (`filterIncludesOf`, `monsterKind`, `includeIdOf` in `shared/backlog-filter.js`); a filter saved with the old single id keeps working (both kinds); the window and its tests are updated.
+- [X] T024 Sorting: `BACKLOG_SORTS` and `sortBacklogCards` in `shared/backlog-filter.js`, a "Sort backlog" select in the panel, saved per profile (`ygoBacklogSort`).
+- [X] T025 Search over name, effect text, attribute, race and type (`cardMatchesSearch`, every word must match); the first search triggers the one-time background completion of cards missing details.
+
+- [X] T026 The filter window is up to 1180 px wide and its nine tabs stay on one line (they scroll sideways only on very narrow screens).
+- [X] T027 ATK and DEF ranges: value groups `atk` and `def` on the monster tabs (Link: `atk` only) filtered with `{ min, max }` (`isRangeGroup`, range handling in `availableValues`, `matchesFilter` and `sanitizeFilter`); "From / To" inputs in the window showing the present minimum and maximum.
+
+---
+
 ## Dependencies & Execution Order
 
 - Phase 1 → Phase 2 (blocking) → stories. T002 → T003 → T004 → T005.
