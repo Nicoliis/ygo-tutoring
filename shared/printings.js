@@ -1,21 +1,28 @@
 /*
  * Printings: which set/rarity/price each owned copy came from. Stored in card.printings
  * (optional; cards saved before this feature have none). Pure helpers, no storage.
- *   printing = { set: non-empty string, rarity: string | null, price: number >= 0, quantity: integer >= 1 }
- * Identity is the (set, rarity) pair within a card. The price is recorded at the FIRST pull of a printing.
+ *   printing = { set: non-empty string, rarity: string | null, price: number >= 0, quantity: integer >= 1,
+ *                setPrice?: integer cents >= 1 (what the card sells for), setCode?: string (e.g. "LOB-EN001") }
+ * Identity is the (set, rarity) pair within a card. price and setPrice are recorded at the first pull of a
+ * printing; setPrice is also filled in by a later pull if the printing had none yet, and never changed after.
  */
 function printingsTotal(card) {
   const list = Array.isArray(card.printings) ? card.printings : [];
   return list.reduce((sum, p) => sum + (Number(p.quantity) || 0), 0);
 }
 
-function addPrinting(card, { set, rarity, price }) {
+// What a copy sells for when nothing better is known (old printings, unknown copies): 0.01.
+const UNPRICED_SALE_CENTS = 1;
+
+function addPrinting(card, { set, rarity, price, setPrice, setCode }) {
   if (!set) return;
   if (!Array.isArray(card.printings)) card.printings = [];
   const normalizedRarity = rarity || null;
   const existing = card.printings.find((p) => p.set === set && (p.rarity || null) === normalizedRarity);
   if (existing) {
     existing.quantity += 1;
+    if (!existing.setPrice && Number.isInteger(setPrice) && setPrice >= 1) existing.setPrice = setPrice;
+    if (!existing.setCode && setCode) existing.setCode = setCode;
     return;
   }
   card.printings.push({
@@ -23,7 +30,14 @@ function addPrinting(card, { set, rarity, price }) {
     rarity: normalizedRarity,
     price: Number.isFinite(price) && price >= 0 ? price : 0,
     quantity: 1,
+    ...(Number.isInteger(setPrice) && setPrice >= 1 ? { setPrice } : {}),
+    ...(setCode ? { setCode } : {}),
   });
+}
+
+/* Sale value of a printing in integer cents: its recorded price, or 0.01 when none was recorded. */
+function printingSaleValue(printing) {
+  return printing && Number.isInteger(printing.setPrice) && printing.setPrice >= 1 ? printing.setPrice : UNPRICED_SALE_CENTS;
 }
 
 function printingSummary(card) {
@@ -55,13 +69,47 @@ function rarestPrinting(card) {
   return list.reduce((best, p) => (rarityRank(p.rarity) > rarityRank(best.rarity) ? p : best));
 }
 
+/* Copies owned per rarity (sets merged), rarest first, plus copies of unknown rarity. */
+function rarityCounts(card) {
+  const byRarity = new Map();
+  (Array.isArray(card.printings) ? card.printings : []).forEach((p) => {
+    const key = (p.rarity || "").trim();
+    byRarity.set(key, (byRarity.get(key) || 0) + (Number(p.quantity) || 0));
+  });
+  const rows = Array.from(byRarity, ([rarity, quantity]) => ({ rarity: rarity || null, quantity }));
+  const unknownQuantity = printingSummary(card).unknownQuantity;
+  if (unknownQuantity > 0) {
+    const existing = rows.find((r) => r.rarity === null);
+    if (existing) existing.quantity += unknownQuantity;
+    else rows.push({ rarity: null, quantity: unknownQuantity });
+  }
+  return rows.sort((a, b) => rarityRank(b.rarity) - rarityRank(a.rarity));
+}
+
+/* "How many of each rarity" list shown when a backlog tag is opened; empty when nothing is known. */
+function buildRarityCountsHtml(card) {
+  const rows = rarityCounts(card);
+  if (rows.length === 0) return "";
+  const items = rows
+    .map((r) => `<li>${buildRarityBadge(r.rarity).outerHTML}<strong>x${r.quantity}</strong></li>`)
+    .join("");
+  return `<ul class="card-rarity-counts" aria-label="Copies owned per rarity">${items}</ul>`;
+}
+
+/* Small subsection for the card details window: copies owned per rarity (sets merged). */
+function buildRarityCountsSectionHtml(card) {
+  const list = buildRarityCountsHtml(card);
+  return list ? `<hr class="card-divider"><div class="card-subsection"><strong>Copies owned</strong>${list}</div>` : "";
+}
+
 /* HTML for the detail modals; empty string when there is nothing to show. Needs rarity.js + dom-utils.js. */
-function buildPrintingsHtml(card) {
+function buildPrintingsHtml(card, { showSet = false } = {}) {
   const { printings, unknownQuantity } = printingSummary(card);
   if (printings.length === 0 && unknownQuantity === 0) return "";
   const rows = printings.map((p) => {
     const price = p.price > 0 ? ` · $${p.price.toFixed(2)}` : "";
-    return `<li><strong>${escapeHtml(rarityLabel(p.rarity))}</strong>${price} × ${p.quantity}</li>`;
+    const where = showSet ? ` — ${escapeHtml(p.set)}${p.setCode ? ` · ${escapeHtml(p.setCode)}` : ""}` : "";
+    return `<li><strong>${escapeHtml(rarityLabel(p.rarity))}</strong>${where}${price} × ${p.quantity}</li>`;
   });
   if (unknownQuantity > 0) rows.push(`<li>Unknown rarity × ${unknownQuantity}</li>`);
   return `<div class="card-printings"><strong>Printings:</strong><ul>${rows.join("")}</ul></div>`;

@@ -4,10 +4,13 @@ function openCardDetailModal(card, buttons) {
     : "";
   const tagsHtml = buildCardTagsHtml(card);
   const effectHtml = buildEffectHtml(card);
-  const printingsHtml = typeof buildPrintingsHtml === "function" ? buildPrintingsHtml(card) : "";
+  const inStore = document.body.dataset.area === "store";
+  const printingsHtml = inStore
+    ? (typeof buildPrintingsHtml === "function" ? "<hr class=\"card-divider\">" + buildPrintingsHtml(card, { showSet: true }) : "")
+    : (typeof buildRarityCountsSectionHtml === "function" ? buildRarityCountsSectionHtml(card) : "");
   const bodyHtml =
     imageHtml || tagsHtml || effectHtml || printingsHtml
-      ? `${imageHtml}${tagsHtml}${printingsHtml}${effectHtml}`
+      ? `${imageHtml}${tagsHtml}${effectHtml}${printingsHtml}`
       : `<div>No further details available for this card.</div>`;
 
   showModal({

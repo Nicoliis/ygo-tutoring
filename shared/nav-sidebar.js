@@ -8,22 +8,31 @@ function buildSidebarToggle() {
   return toggle;
 }
 
-function buildSidebarNav(activeSlug) {
+/* Only the current area's pages, preceded by the way back to the main menu. */
+function buildSidebarNav(area) {
+  const currentPage = currentAreaPage();
   const nav = document.createElement("nav");
-  nav.setAttribute("aria-label", "Tool navigation");
+  nav.setAttribute("aria-label", `${area.label} navigation`);
   const list = document.createElement("ul");
-  NAV_ENTRIES.forEach((entry) => list.appendChild(buildSidebarItem(entry, activeSlug)));
+  list.appendChild(buildBackToMenuItem());
+  area.pages.forEach((page) => list.appendChild(buildSidebarItem(page, page === currentPage)));
   nav.appendChild(list);
   return nav;
 }
 
-function buildSidebar() {
+function buildSidebar(area) {
   const aside = document.createElement("aside");
   aside.id = "appSidebar";
 
   const toggle = buildSidebarToggle();
   aside.appendChild(toggle);
-  aside.appendChild(buildSidebarNav(currentSlug()));
+
+  const title = document.createElement("div");
+  title.className = "sidebar-area";
+  title.textContent = area.label;
+  aside.appendChild(title);
+
+  aside.appendChild(buildSidebarNav(area));
 
   toggle.addEventListener("click", () => {
     const collapsed = !aside.classList.contains("collapsed");

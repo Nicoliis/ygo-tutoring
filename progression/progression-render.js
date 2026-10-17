@@ -87,7 +87,7 @@ function renderNoRules() {
   panel.className = "panel";
   panel.innerHTML = `<h2>No run rules</h2>
     <p>This profile has no run rules. Use the other tools freely:</p>
-    <p><a href="../collection/index.html">Collection</a> · <a href="../draft/index.html">Booster Draft</a> · <a href="../tracker/index.html">Pack Puller</a></p>`;
+    <p><a href="../workshop/backlog.html">Workshop</a> · <a href="../draft/index.html">Booster Draft</a> · <a href="../tracker/index.html">Pack Puller</a></p>`;
   progressionRootEl.appendChild(panel);
 }
 
@@ -180,6 +180,10 @@ function renderRun() {
     packReveal.destroy();
     packReveal = null;
   }
+  if (extraReveal) {
+    extraReveal.destroy();
+    extraReveal = null;
+  }
   progressionRootEl.innerHTML = "";
   const run = currentRun;
   const phase = boxPhase(run);
@@ -204,7 +208,7 @@ function renderRun() {
     actions.className = "stage-actions";
     const deckLink = document.createElement("a");
     deckLink.className = "btn btn-secondary";
-    deckLink.href = "../collection/index.html";
+    deckLink.href = "../workshop/deckbuilding.html";
     deckLink.textContent = "Build decks";
     const complete = canCompleteStage(run);
     const start = canOpenBox(run);
@@ -223,6 +227,12 @@ function renderRun() {
   if (run.current !== null && phase !== "not-started") {
     progressionRootEl.appendChild(buildOpenerPanel());
     mountOpener();
+  }
+
+  const extraPanel = buildExtraPanel();
+  if (extraPanel) {
+    progressionRootEl.appendChild(extraPanel);
+    if (getExtraPack(currentRun)) mountExtraPack();
   }
 
   progressionRootEl.appendChild(buildBoosterRail(run));
@@ -257,4 +267,68 @@ function updateBoxProgress() {
   const bar = el.querySelector(".box-progress-bar");
   bar.max = totalCards;
   bar.value = box.pulled.length;
+}
+
+/* ---- Bought boosters (opened one at a time with the same opener, outside the stage box) ---- */
+
+let extraReveal = null;
+let extraAreaEl = null;
+let extraActionEl = null;
+let extraStripEl = null;
+
+/* The "Bought boosters" panel, or null when there is nothing in the inventory and no pack open. */
+function buildExtraPanel() {
+  const inventory = Object.entries(currentRun.packInventory || {}).filter(([, n]) => n > 0);
+  const open = getExtraPack(currentRun);
+  if (inventory.length === 0 && !open) return null;
+
+  const panel = document.createElement("section");
+  panel.className = "panel";
+  const heading = document.createElement("h2");
+  heading.textContent = "Bought boosters";
+  panel.appendChild(heading);
+
+  if (inventory.length > 0) {
+    const list = document.createElement("ul");
+    list.className = "bought-list";
+    inventory.forEach(([setName, count]) => {
+      const li = document.createElement("li");
+      const label = document.createElement("span");
+      label.textContent = `${setName} ×${count}`;
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "btn btn-primary";
+      btn.textContent = "Open one";
+      btn.disabled = busy || Boolean(open);
+      btn.title = open ? "Finish the pack you are opening first." : "";
+      btn.setAttribute("aria-label", `Open one ${setName} pack`);
+      btn.addEventListener("click", () => onOpenBought(setName));
+      li.append(label, btn);
+      list.appendChild(li);
+    });
+    panel.appendChild(list);
+  }
+
+  if (open) {
+    const title = document.createElement("h3");
+    title.textContent = `Opening: ${open.setName}`;
+    panel.appendChild(title);
+    const hint = document.createElement("p");
+    hint.className = "status";
+    hint.textContent = "Click the card back to pull the next card.";
+    panel.appendChild(hint);
+    const stage = document.createElement("div");
+    stage.className = "pack-stage";
+    extraAreaEl = document.createElement("div");
+    extraAreaEl.className = "pack-area";
+    extraActionEl = document.createElement("div");
+    extraActionEl.className = "pack-action-slot";
+    stage.append(extraAreaEl, extraActionEl);
+    panel.appendChild(stage);
+    extraStripEl = document.createElement("div");
+    extraStripEl.className = "pulled-strip";
+    extraStripEl.setAttribute("aria-label", "Cards pulled from this pack");
+    panel.appendChild(extraStripEl);
+  }
+  return panel;
 }

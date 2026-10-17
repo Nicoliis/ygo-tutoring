@@ -41,3 +41,18 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* Small extra block at the end of the card details window; never pushes the card's own info out of the way. */
+.card-subsection {
+  margin-top: 10px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+  font-size: 0.78rem;
+}
+.card-subsection .card-rarity-counts { margin-top: 4px; max-width: 220px; }
+.card-rarity-counts { margin: 6px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 3px; }
+.card-rarity-counts li { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+
+.card-divider { border: 0; border-top: 1px solid var(--border); margin: 12px 0 8px; }
+.card-subsection .card-rarity-counts li { gap: 12px; justify-content: flex-start; }
+.card-subsection .card-rarity-counts li strong { font-variant-numeric: tabular-nums; }

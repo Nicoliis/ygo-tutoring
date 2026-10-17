@@ -23,7 +23,7 @@ function buildProfileSwitcher() {
 function initProfileSwitcher() {
   const aside = document.getElementById("appSidebar");
   const box = buildProfileSwitcher();
-  if (aside && box) aside.insertBefore(box, aside.querySelector("nav"));
+  if (aside && box) aside.insertBefore(box, aside.querySelector(".sidebar-area") || aside.querySelector("nav"));
 }
 
 if (document.readyState === "loading") {

@@ -47,3 +47,10 @@ main { max-width: 900px; }
   color: var(--text); padding: 8px 10px; font-size: 0.9rem;
 }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+.area-card { border-left: 4px solid var(--accent); }
+.area-card[data-area="run"] { border-left-color: #5b8cff; }
+.area-card[data-area="workshop"] { border-left-color: #e0953a; }
+.area-card[data-area="store"] { border-left-color: #3fb27f; }
+.area-card[data-area="tools"] { border-left-color: #8a93a6; }
+.area-card-pages { margin-top: 8px; font-size: 0.75rem; color: var(--text-dim); }

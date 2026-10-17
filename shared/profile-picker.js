@@ -83,7 +83,32 @@ function renderProfiles() {
   profiles.forEach((p) => profileListEl.appendChild(buildProfileItem(p, Boolean(active) && active.id === p.id)));
 
   toolsSectionEl.hidden = !active;
-  if (active) toolsHeadingEl.textContent = `Tools — playing as ${active.name}`;
+  if (active) {
+    toolsHeadingEl.textContent = `Choose an area — playing as ${active.name}`;
+    renderAreaCards();
+  }
+}
+
+/* The main menu: one card per area, each leading to that area's first screen. */
+function renderAreaCards() {
+  const grid = document.getElementById("areaGrid");
+  grid.innerHTML = "";
+  AREAS.forEach((area) => {
+    if (area.pages.length === 0) return;
+    const link = document.createElement("a");
+    link.className = "tool-card area-card";
+    link.dataset.area = area.id;
+    link.href = area.pages[0].href;
+    const title = document.createElement("h2");
+    title.textContent = area.label;
+    const description = document.createElement("p");
+    description.textContent = area.description;
+    const pages = document.createElement("p");
+    pages.className = "area-card-pages";
+    pages.textContent = area.pages.map((page) => page.label).join(" · ");
+    link.append(title, description, pages);
+    grid.appendChild(link);
+  });
 }
 
 function buildModeOptions() {

@@ -1,5 +1,6 @@
 function maybeBackfillCardDetails(card) {
-  if (card.apiId || backfillAttemptedCardIds.has(card.id)) return;
+  const hasEffect = Boolean(card.effect || card.desc || card.pendDesc || card.monsterDesc);
+  if (hasEffect || backfillAttemptedCardIds.has(card.id)) return;
   backfillAttemptedCardIds.add(card.id);
   const url = `${API_URL}?name=${encodeURIComponent(card.name)}`;
   fetch(url)

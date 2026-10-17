@@ -19,6 +19,17 @@ function mergeCardsIntoBacklog(cards) {
       level: card.level,
       atk: card.atk,
       def: card.def,
+      humanReadableCardType: card.humanReadableCardType,
+      frameType: card.frameType,
+      race: card.race,
+      attribute: card.attribute,
+      archetype: card.archetype,
+      effect: card.desc,
+      pendDesc: card.pendDesc,
+      monsterDesc: card.monsterDesc,
+      scale: card.scale,
+      linkval: card.linkval,
+      linkmarkers: card.linkmarkers,
     };
     if (owned) {
       owned.quantityOwned += 1;
@@ -36,7 +47,7 @@ function mergeCardsIntoBacklog(cards) {
       };
       backlog.push(owned);
     }
-    addPrinting(owned, { set: card.set, rarity: card.rarity, price: card.price });
+    addPrinting(owned, { set: card.set, rarity: card.rarity, price: card.price, setPrice: card.setPrice, setCode: card.setCode });
   });
   return saveData({ ...blob, cards: backlog }, key);
 }

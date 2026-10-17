@@ -4,7 +4,7 @@ function deleteEngine(engineId) {
 
   showModal({
     title: "Delete engine?",
-    bodyHtml: `<p>${escapeHtml(`Delete engine "${engine.name}"?`)}</p>`,
+    bodyHtml: `<p>${escapeHtml(`Delete engine "${engine.name}"?`)}</p><p>${escapeHtml("Cards already added to decks stay in those decks.")}</p>`,
     buttons: [
       { label: "Cancel" },
       {

@@ -33,3 +33,20 @@
   margin: 0;
   white-space: pre-line;
 }
+
+/* The Workshop's backlog rows also use the class "card-tag" (a fixed-size button); inside the details window
+   the chips must keep their own size and look. */
+.card-tags .card-tag {
+  position: static;
+  width: auto;
+  height: auto;
+  flex: 0 0 auto;
+  padding: 4px 10px;
+  font-size: 0.74rem;
+  justify-content: flex-start;
+  text-align: left;
+  cursor: default;
+  border-radius: 999px;
+  color: var(--text-dim);
+}
+.card-tags .card-tag:hover { border-color: var(--border); }

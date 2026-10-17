@@ -18,10 +18,13 @@ const source = [
   "function nextId(p){ return p + Date.now() + Math.random().toString(36).slice(2); }",
   read("save-utils.js"),
   read("profiles.js"),
+  read("money.js"),
   read("rarity.js"),
   read("printings.js"),
   read("backlog-merge.js"),
+  read("../collection/collection-allocation.js"),
   read("../progression/progression-state.js"),
+  read("../store/store-state.js"),
   read("contract-tests.js"),
 ].join("\n");
 const results = new Function(`${source}; return runContractTests();`)();

@@ -1,0 +1,64 @@
+/* One visual identity per area. Only custom properties change, so every component re-themes itself. */
+body[data-area="run"] {
+  --accent: #5b8cff;
+  --accent-hover: #7aa2ff;
+}
+
+body[data-area="workshop"] {
+  --bg: #1a1511;
+  --panel: #251e17;
+  --panel-alt: #30271e;
+  --border: #4d3e2e;
+  --accent: #e0953a;
+  --accent-hover: #f0aa55;
+}
+
+body[data-area="store"] {
+  --bg: #101a18;
+  --panel: #172522;
+  --panel-alt: #1f322e;
+  --border: #2f524b;
+  --accent: #3fb27f;
+  --accent-hover: #5cc99a;
+}
+
+body[data-area="tools"] {
+  --accent: #8a93a6;
+  --accent-hover: #a7afc0;
+}
+
+#appSidebar .sidebar-area {
+  margin: 0 16px 8px;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+#appSidebar .sidebar-link-back {
+  color: var(--text-dim);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+}
+
+#appSidebar.collapsed .sidebar-area { display: none; }
+
+.header-menu-link {
+  margin-left: auto;
+  padding: 4px 10px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  color: var(--accent);
+  font-size: 0.8rem;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.header-menu-link:hover, .header-menu-link:focus-visible {
+  background: var(--accent);
+  color: var(--bg);
+  outline: none;
+}
+
+/* Area titles in the page headers, e.g. "Workshop · Synergy Builder", get the area accent. */
+body[data-area] .app-header h1 { border-left: 4px solid var(--accent); padding-left: 10px; }

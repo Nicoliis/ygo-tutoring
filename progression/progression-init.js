@@ -195,8 +195,81 @@ function initProgression() {
   renderRun();
   loadSetDates().then(() => {
     // Only redraw the rail's pictures/dates; never interrupt a pack being revealed.
-    if (!packReveal || packReveal.isComplete()) renderRun();
+    if ((!packReveal || packReveal.isComplete()) && (!extraReveal || extraReveal.isComplete())) renderRun();
   });
 }
 
 initProgression();
+
+/* ---- Bought boosters ---- */
+
+let pendingExtraFinish = null; // { run } when the backlog merge succeeded but the run could not be saved yet
+
+function completeExtraPack() {
+  const result = finishExtraPack(currentRun);
+  if (!pendingExtraFinish) {
+    if (!mergeCardsIntoBacklog(result.cards)) {
+      setProgressionStatus(SAVE_PULLS_ERROR, true);
+      return false;
+    }
+    pendingExtraFinish = { run: result.run };
+  }
+  if (!persistRun(pendingExtraFinish.run)) return false;
+  pendingExtraFinish = null;
+  setProgressionStatus("");
+  return true;
+}
+
+function extraAction(saved) {
+  if (!saved) {
+    return {
+      label: "Retry save",
+      onClick: () => {
+        if (completeExtraPack()) renderRun();
+      },
+    };
+  }
+  return { label: "Done", onClick: renderRun };
+}
+
+function mountExtraPack() {
+  const extra = getExtraPack(currentRun);
+  // Cards already pulled from this pack (e.g. after a reload), newest first.
+  extra.pack.cards
+    .filter((_, i) => extra.pack.revealed[i])
+    .reverse()
+    .forEach((card) => extraStripEl.appendChild(buildRevealedCardElement(card)));
+  let saved = false;
+  extraReveal = createPackReveal(extraAreaEl, {
+    pack: extra.pack,
+    pulledStripEl: extraStripEl,
+    actionSlotEl: extraActionEl,
+    onReveal: (index) => {
+      persistRun(revealInExtraPack(currentRun, index));
+    },
+    onPackComplete: () => {
+      saved = completeExtraPack();
+    },
+    nextAction: () => extraAction(saved),
+  });
+}
+
+/* Generate the pack FIRST; only if that works, take it out of the inventory and keep it as the open pack. */
+function onOpenBought(setName) {
+  if (busy || getExtraPack(currentRun)) return;
+  busy = true;
+  setProgressionStatus("Opening pack…");
+  generatePack(setName)
+    .then((cards) => {
+      if (!persistRun(startExtraPack(currentRun, setName, cards))) return;
+      setProgressionStatus("");
+    })
+    .catch((err) => {
+      console.warn("Could not open bought pack:", err);
+      setProgressionStatus(OPEN_PACK_ERROR, true);
+    })
+    .finally(() => {
+      busy = false;
+      renderRun();
+    });
+}

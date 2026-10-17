@@ -128,3 +128,38 @@ function runSummary(run, boosterList) {
   const stage = state.completed.length + 1;
   return `Stage ${stage}/${boosterList.length} – ${state.boxOpened ? "Box opened" : "Box not opened"}`;
 }
+
+/* ---- Bought packs opened outside the stage box (run.extraPack) ---- */
+
+function getExtraPack(run) {
+  return run.extraPack && run.extraPack.pack ? run.extraPack : null;
+}
+
+/*
+ * Starts opening one bought pack: the inventory drops by one and the generated pack becomes run.extraPack, in a
+ * single new record. Throws when there is no such pack in the inventory or another bought pack is open.
+ */
+function startExtraPack(run, setName, cards) {
+  const owned = (run.packInventory && run.packInventory[setName]) || 0;
+  if (!(owned >= 1)) throw new Error("No such booster in your inventory.");
+  if (getExtraPack(run)) throw new Error("Finish the pack you are opening first.");
+  return {
+    ...run,
+    packInventory: { ...run.packInventory, [setName]: owned - 1 },
+    extraPack: { setName, pack: { cards, revealed: cards.map(() => false) } },
+  };
+}
+
+function revealInExtraPack(run, index) {
+  const extra = getExtraPack(run);
+  if (!extra || extra.pack.revealed[index]) return run;
+  const revealed = extra.pack.revealed.slice();
+  revealed[index] = true;
+  return { ...run, extraPack: { ...extra, pack: { ...extra.pack, revealed } } };
+}
+
+/* Call once every card is revealed: returns { run, cards } (cards must be merged into the backlog). */
+function finishExtraPack(run) {
+  const extra = getExtraPack(run);
+  return { cards: extra ? extra.pack.cards : [], run: { ...run, extraPack: null } };
+}

@@ -8,6 +8,7 @@
 <link rel="stylesheet" href="draft/draft-base.css">
 <link rel="stylesheet" href="draft/draft-buttons.css">
 <link rel="stylesheet" href="welcome.css">
+<link rel="stylesheet" href="shared/areas.css">
 <link rel="stylesheet" href="shared/nav-layout.css">
 <link rel="stylesheet" href="shared/nav-links.css">
 <link rel="stylesheet" href="shared/nav-responsive.css">
@@ -35,33 +36,13 @@
     </section>
 
     <section id="toolsSection" aria-labelledby="toolsHeading" hidden>
-      <h2 id="toolsHeading" class="tools-heading">Tools</h2>
-      <div class="welcome-grid">
-        <a class="tool-card" href="progression/index.html">
-          <h2>Progression Run</h2>
-          <p>Open one box per main booster in order, build, duel, and advance.</p>
-        </a>
-        <a class="tool-card" href="proxy-builder/index.html">
-          <h2>Proxy Sheet Builder</h2>
-          <p>Search cards, build a deck, and print proxies at real size.</p>
-        </a>
-        <a class="tool-card" href="collection/index.html">
-          <h2>Draft Collection Manager</h2>
-          <p>Track your owned cards, engines, and decks.</p>
-        </a>
-        <a class="tool-card" href="tracker/index.html">
-          <h2>Progression Series Pack Puller</h2>
-          <p>Log and simulate opening Progression Series boxes.</p>
-        </a>
-        <a class="tool-card" href="draft/index.html">
-          <h2>Booster Draft</h2>
-          <p>Draft cards one pick at a time from simulated booster openings.</p>
-        </a>
-      </div>
+      <h2 id="toolsHeading" class="tools-heading">Choose an area</h2>
+      <div id="areaGrid" class="welcome-grid"></div>
     </section>
   </main>
 </div>
 
+<script src="shared/areas.js"></script>
 <script src="shared/nav-entries.js"></script>
 <script src="shared/save-utils.js"></script>
 <script src="shared/profiles.js"></script>
