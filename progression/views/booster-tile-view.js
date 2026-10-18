@@ -4,7 +4,7 @@
  * Booster Pull screen, so a booster looks the same everywhere.
  *
  *   buildBoosterTile(name, { state, label, current, amount, selectable, selected, onSelect })
- *   state: "opened" | "next" | "locked" | "skipped" (a class pack-<state>); label: the accessible/hover text;
+ *   state: "opened" | "next" | "locked" | "skipped" | "owned" (a class pack-<state>; owned has no special look); label: the accessible/hover text;
  *   amount: shows "×amount"; selectable: the tile is a toggle button (aria-pressed = selected).
  *
  * Needs progression-boosters.js (getSetImage).
