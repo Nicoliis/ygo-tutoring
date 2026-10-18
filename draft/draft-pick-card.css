@@ -21,13 +21,18 @@
   gap: 6px;
   cursor: pointer;
   text-align: center;
-  box-shadow: 0 0 8px 1px var(--glow-color), 0 0 16px 3px var(--glow-color);
-  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+  transition: border-color 0.15s ease;
 }
 .pick-card:hover, .pick-card:focus-visible {
   border-color: var(--accent);
   outline: none;
-  box-shadow: 0 0 10px 2px var(--glow-color), 0 0 22px 5px var(--glow-color);
+}
+/* hovering a pick makes its inward glow stronger */
+.pick-card:hover::after, .pick-card:focus-visible::after {
+  --glow-blur: 14px;
+  --glow-spread: 4px;
+  --glow-blur-wide: 28px;
+  --glow-spread-wide: 8px;
 }
 .pick-card:active { cursor: grabbing; }
 .pick-card.dragging { opacity: 0.4; }
