@@ -3,6 +3,9 @@
  * A "synergy name" is any text between double quotes in the effect text of a card that has an effect.
  *  - Cards with no effect (Normal monsters, and Fusion Monsters that are not also Effect Monsters, whose text is
  *    only flavor or a list of materials) quote no names: what they write is not counted.
+ *  - Ritual Monsters and Ritual Spells open with the ritual clause ("...Ritual Summoned with \"Black Luster Ritual\"",
+ *    "This card is used to Ritual Summon \"Black Luster Soldier\""): their first sentence is ignored, so the names
+ *    in it do not make a synergy. The rest of their text counts as usual.
  *  - A card never counts for a name it quotes when that name is its own full name (it names itself).
  *  - A card is counted for a name when it quotes it, or when its own name contains it AND some card with an
  *    effect quotes it (a different card names it). Unquoted mentions in effect text do not count.
@@ -13,6 +16,29 @@ const SYNERGY_NAME_MAX = 80;
 
 function cardEffectText(card) {
   return [card.effect, card.desc, card.pendDesc, card.monsterDesc].filter(Boolean).join(" ");
+}
+
+/* A Ritual Monster, or a Ritual Spell (a Spell Card of the Ritual kind). */
+function isRitualCard(card) {
+  const typeText = `${card.type || ""} ${card.frameType || ""}`;
+  return /ritual/i.test(typeText) || (/spell/i.test(typeText) && /^ritual$/i.test(String(card.race || "").trim()));
+}
+
+/* Where the first sentence ends: at a period outside quotes (a name like "Mr. X" does not end it) or a line break. */
+function firstSentenceEnd(text) {
+  let inQuote = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (ch === '"' || ch === "“" || ch === "”") inQuote = ch === "“" ? true : ch === "”" ? false : !inQuote;
+    else if (!inQuote && (ch === "\n" || (ch === "." && (i + 1 === text.length || /\s/.test(text[i + 1]))))) return i + 1;
+  }
+  return text.length;
+}
+
+/* The text names are taken from: the effect text, without the ritual clause of a Ritual card. */
+function synergyText(card) {
+  const text = cardEffectText(card);
+  return isRitualCard(card) ? text.slice(firstSentenceEnd(text)) : text;
 }
 
 function synergyKey(name) {
@@ -60,7 +86,7 @@ function hasNoEffect(card) {
 function cardQuotedKeys(card) {
   if (hasNoEffect(card)) return new Set();
   const own = synergyKey(card.name);
-  const keys = quotedNames(cardEffectText(card)).map(synergyKey).filter((key) => key !== own);
+  const keys = quotedNames(synergyText(card)).map(synergyKey).filter((key) => key !== own);
   return new Set(keys);
 }
 
@@ -76,7 +102,7 @@ function buildSynergyIndex(cards) {
   const quoters = new Map();
   cards.forEach((card) => {
     const keys = cardQuotedKeys(card);
-    quotedNames(cardEffectText(card)).forEach((name) => {
+    quotedNames(synergyText(card)).forEach((name) => {
       const key = synergyKey(name);
       if (keys.has(key) && !labels.has(key)) labels.set(key, name);
     });

@@ -765,6 +765,20 @@ function runContractTests() {
     expect(matchesFilter(hero2, { types: [], values: {}, synergy: ["Hero Two"] }, index) && !matchesFilter(selfNamer, { types: [], values: {}, synergy: ["Hero Two"] }, index));
   });
 
+  check("synergy: the ritual clause of Ritual Monsters and Ritual Spells is ignored", () => {
+    const ritualSpell = { name: "Black Luster Ritual", type: "Spell Card", race: "Ritual", effect: 'This card is used to Ritual Summon "Black Luster Soldier". You must also Tribute monsters. Then add 1 "Gaia Power" from your Deck.' };
+    const ritualMonster = { name: "Black Luster Soldier", type: "Ritual Effect Monster", frameType: "ritual_pendulum", race: "Warrior", effect: 'You can Ritual Summon this card with "Black Luster Ritual".\nOnce per turn: send 1 "Mr. Volcano" to the GY.' };
+    const plainRitual = { name: "Ritual Plain", type: "Ritual Monster", frameType: "ritual", race: "Fiend", effect: 'This card can only be Ritual Summoned with the Ritual Spell Card, "Some Ritual".' };
+    const normalSpell = { name: "Pot", type: "Spell Card", race: "Normal", effect: 'Draw 2 cards. Then add "Pot Partner".' };
+    expect(isRitualCard(ritualSpell) && isRitualCard(ritualMonster) && isRitualCard(plainRitual) && !isRitualCard(normalSpell));
+    expect(firstSentenceEnd('Ritual Summon "Mr. X". Next.') === 22 && firstSentenceEnd("one\ntwo") === 4 && firstSentenceEnd("no end") === 6, "periods inside quotes and line breaks");
+    const index = buildSynergyIndex([ritualSpell, ritualMonster, plainRitual, normalSpell]);
+    expect(index.entries.map((e) => e.key).sort().join("|") === "Gaia Power|Mr. Volcano|Pot Partner", "only names after the ritual clause, and the normal Spell as usual");
+    expect(cardQuotedKeys(plainRitual).size === 0, "a Ritual Monster whose only sentence is the clause quotes nothing");
+    expect(cardTiedTo(ritualSpell, "Black Luster Soldier") === false, "the clause does not tie the Spell to the monster");
+    expect(cardTiedTo(ritualSpell, "Gaia Power") === true && cardTiedTo(ritualMonster, "Mr. Volcano") === true, "later sentences still count");
+  });
+
   check("synergy: names are case sensitive", () => {
     const upper = { name: "Blue-Eyes White Dragon", type: "Normal Monster", frameType: "normal" };
     const lowerQuote = { name: "Lower Quoter", type: "Effect Monster", frameType: "effect", effect: 'Search "blue-eyes".' };
