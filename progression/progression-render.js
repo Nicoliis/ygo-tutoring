@@ -1,24 +1,4 @@
-let activeProfile = null;
-let currentRun = null;
-let busy = false;
 let packReveal = null;
-
-function setProgressionStatus(message, isError) {
-  progressionStatusEl.textContent = message || "";
-  progressionStatusEl.classList.toggle("error", Boolean(isError));
-}
-
-function countOwnedCards() {
-  const blob = loadData(STORAGE_KEY);
-  const cards = blob && Array.isArray(blob.cards) ? blob.cards : [];
-  return cards.reduce((sum, c) => sum + (Number(c.quantityOwned) || 0), 0);
-}
-
-function stageLabel(name) {
-  const date = getReleaseDate(name);
-  return date ? `${name} (${date})` : name;
-}
-
 const STAGE_STATE_TEXT = { opened: "opened", next: "next to open", locked: "not reached yet", skipped: "skipped — buy its boosters in the Store" };
 
 function buildBoosterPack(name, state, isCurrent) {
@@ -42,16 +22,6 @@ function buildBoosterRail(run) {
     if (current) rail.scrollLeft = Math.max(0, current.offsetLeft - rail.clientWidth / MIDPOINT_DIVISOR + current.clientWidth / MIDPOINT_DIVISOR);
   });
   return section;
-}
-
-function renderNoRules() {
-  progressionRootEl.innerHTML = "";
-  const panel = document.createElement("section");
-  panel.className = "panel";
-  panel.innerHTML = `<h2>No run rules</h2>
-    <p>This profile has no run rules. Use the other tools freely:</p>
-    <p><a href="../workshop/backlog.html">Workshop</a> · <a href="../draft/index.html">Booster Draft</a> · <a href="../tracker/index.html">Pack Puller</a></p>`;
-  progressionRootEl.appendChild(panel);
 }
 
 function buildActionButton(label, check, onClick) {

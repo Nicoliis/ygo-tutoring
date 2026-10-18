@@ -1,42 +1,4 @@
-const SAVE_PULLS_ERROR = "Couldn't save your pulls — browser storage is unavailable or full.";
-const OPEN_PACK_ERROR = "Couldn't open the pack — check your connection and try again.";
-
 let pendingFinish = null; // { run } when the backlog merge succeeded but the run could not be saved yet
-
-function persistRun(run) {
-  if (!saveRun(activeProfile.id, run)) {
-    setProgressionStatus("Couldn't save your progress — browser storage is unavailable or full.", true);
-    return false;
-  }
-  currentRun = run;
-  updateBoxProgress();
-  return true;
-}
-
-/*
- * What the card details window may do with a card just pulled (see shared/card-engines.js): when the card still has an
- * unsaved revealed copy in an open pack, putting it in an engine saves that copy to the backlog now and flags it so
- * finishing the pack skips it. Cards of finished packs are already in the backlog: no pull context.
- */
-function pullContextFor(card) {
-  const source = [PACK_SOURCE_BOX, PACK_SOURCE_EXTRA].find((src) => unsavedCopiesOf(currentRun, src, card) > 0);
-  if (!source) return null;
-  return {
-    canSave: true,
-    availableCopies: () => unsavedCopiesOf(currentRun, source, card),
-    saveEarly() {
-      if (!mergeCardsIntoBacklog([card])) {
-        setProgressionStatus(SAVE_PULLS_ERROR, true);
-        return false;
-      }
-      if (!persistRun(markCardSavedEarly(currentRun, source, card))) {
-        unmergeCardFromBacklog(card); // the flag could not be saved: take the copy back so it is not counted twice
-        return false;
-      }
-      return true;
-    },
-  };
-}
 
 function setPackAction(action) {
   packActionEl.innerHTML = "";
@@ -237,11 +199,7 @@ function chooseDuelResult(stageName) {
 }
 
 function initProgression() {
-  activeProfile = getActiveProfile();
-  if (activeProfile.mode !== "progression") {
-    renderNoRules();
-    return;
-  }
+  if (!initRunContext()) return;
   currentRun = loadRun(activeProfile.id);
   if (!currentRun) {
     currentRun = newRun(MAINLINE_BOOSTERS);
