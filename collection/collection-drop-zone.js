@@ -33,6 +33,6 @@ function wireAddDropZone(zoneEl, onCardDrop, onEngineDrop, onMoveDrop) {
     }
 
     const cardId = e.dataTransfer.getData("text/plain");
-    if (cardId) onCardDrop(cardId);
+    if (cardId) onCardDrop(cardId, e);
   });
 }

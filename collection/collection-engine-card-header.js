@@ -12,6 +12,12 @@ function wireEngineCardHeader(el, engine, expanded) {
       headerEl.click();
     }
   });
+  // Dragging the name bar takes the whole engine (every card of it); dragging a card inside takes only that card.
+  headerEl.draggable = true;
+  headerEl.addEventListener("dragstart", (e) => {
+    e.dataTransfer.setData("application/x-engine-source", JSON.stringify({ engineId: engine.id }));
+    e.dataTransfer.effectAllowed = "copy";
+  });
   headerEl.tabIndex = 0;
   headerEl.setAttribute("role", "button");
   headerEl.setAttribute("aria-expanded", String(expanded));

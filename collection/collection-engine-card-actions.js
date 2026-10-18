@@ -1,10 +1,8 @@
 function wireEngineCardActions(el, engine) {
-  el.addEventListener("dragstart", (e) => {
-    e.dataTransfer.setData("application/x-engine-source", JSON.stringify({ engineId: engine.id }));
-    e.dataTransfer.effectAllowed = "copy";
-  });
-
-  wireAddDropZone(el, (cardId) => {
+  wireAddDropZone(el, (cardId, e) => {
+    // a card dragged out of this same engine and dropped back on it is not an add
+    const from = e.dataTransfer.getData("application/x-engine-card");
+    if (from && JSON.parse(from).engineId === engine.id) return;
     if (addCardToEngine(engine.id, cardId, 1)) renderAll();
   });
 

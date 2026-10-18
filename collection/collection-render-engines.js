@@ -4,7 +4,6 @@ function buildEngineCardElement(engine) {
 
   const el = document.createElement("div");
   el.className = "engine-card bag" + (expanded ? " expanded" : " collapsed");
-  el.draggable = true;
   el.innerHTML = buildEngineCardHtml(engine, expanded, totalCopies);
   el.setAttribute(
     "aria-label",

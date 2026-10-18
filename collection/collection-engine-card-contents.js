@@ -16,6 +16,7 @@ function renderEngineCardContents(el, engine) {
         renderCardTile(card, {
           onRemove: () => removeCardFromEngine(engine.id, ec.cardId, 1),
           removeLabel: `Remove one ${card.name} from ${engine.name}`,
+          dragCardPayload: { engineId: engine.id },
         })
       );
     }
