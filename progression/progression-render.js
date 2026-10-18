@@ -19,47 +19,10 @@ function stageLabel(name) {
   return date ? `${name} (${date})` : name;
 }
 
-const STAGE_STATE_TEXT = { opened: "opened", next: "next to open", locked: "not reached yet" };
+const STAGE_STATE_TEXT = { opened: "opened", next: "next to open", locked: "not reached yet", skipped: "skipped — buy its boosters in the Store" };
 
 function buildBoosterPack(name, state, isCurrent) {
-  const li = document.createElement("li");
-  li.className = `booster-pack pack-${state}`;
-  if (isCurrent) li.setAttribute("aria-current", "step");
-  const label = `${stageLabel(name)} — ${STAGE_STATE_TEXT[state]}`;
-  li.title = label;
-
-  const art = document.createElement("div");
-  art.className = "booster-art";
-  const image = getSetImage(name);
-  if (image) {
-    const img = document.createElement("img");
-    img.src = image;
-    img.alt = label;
-    img.loading = "lazy";
-    img.addEventListener("error", () => {
-      art.innerHTML = "";
-      art.appendChild(buildPlaceholderPack(name, label));
-    });
-    art.appendChild(img);
-  } else {
-    art.appendChild(buildPlaceholderPack(name, label));
-  }
-  li.appendChild(art);
-
-  const caption = document.createElement("span");
-  caption.className = "booster-caption";
-  caption.textContent = name;
-  li.appendChild(caption);
-  return li;
-}
-
-function buildPlaceholderPack(name, label) {
-  const ph = document.createElement("div");
-  ph.className = "booster-placeholder";
-  ph.setAttribute("role", "img");
-  ph.setAttribute("aria-label", label);
-  ph.textContent = name;
-  return ph;
+  return buildBoosterTile(name, { state, label: `${stageLabel(name)} — ${STAGE_STATE_TEXT[state]}`, current: isCurrent });
 }
 
 function buildBoosterRail(run) {
