@@ -360,6 +360,26 @@ function runContractTests() {
     expect(buildSetSlots(apiCards, "Nope").length === 0);
   });
 
+  check("set slots: Common, Short Print and Super Short Print are one slot per set number", () => {
+    const api = [
+      apiCardFixture(7, "Trio", [
+        { set_name: SET_A, set_code: "SA-007", set_rarity: "Common" },
+        { set_name: SET_A, set_code: "SA-007", set_rarity: "Super Short Print" },
+        { set_name: SET_A, set_code: "SA-007", set_rarity: "Short Print" },
+        { set_name: SET_A, set_code: "SA-007", set_rarity: "Ultra Rare" },
+      ]),
+      apiCardFixture(8, "Plain", [{ set_name: SET_A, set_code: "SA-008", set_rarity: "Common" }, { set_name: SET_A, set_code: "SA-008", set_rarity: "Short Print" }]),
+      apiCardFixture(9, "Solo", [{ set_name: SET_A, set_code: "SA-009", set_rarity: "Common" }]),
+    ];
+    const slots = buildSetSlots(api, SET_A);
+    expect(slots.map((sl) => `${sl.setCode}:${sl.rarity}`).join() === "SA-007:Super Short Print,SA-007:Ultra Rare,SA-008:Short Print,SA-009:Common", "the least common of the three, and the Ultra Rare stays its own slot");
+    const trio = (rarity) => [{ name: "Trio", apiId: 7, quantityOwned: 1, printings: [{ set: SET_A, rarity, quantity: 1 }] }];
+    const family = slots.find((sl) => sl.key === "7|common");
+    expect(ownedFor(family, trio("Common")) === 1 && ownedFor(family, trio("Short Print")) === 1 && ownedFor(family, trio("Super Short Print")) === 1, "owning any of the three fills the slot");
+    expect(ownedFor(family, trio("Ultra Rare")) === 0 && ownedFor(slots.find((sl) => sl.key === "7|ultra rare"), trio("Common")) === 0, "the Ultra Rare is separate");
+    expect(completion(slots, trio("Common")).total === 4 && completion(slots, trio("Common")).owned === 1);
+  });
+
   check("set slots: ownership counts only the same card, set and rarity", () => {
     const slots = buildSetSlots(apiCards, SET_A);
     const beta = { name: "beta", apiId: 2, quantityOwned: 3, printings: [{ set: SET_A, rarity: "common", quantity: 2 }, { set: "Set B", rarity: "Ultra Rare", quantity: 1 }] };

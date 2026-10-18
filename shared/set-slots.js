@@ -4,12 +4,15 @@
  *   slot = { key, apiId, name, setName, setCode, rarity, card }   one printing of a card in a set
  *
  * A card makes one slot per rarity it has in the set; the regional set numbers of one printing (LOB-001, LOB-E001,
- * LOB-EN001) are the same slot. Ownership comes from the printings recorded when cards were pulled (printings.js). Needs card-api.js (extractCardFields) and rarity.js
+ * LOB-EN001) are the same slot. Common, Short Print and Super Short Print share one set number: they are ONE slot,
+ * labelled with the least common of those the card has in the set, and owning any of them fills it. Ownership comes from the printings recorded when cards were pulled (printings.js). Needs card-api.js (extractCardFields) and rarity.js
  * (rarityRank) loaded first.
  */
 const UNMATCHED_NOTE_MIN = 1; // fewest unmatched copies that makes the binder show its note
 const PERCENT_DIGITS = 0; // decimals of the progress percentage
 const PERCENT_SCALE = 100; // percentage is shown out of 100
+const COMMON_FAMILY_RARITIES = ["common", "short print", "super short print"]; // one printing sold in three finishes
+const COMMON_FAMILY_KEY = "common"; // what the three are filed under
 const PREFERRED_REGION_CODE = /-EN\d/i; // the English set number represents a printing sold under several regional numbers
 
 /* The card number at the end of a set number: "LOB-EN005" -> 5 (no number sorts last). */
@@ -22,6 +25,12 @@ function rarityKey(rarity) {
   return String(rarity || "").trim().toLowerCase();
 }
 
+/* What a rarity is filed under in a slot: Common, Short Print and Super Short Print are the same printing. */
+function rarityFamily(rarity) {
+  const key = rarityKey(rarity);
+  return COMMON_FAMILY_RARITIES.includes(key) ? COMMON_FAMILY_KEY : key;
+}
+
 /* One slot per card and rarity in `setName`, in set-code order (then common to rare, then name). */
 function buildSetSlots(apiCards, setName) {
   const byPrinting = new Map();
@@ -30,10 +39,15 @@ function buildSetSlots(apiCards, setName) {
     entries
       .filter((entry) => entry.set_name === setName)
       .forEach((entry) => {
-        const key = `${apiCard.id}|${rarityKey(entry.set_rarity)}`;
+        const key = `${apiCard.id}|${rarityFamily(entry.set_rarity)}`;
         const known = byPrinting.get(key);
-        // regional numbers of one printing share a slot; the English number is shown when there is one
-        if (known && (PREFERRED_REGION_CODE.test(known.setCode || "") || !PREFERRED_REGION_CODE.test(entry.set_code || ""))) return;
+        if (known) {
+          // the rarest finish of the common family names the slot
+          if (rarityRank(entry.set_rarity) > rarityRank(known.rarity)) known.rarity = entry.set_rarity;
+          // regional numbers of one printing share a slot; the English number is shown when there is one
+          if (!PREFERRED_REGION_CODE.test(known.setCode || "") && PREFERRED_REGION_CODE.test(entry.set_code || "")) known.setCode = entry.set_code;
+          return;
+        }
         const fields = extractCardFields(apiCard);
         byPrinting.set(key, {
           key,
@@ -67,7 +81,7 @@ function ownedFor(slot, collectionCards) {
     if (!sameCard(slot, card)) return;
     (Array.isArray(card.printings) ? card.printings : []).forEach((printing) => {
       if (printing.set !== slot.setName) return;
-      if (rarityKey(printing.rarity) !== rarityKey(slot.rarity)) return;
+      if (rarityFamily(printing.rarity) !== rarityFamily(slot.rarity)) return;
       owned += printing.quantity;
     });
   });
