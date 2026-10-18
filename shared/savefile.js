@@ -177,19 +177,80 @@ function pickFileFallback() {
   });
 }
 
-/* Called by save-utils after every write/remove. Debounced rewrite of the active profile's linked file. */
+/* ---- live mirroring ---------------------------------------------------- */
+
+let saveFileWriteChain = Promise.resolve();
+let saveFileStatus = { text: "", error: false };
+
+function setSaveFileStatus(text, error) {
+  saveFileStatus = { text, error: Boolean(error) };
+  document.dispatchEvent(new CustomEvent("savefile-status", { detail: saveFileStatus }));
+}
+
+/* Rewrites the active profile's linked file from the current stored state. Writes never overlap. */
+function mirrorToSaveFile() {
+  saveFileWriteChain = saveFileWriteChain.then(async () => {
+    try {
+      const profile = getActiveProfile();
+      if (!profile) return;
+      const handle = await getSaveHandle(profile.id);
+      if (!handle) return;
+      if ((await handle.queryPermission({ mode: "readwrite" })) !== "granted") {
+        setSaveFileStatus("Save file disconnected — click anywhere to reconnect", true);
+        return;
+      }
+      await writeToHandle(handle, profile);
+      setSaveFileStatus(`Saved ${new Date().toLocaleTimeString()}`, false);
+    } catch (err) {
+      console.warn("Could not write the save file:", err);
+      setSaveFileStatus("Could not write the save file", true);
+    }
+  });
+  return saveFileWriteChain;
+}
+
+/* Called by save-utils after every write/remove: a short debounce coalesces bursts of saves. */
 function onSaveCommitted(key) {
   if (!saveFileSupported || typeof getActiveProfile !== "function") return;
   clearTimeout(saveFileTimer);
-  saveFileTimer = setTimeout(async () => {
-    try {
-      const profile = getActiveProfile();
-      if (!profile || (key && !GLOBAL_SAVE_KEYS.includes(key) && !keyBelongsToProfile(key, profile))) return;
-      const handle = await getSaveHandle(profile.id);
-      if (!handle || (await handle.queryPermission({ mode: "readwrite" })) !== "granted") return;
-      await writeToHandle(handle, profile);
-    } catch (err) {
-      console.warn("Could not write the save file:", err);
-    }
-  }, SAVEFILE_AUTOSAVE_MS);
+  saveFileTimer = setTimeout(() => {
+    saveFileTimer = null;
+    mirrorToSaveFile();
+  }, 150);
 }
+
+/* On each page load: bring the file up to date, and if the browser forgot the permission
+ * (new session), ask for it again on the first click/keypress, which is a user gesture. */
+async function startSaveFileSync() {
+  if (!saveFileSupported || typeof getActiveProfile !== "function") return;
+  const profile = getActiveProfile();
+  if (!profile) return;
+  const state = await saveFileState(profile);
+  if (state === "granted") {
+    mirrorToSaveFile();
+  } else if (state === "prompt") {
+    setSaveFileStatus("Save file disconnected — click anywhere to reconnect", true);
+    const reconnect = async () => {
+      try {
+        await reconnectSaveFile(profile);
+        setSaveFileStatus(`Saved ${new Date().toLocaleTimeString()}`, false);
+      } catch (err) {
+        setSaveFileStatus("Save file disconnected — click anywhere to reconnect", true);
+        document.addEventListener("pointerdown", reconnect, { once: true });
+      }
+    };
+    document.addEventListener("pointerdown", reconnect, { once: true });
+  }
+}
+
+/* Best effort: a save made just before leaving the page must not wait for the debounce. */
+window.addEventListener("pagehide", () => {
+  if (saveFileTimer) {
+    clearTimeout(saveFileTimer);
+    saveFileTimer = null;
+    mirrorToSaveFile();
+  }
+});
+
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", startSaveFileSync);
+else startSaveFileSync();

@@ -72,9 +72,13 @@
   cursor: pointer;
 }
 .bf-chip:has(input:checked) { border-color: var(--accent); color: var(--accent); }
+.bf-chip-count { color: var(--text-dim); font-size: 0.72rem; }
+.bf-chip:has(input:checked) .bf-chip-count { color: inherit; }
+.bf-synergy-search { width: 100%; box-sizing: border-box; margin-bottom: 8px; }
+.bf-synergy-list { display: flex; flex-wrap: wrap; gap: 6px; max-height: 320px; overflow-y: auto; }
 .bf-empty, .bf-note { color: var(--text-dim); font-size: 0.82rem; margin: 6px 0; }
 
-/* The shared dialog is 420 px wide; the filter window has nine tabs and needs more room. */
+/* The shared dialog is 420 px wide; the filter window has ten tabs and needs more room. */
 .modal-dialog:has(.bf-root) { max-width: min(1180px, 96vw); }
 
 .backlog-sort {

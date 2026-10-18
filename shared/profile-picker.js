@@ -10,6 +10,7 @@ function setProfileStatus(message, isError) {
 }
 
 function saveFileLabel(state, name) {
+  if (!saveFileSupported) return "Auto-save to file needs Chrome or Edge (use Download save file)";
   if (state === "granted") return `Save file: ${name || "linked"} (auto-saving)`;
   if (state === "prompt") return `Save file: ${name || "linked"} (needs reconnecting)`;
   return "No save file yet";
@@ -68,10 +69,11 @@ function buildProfileItem(profile, isActive) {
   Promise.all([saveFileState(profile), linkedSaveFileName(profile)]).then(([state, fileName]) => {
     fileMeta.textContent = saveFileLabel(state, fileName);
     if (state === "granted") return;
-    const label = state === "prompt" ? "Reconnect save file" : "Create save file";
+    const label = !saveFileSupported ? "Download save file" : state === "prompt" ? "Reconnect save file" : "Create save file";
     actions.children[0].after(
       buildProfileButton(label, `${label} for ${profile.name}`, () => runAsyncAction(async () => {
         await (state === "prompt" ? reconnectSaveFile(profile) : createSaveFile(profile));
+        if (!saveFileSupported) return;
         setActiveProfile(profile.id);
         window.location.href = "menu.html";
       }))

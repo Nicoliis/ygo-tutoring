@@ -436,7 +436,7 @@ function runContractTests() {
     const attrs = { types: ["monster-effect"], values: { monster: { attribute: ["DARK", "LIGHT"] } } };
     expect(matchesFilter(dark4, attrs) && matchesFilter(light4, attrs), "values in a group are OR");
     expect(matchesFilter(spell, { types: ["spell", "monster-effect"], values: { monster: { attribute: ["WIND"] }, spell: { subtype: ["Quick-Play"] } } }), "each tab uses its own values");
-    expect(activeTypeCount(spellOrTrap) === 2 && activeTypeCount(emptyFilter()) === 0 && isFilterActive(onlySpell));
+    expect(activeFilterCount(spellOrTrap) === 2 && activeFilterCount(emptyFilter()) === 0 && isFilterActive(onlySpell));
   });
 
   check("Monster tab: normal and effect monsters are included separately", () => {
@@ -459,7 +459,7 @@ function runContractTests() {
     expect(filterIncludesOf("monster").length === 2 && filterIncludesOf("spell").length === 1 && FILTER_GROUPS[0].label === "Monster");
     // a filter saved before the split used the single id "monster": it means both kinds
     expect(sanitizeFilter({ types: ["monster", "spell"] }).types.join() === "monster-normal,monster-effect,spell");
-    expect(activeTypeCount(both) === 2);
+    expect(activeFilterCount(both) === 2);
   });
 
   check("search: name, effect text, attribute, race and type; every word must be found", () => {
@@ -531,6 +531,108 @@ function runContractTests() {
     expect(Object.keys(buildBackup().data).includes(`ygoBacklogFilter_${profileA}`), "exported with the rest of the save");
     saveBacklogFilter({ types: [], values: {} });
     expect(loadData(profileKey("ygoBacklogFilter")) === null, "an empty filter clears the key");
+  });
+
+  /* ---- Filter counts and synergy names (spec 013) ---- */
+
+  const synergyCards = [
+    { name: "Dark Magician", type: "Normal Monster", race: "Spellcaster", attribute: "DARK", level: 7, effect: "The ultimate wizard." },
+    { name: "Dark Magician Girl", type: "Effect Monster", race: "Spellcaster", attribute: "DARK", level: 6, effect: 'Gains 300 ATK for each "Dark Magician" in the GY. "dark  magician" again.' },
+    { name: "Magic Cylinder", type: "Trap Card", race: "Normal", effect: "Negate. Not about dark magician without quotes." },
+    { name: "Thousand Dragon", type: "Effect Monster", race: "Dragon", attribute: "WIND", level: 5, effect: "Treated as “Blue-Eyes White Dragon” while on the field. Also \"Blue-Eyes White Dragon\"." },
+    { name: "Blue-Eyes White Dragon", type: "Normal Monster", race: "Dragon", attribute: "LIGHT", level: 8 },
+    { name: "Mystical Space Typhoon", type: "Spell Card", race: "Quick-Play" },
+  ];
+
+  check("valueCounts: distinct cards per value, monster normal/effect split, missing values skipped", () => {
+    const counts = valueCounts(synergyCards, "monster");
+    expect(counts.attribute.DARK === 2 && counts.attribute.WIND === 1 && counts.attribute.LIGHT === 1);
+    expect(counts.race.Dragon === 2 && counts.race.Spellcaster === 2);
+    expect(counts.level["7"] === 1 && counts.level["8"] === 1);
+    expect(counts["monster-normal"] === 2 && counts["monster-effect"] === 2);
+    expect(!("atk" in counts), "ranges are not counted");
+    expect(valueCounts(synergyCards, "trap").subtype.Normal === 1);
+    expect(valueCounts(synergyCards, "spell").subtype["Quick-Play"] === 1);
+    const only = { types: ["monster-normal", "monster-effect"], values: { monster: { attribute: ["DARK"] } }, synergy: [] };
+    expect(synergyCards.filter((c) => matchesFilter(c, only)).length === counts.attribute.DARK, "count equals the listed cards");
+  });
+
+  check("quotedNames: straight and curly quotes, trimmed, deduplicated, quoted only", () => {
+    const names = quotedNames(synergyCards[1].effect);
+    expect(names.length === 1 && names[0] === "Dark Magician", "case/space duplicates merged, first spelling kept");
+    expect(quotedNames(synergyCards[3].effect).join() === "Blue-Eyes White Dragon", "curly and straight merge");
+    expect(quotedNames("no quotes here dark magician").length === 0);
+    expect(quotedNames('"' + "x".repeat(81) + '" and "  Ok   Name "').join() === "Ok Name", "over-long dropped, spaces collapsed");
+    expect(quotedNames(undefined).length === 0);
+  });
+
+  check("buildSynergyIndex: ties by quote or own name, once per card, sorted by count", () => {
+    const index = buildSynergyIndex(synergyCards);
+    const byKey = Object.fromEntries(index.entries.map((e) => [e.key, e.count]));
+    expect(byKey["dark magician"] === 2, "Dark Magician (name) and Dark Magician Girl (quote and name) only; the unquoted trap mention is ignored");
+    expect(byKey["blue-eyes white dragon"] === 2, "the quoting card and the card with that name");
+    expect(index.entries[0].count >= index.entries[1].count, "highest count first");
+    expect(index.entries.length === 2);
+    expect(cardTiedTo(synergyCards[2], "dark magician") === false);
+  });
+
+  check("synergy: vanilla Fusion Monsters add no names and are not tied through their materials", () => {
+    const vanilla = { name: "Fusion Vanilla", type: "Fusion Monster", frameType: "fusion", race: "Dragon", effect: '"Blue-Eyes White Dragon" + "Blue-Eyes White Dragon"' };
+    const withEffect = { name: "Fusion Effect", type: "Fusion Monster", frameType: "fusion", race: "Dragon", effect: '"Material One" + "Material Two"\r\nOnce per turn: add 1 "Polymerization" from your Deck.' };
+    const typedEffect = { name: "Fusion Typed", type: "Pendulum Effect Fusion Monster", frameType: "fusion_pendulum", effect: '"Typed Material" + "Typed Other"' };
+    expect(isVanillaFusion(vanilla) && !isVanillaFusion(withEffect) && !isVanillaFusion(synergyCards[1]));
+    expect(!isVanillaFusion(typedEffect), "a Fusion that is also an Effect Monster keeps its materials");
+    const index = buildSynergyIndex([vanilla, withEffect, synergyCards[4]]);
+    const keys = index.entries.map((e) => e.key).sort().join("|");
+    expect(keys === "material one|material two|polymerization", "only the fusion with an effect adds names");
+    expect(cardTiedTo(vanilla, "blue-eyes white dragon") === false, "its materials do not tie it");
+    expect(cardTiedTo({ ...vanilla, name: "Blue-Eyes Ultimate Dragon" }, "blue-eyes") === true, "its own name still does");
+  });
+
+  check("synergy: cards with no effect and self-naming cards are not counted, unless another card names them", () => {
+    const flavor = { name: "Flavor Normal", type: "Normal Monster", frameType: "normal", effect: 'He once met "Dark Magician".' };
+    const selfNamer = { name: "Solo Dragon", type: "Effect Monster", frameType: "effect", effect: 'If "Solo Dragon" is summoned: draw 1.' };
+    const namedByOther = { name: "Hero One", type: "Effect Monster", frameType: "effect", effect: 'Add "Hero Two" from your Deck.' };
+    const hero2 = { name: "Hero Two", type: "Normal Monster", frameType: "normal", effect: "Plain." };
+    const dm = synergyCards[0];
+    let index = buildSynergyIndex([flavor, dm]);
+    expect(index.entries.length === 0, "a Normal monster's flavor text names nothing");
+    index = buildSynergyIndex([selfNamer]);
+    expect(index.entries.length === 0 && !index.tied(selfNamer, "solo dragon"), "a card that only names itself is not counted");
+    index = buildSynergyIndex([selfNamer, namedByOther, hero2]);
+    const byKey = Object.fromEntries(index.entries.map((e) => [e.key, e.count]));
+    expect(byKey["hero two"] === 2 && !("solo dragon" in byKey), "a card with no effect IS counted when a different card names it");
+    expect(index.tied(hero2, "hero two") && index.tied(namedByOther, "hero two") && !index.tied(selfNamer, "hero two"));
+    const girl = synergyCards[1];
+    expect(buildSynergyIndex([girl, dm]).tied(dm, "dark magician"), "named by a different card");
+    expect(!buildSynergyIndex([dm]).tied(dm, "dark magician"), "nobody names it: not counted");
+    expect(matchesFilter(hero2, { types: [], values: {}, synergy: ["hero two"] }, index) && !matchesFilter(selfNamer, { types: [], values: {}, synergy: ["hero two"] }, index));
+  });
+
+  check("synergy filter: cross-type, OR inside, AND with the type tabs, empty means no restriction", () => {
+    const names = (filter) => synergyCards.filter((c) => matchesFilter(c, filter)).map((c) => c.name).join("|");
+    expect(names({ types: [], values: {}, synergy: ["dark magician"] }) === "Dark Magician|Dark Magician Girl");
+    expect(names({ types: [], values: {}, synergy: ["dark magician", "blue-eyes white dragon"] }).split("|").length === 4, "union of two names");
+    expect(names({ types: ["monster-effect"], values: {}, synergy: ["dark magician"] }) === "Dark Magician Girl", "type AND synergy");
+    expect(synergyCards.every((c) => matchesFilter(c, { types: [], values: {}, synergy: [] })));
+    expect(isFilterActive({ types: [], values: {}, synergy: ["x"] }) && activeFilterCount({ types: ["spell"], values: {}, synergy: ["x"] }) === 2);
+  });
+
+  check("synergy selection: sanitized, saved per profile, restored, cleared, unknown names harmless", () => {
+    const clean = sanitizeFilter({ types: [], values: {}, synergy: ["  Dark   Magician ", "dark magician", 5, "", "x".repeat(81)] });
+    expect(clean.synergy.join() === "dark magician", "trimmed, unique, strings only, short");
+    expect(sanitizeFilter({ types: ["spell"], values: {} }).synergy.length === 0, "an older record loads without synergy");
+    createProfile("SynA", "progression");
+    const profileA = getActiveProfile().id;
+    saveBacklogFilter({ types: [], values: {}, synergy: ["gone card"] });
+    expect(loadBacklogFilter().synergy.join() === "gone card" && isFilterActive(loadBacklogFilter()));
+    expect(Object.keys(buildBackup().data).includes(`ygoBacklogFilter_${profileA}`), "exported with the rest of the save");
+    expect(!synergyCards.some((c) => matchesFilter(c, loadBacklogFilter())), "a name no card mentions matches nothing");
+    createProfile("SynB", "progression");
+    expect(!isFilterActive(loadBacklogFilter()), "the other profile has its own filter");
+    setActiveProfile(profileA);
+    clearBacklogFilter();
+    expect(loadData(profileKey("ygoBacklogFilter")) === null);
   });
 
   /* ---- Pull history, rarity and pack opening (spec 010) ---- */

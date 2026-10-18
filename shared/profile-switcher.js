@@ -21,24 +21,48 @@ function buildProfileSwitcher() {
   return box;
 }
 
-/* Shown only when the save file needs action: not created yet, or permission must be re-granted. */
+/* Save-file line + action in the sidebar. Live status where the browser can keep a file open;
+ * elsewhere (Firefox, Safari) a manual download, since a web page can't write to a file there. */
 function addSaveFileLink(box, profile) {
+  const status = document.createElement("span");
+  status.className = "sidebar-profile-name";
+  status.setAttribute("aria-live", "polite");
+  box.appendChild(status);
+  const showStatus = ({ text, error }) => {
+    status.textContent = text;
+    status.style.color = error ? "var(--danger, #e5534b)" : "";
+  };
+  document.addEventListener("savefile-status", (e) => showStatus(e.detail));
+  showStatus(saveFileStatus);
+
+  const btn = document.createElement("a");
+  btn.className = "sidebar-link";
+  btn.href = "#";
+  box.appendChild(btn);
+
   saveFileState(profile).then((state) => {
-    if (state === "granted") return;
-    const btn = document.createElement("a");
-    btn.className = "sidebar-link";
-    btn.href = "#";
-    btn.textContent = state === "prompt" ? "Reconnect save file" : "Create save file";
-    btn.addEventListener("click", async (e) => {
-      e.preventDefault();
-      try {
-        await (state === "prompt" ? reconnectSaveFile(profile) : createSaveFile(profile));
-        btn.remove();
-      } catch (err) {
-        if (err.name !== "AbortError") alertDialog(err.message);
-      }
-    });
-    box.appendChild(btn);
+    if (!saveFileSupported) {
+      status.textContent = "Auto-save to file needs Chrome or Edge";
+      btn.textContent = "Download save file";
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        downloadProfileSave(profile);
+      });
+    } else if (state === "none") {
+      btn.textContent = "Create save file";
+      btn.addEventListener("click", async (e) => {
+        e.preventDefault();
+        try {
+          await createSaveFile(profile);
+          btn.remove();
+          showStatus({ text: `Saved ${new Date().toLocaleTimeString()}`, error: false });
+        } catch (err) {
+          if (err.name !== "AbortError") alertDialog(err.message);
+        }
+      });
+    } else {
+      btn.remove();
+    }
   });
 }
 

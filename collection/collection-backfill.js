@@ -32,8 +32,14 @@ function maybeBackfillCardDetails(card) {
  */
 let completionInFlight = null;
 
+/* A card is incomplete when it lacks its race or any effect text, and it was never tried before. */
+function cardNeedsDetails(card) {
+  const noEffect = typeof cardEffectText === "function" ? !cardEffectText(card) : false;
+  return (!card.race || noEffect) && !card.detailsTried;
+}
+
 function completeMissingCardDetails(cards) {
-  const todo = cards.filter((card) => !card.race && !card.detailsTried);
+  const todo = cards.filter(cardNeedsDetails);
   if (todo.length === 0) return Promise.resolve();
   if (completionInFlight) return completionInFlight;
 

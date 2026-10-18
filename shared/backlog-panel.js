@@ -29,11 +29,11 @@ function backlogPanelDefaults() {
 function updateBacklogFilterButton() {
   const btn = document.getElementById("backlogFilterBtn");
   if (!btn) return;
-  const count = activeTypeCount(appliedBacklogFilter);
+  const count = activeFilterCount(appliedBacklogFilter);
   btn.classList.toggle("bf-active", count > 0);
   btn.querySelector(".bf-count").textContent = count > 0 ? String(count) : "";
-  btn.setAttribute("aria-label", count > 0 ? `Filter backlog (${count} card types included)` : "Filter backlog");
-  btn.title = count > 0 ? `Filter active: ${count} card type${count === 1 ? "" : "s"}` : "Filter backlog by card type";
+  btn.setAttribute("aria-label", count > 0 ? `Filter backlog (filter active, ${count} selected)` : "Filter backlog");
+  btn.title = count > 0 ? `Filter active: ${count} selected` : "Filter backlog by card type or synergy";
 }
 
 function mountBacklogPanel(containerEl, options = {}) {

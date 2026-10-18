@@ -47,7 +47,8 @@ function renderBacklog() {
   const bySearch = collection.cards.filter((c) => !filterLower || cardMatchesSearch(c, filterLower));
   // The type filter only exists when the Backlog panel was mounted; without it every card is listed.
   const typeFilter = typeof appliedBacklogFilter !== "undefined" ? appliedBacklogFilter : null;
-  const filtered = typeFilter ? bySearch.filter((c) => matchesFilter(c, typeFilter)) : bySearch;
+  const synergyIndex = typeFilter && hasSynergySelection(typeFilter) ? buildSynergyIndex(collection.cards) : null;
+  const filtered = typeFilter ? bySearch.filter((c) => matchesFilter(c, typeFilter, synergyIndex)) : bySearch;
 
   if (filtered.length === 0) {
     if (bySearch.length > 0 && typeFilter && isFilterActive(typeFilter)) {

@@ -1,7 +1,7 @@
 /*
  * Backlog type filter: pure rules + per-profile persistence. No DOM here.
  *
- *   filter = { types: [groupId], values: { [groupId]: { [valueGroup]: [value] } } }
+ *   filter = { types: [includeId], values: { [groupId]: { [valueGroup]: [value] } }, synergy: [synergyKey] }
  *
  * - A card belongs to exactly one tab (or none): Pendulum wins over the other monster types, then Link, Xyz,
  *   Synchro, Fusion, Ritual; Spell and Trap; everything else that is a monster is "Monster (normal/effect)".
@@ -9,6 +9,8 @@
  *   every other tab has one include box whose id is the tab id.
  * - No ticked tab = no type restriction. Ticked tabs combine with OR; inside a tab value groups combine with AND
  *   and the values of one group with OR. A card missing a value a selected group needs does not match.
+ * - Synergy names (backlog-synergy.js) are cross-type: with names selected a card must be tied to any one of them
+ *   (OR), and that rule combines with the type tabs by AND.
  */
 const FILTER_GROUPS = [
   { id: "monster", label: "Monster", valueGroups: ["attribute", "race", "level", "atk", "def"] },
@@ -141,20 +143,62 @@ function availableValues(cards, groupId) {
   return result;
 }
 
-function emptyFilter() {
-  return { types: [], values: {} };
+/* How many distinct cards of one tab have each value: { [valueGroup]: { [String(value)]: n } }. The Monster tab also
+ * gets "monster-normal" / "monster-effect" totals for its two include boxes. Range groups (ATK/DEF) are not counted. */
+function valueCounts(cards, groupId) {
+  const def = filterGroupDef(groupId);
+  const result = {};
+  if (!def) return result;
+  const listGroups = def.valueGroups.filter((vg) => !isRangeGroup(vg));
+  listGroups.forEach((vg) => {
+    result[vg] = {};
+  });
+  if (groupId === "monster") {
+    result["monster-normal"] = 0;
+    result["monster-effect"] = 0;
+  }
+  cards.forEach((card) => {
+    if (groupOf(card) !== groupId) return;
+    if (groupId === "monster") result[`monster-${monsterKind(card)}`] += 1;
+    listGroups.forEach((vg) => {
+      const value = filterValueOf(card, vg);
+      if (value === null) return;
+      result[vg][String(value)] = (result[vg][String(value)] || 0) + 1;
+    });
+  });
+  return result;
 }
 
-function isFilterActive(filter) {
+function emptyFilter() {
+  return { types: [], values: {}, synergy: [] };
+}
+
+function hasTypeSelection(filter) {
   return Array.isArray(filter.types) && filter.types.length > 0;
 }
 
-function activeTypeCount(filter) {
-  return isFilterActive(filter) ? filter.types.length : 0;
+function hasSynergySelection(filter) {
+  return Array.isArray(filter.synergy) && filter.synergy.length > 0;
 }
 
-function matchesFilter(card, filter) {
+function isFilterActive(filter) {
+  return hasTypeSelection(filter) || hasSynergySelection(filter);
+}
+
+/* The number on the filter icon: ticked types, plus one when any synergy name is selected. */
+function activeFilterCount(filter) {
+  return (hasTypeSelection(filter) ? filter.types.length : 0) + (hasSynergySelection(filter) ? 1 : 0);
+}
+
+/* `synergyIndex` (from buildSynergyIndex over the whole Backlog) is optional; build it once per list, not per card. */
+function matchesFilter(card, filter, synergyIndex) {
   if (!isFilterActive(filter)) return true;
+  const tied = synergyIndex ? synergyIndex.tied : cardTiedTo;
+  if (hasSynergySelection(filter) && !filter.synergy.some((key) => tied(card, key))) return false;
+  return !hasTypeSelection(filter) || matchesTypeRule(card, filter);
+}
+
+function matchesTypeRule(card, filter) {
   const group = groupOf(card);
   if (!group || !filter.types.includes(includeIdOf(card))) return false;
   const selected = (filter.values && filter.values[group]) || {};
@@ -201,6 +245,13 @@ function sanitizeFilter(raw) {
       });
       if (Object.keys(clean).length > 0) filter.values[g.id] = clean;
     });
+  }
+  if (Array.isArray(raw.synergy)) {
+    const keys = raw.synergy
+      .filter((k) => typeof k === "string")
+      .map(synergyKey)
+      .filter((k) => k && k.length <= SYNERGY_NAME_MAX);
+    filter.synergy = keys.filter((k, i) => keys.indexOf(k) === i);
   }
   return filter;
 }
