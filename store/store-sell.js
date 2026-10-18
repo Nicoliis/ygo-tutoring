@@ -1,4 +1,4 @@
-/* Sell screen behaviour: one row per owned printing; a sale credits that printing's price (set price, else Cardmarket, else 0.01). */
+/* Sell screen behaviour: one row per owned printing; a sale credits that printing's price (the one its details show), else 0.01. */
 let selling = false;
 let onlyExtras = false; // show only cards owned more than `keepCopies` times (all rarities and sets together)
 let keepCopies = KEEP_COPIES; // how many copies of each card "Sell extras" leaves (1-4)

@@ -125,7 +125,7 @@ function renderSellPanel(model, handlers) {
   const note = document.createElement("p");
   note.className = "store-note";
   note.textContent =
-    "A copy sells for its set price. When the data has none it uses the Cardmarket price, and 0.01 if there is no price at all.";
+    "A copy sells for the price of its printing (the one shown in its details), and 0.01 when it has none.";
   panel.appendChild(note);
 
   if (model.rows.length === 0) {
