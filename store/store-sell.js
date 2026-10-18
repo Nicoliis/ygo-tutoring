@@ -39,6 +39,12 @@ function renderSellList() {
   );
 }
 
+/* The card details window changed engines in the saved collection: reload it so a later sale never saves a stale copy. */
+function onCardEnginesChanged() {
+  reloadStoreCollection();
+  renderSellList();
+}
+
 async function onSellExtras() {
   if (selling) return;
   const preview = previewExtras(storeRun, storeCollection, keepCopies);

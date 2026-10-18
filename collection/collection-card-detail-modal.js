@@ -9,9 +9,10 @@ function openCardDetailModal(card, buttons) {
   const raritySectionHtml = typeof buildRarityCountsSectionHtml === "function" ? buildRarityCountsSectionHtml(card) : "";
   const hasInfo = tagsHtml || effectHtml;
 
-  showModal({
+  showCardDetailWindow({
+    card,
     title: card.name,
-    bodyHtml: `${imageHtml}${hasInfo ? tagsHtml + effectHtml : "<div>No further details available for this card.</div>"}${raritySectionHtml}`,
+    detailHtml: `${imageHtml}${hasInfo ? tagsHtml + effectHtml : "<div>No further details available for this card.</div>"}${raritySectionHtml}`,
     buttons: buttons || [{ label: "Close", primary: true }],
   });
 }

@@ -1,5 +1,5 @@
 /* `extraHtml` (optional) is shown right under the picture, e.g. which printing of the card is being looked at. */
-function openCardDetailModal(card, buttons, extraHtml = "") {
+function openCardDetailModal(card, buttons, extraHtml = "", pull = null) {
   const imageHtml = card.imageFull
     ? `<img src="${card.imageFull}" alt="${escapeHtml(card.name)}">`
     : "";
@@ -9,14 +9,16 @@ function openCardDetailModal(card, buttons, extraHtml = "") {
   const printingsHtml = inStore
     ? (typeof buildPrintingsHtml === "function" ? "<hr class=\"card-divider\">" + buildPrintingsHtml(card, { showSet: true }) : "")
     : (typeof buildRarityCountsSectionHtml === "function" ? buildRarityCountsSectionHtml(card) : "");
-  const bodyHtml =
+  const detailHtml =
     imageHtml || tagsHtml || effectHtml || printingsHtml
       ? `${imageHtml}${extraHtml}${tagsHtml}${effectHtml}${printingsHtml}`
       : `<div>No further details available for this card.</div>`;
 
-  showModal({
+  showCardDetailWindow({
+    card,
     title: card.name,
-    bodyHtml,
+    detailHtml,
     buttons: buttons || [{ label: "Close", primary: true }],
+    pull,
   });
 }

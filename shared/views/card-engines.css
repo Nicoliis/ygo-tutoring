@@ -1,0 +1,31 @@
+/* Card details window: two-column layout and the engines panel. Rendering only. */
+:root {
+  --card-detail-max-width: 880px; /* the window is wider than a plain dialog to fit two columns */
+  --card-engines-column-width: 280px;
+  --card-engines-list-max-height: 340px;
+}
+
+.modal-dialog:has(.card-detail-layout) { max-width: min(var(--card-detail-max-width), 96vw); }
+.card-detail-layout { display: grid; grid-template-columns: minmax(0, 1fr) var(--card-engines-column-width); gap: 16px; align-items: start; }
+.card-detail-main { min-width: 0; }
+.card-detail-engines { min-width: 0; border-left: 1px solid var(--border); padding-left: 16px; }
+
+.card-engines-heading { margin: 0 0 8px; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-dim); }
+.card-engines-note { margin: 0 0 8px; font-size: 0.78rem; color: var(--text-dim); }
+.card-engines-search { width: 100%; margin-bottom: 6px; }
+.card-engines-list { list-style: none; margin: 0 0 10px; padding: 0; max-height: var(--card-engines-list-max-height); overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+.card-engines-row { display: flex; align-items: center; gap: 6px; padding: 4px 6px; background: var(--panel-alt); border: 1px solid var(--border); border-radius: var(--radius); }
+.card-engines-row[hidden] { display: none; }
+.card-engines-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.85rem; }
+.card-engines-count { flex: 0 0 auto; min-width: 2ch; text-align: right; font-variant-numeric: tabular-nums; color: var(--text-dim); font-size: 0.8rem; }
+.card-engines-step { flex: 0 0 auto; width: 28px; padding: 2px 0; line-height: 1.2; }
+.card-engines-step:disabled { opacity: 0.4; cursor: not-allowed; }
+.card-engines-form { display: flex; gap: 6px; margin-bottom: 6px; }
+.card-engines-new-name { flex: 1 1 auto; min-width: 0; }
+.card-engines-live { margin: 0; min-height: 1.2em; font-size: 0.78rem; color: var(--accent); }
+
+/* A narrow window stacks the engines under the details (the same limit as the binder's narrow layout). */
+@media (max-width: 700px) {
+  .card-detail-layout { grid-template-columns: minmax(0, 1fr); }
+  .card-detail-engines { border-left: 0; border-top: 1px solid var(--border); padding-left: 0; padding-top: 12px; }
+}
