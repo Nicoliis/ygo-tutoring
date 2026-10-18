@@ -7,7 +7,11 @@ const AREAS = [
     id: "run",
     label: "Run",
     description: "Open your boxes, pull cards and advance through the boosters.",
-    pages: [{ label: "Progression Run", href: "progression/index.html" }],
+    pages: [
+      { label: "Progression Run", href: "progression/index.html" },
+      { label: "Current Stage Pull", href: "progression/stage.html" },
+      { label: "Booster Pull", href: "progression/boosters.html" },
+    ],
   },
   {
     id: "workshop",
