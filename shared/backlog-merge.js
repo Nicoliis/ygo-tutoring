@@ -49,7 +49,7 @@ function mergeCardsIntoBacklog(cards) {
       };
       backlog.push(owned);
     }
-    addPrinting(owned, { set: card.set, rarity: card.rarity, price: card.price, setPrice: card.setPrice, setCode: card.setCode });
+    addPrinting(owned, { set: card.set, rarity: card.rarity, price: card.price, setCode: card.setCode });
   });
   return saveData({ ...blob, cards: backlog }, key);
 }

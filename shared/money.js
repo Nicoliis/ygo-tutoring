@@ -1,7 +1,7 @@
 /* Money helpers. Money is ALWAYS integer cents; never floats. */
 const CENTS_PER_UNIT = 100; // cents in one unit of money
 const CENT_DIGITS = 2; // digits shown after the decimal point
-const BOOSTER_BASE_PRICE_CENTS = 250; // what the first purchase of a booster costs
+const BOOSTER_BASE_PRICE_CENTS = 100; // what the first purchase of a booster costs
 const BOOSTER_PRICE_GROWTH = 1.5; // every further purchase of the same booster costs this many times the last one
 const ROUNDING_EPSILON = 1e-9; // makes exact .5 results round up despite float error
 
@@ -31,12 +31,4 @@ function totalForPurchases(k, n) {
   let total = 0;
   for (let i = 0; i < n; i++) total += priceForPurchase(k + i);
   return total;
-}
-
-/*
- * Sale price in cents of a card pulled from a set: the set's own price, else the card's Cardmarket price,
- * else 0.01. Never null, never zero.
- */
-function resolveSalePriceCents(setPriceValue, cardmarketValue) {
-  return toCents(setPriceValue) || toCents(cardmarketValue) || 1;
 }

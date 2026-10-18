@@ -169,23 +169,16 @@ function runContractTests() {
     expect(totalForPurchases(5, 0) === 0);
   });
 
-  check("resolveSalePriceCents: set price, else Cardmarket, else 0.01", () => {
-    expect(resolveSalePriceCents("6.97", "1.00") === 697, "set price wins");
-    expect(resolveSalePriceCents("0", "1.25") === 125, "zero set price falls back to Cardmarket");
-    expect(resolveSalePriceCents(null, "0.40") === 40, "missing set price falls back to Cardmarket");
-    expect(resolveSalePriceCents("0.00", "0") === 1 && resolveSalePriceCents(undefined, undefined) === 1, "no price at all is 0.01");
-  });
-
-  check("printings: setPrice is stored at first pull, filled in once if missing, then never changed", () => {
+  check("printings: a copy is worth the price recorded for its printing, 0.01 when none", () => {
     const card = { name: "X", quantityOwned: 0 };
-    addPrinting(card, { set: "S1", rarity: "Rare", price: 1 });
-    expect(printingSaleValue(card.printings[0]) === 1, "no set price recorded: worth 0.01");
-    addPrinting(card, { set: "S1", rarity: "Rare", price: 1, setPrice: 250 });
-    expect(card.printings[0].setPrice === 250 && printingSaleValue(card.printings[0]) === 250);
-    addPrinting(card, { set: "S1", rarity: "Rare", price: 1, setPrice: 999 });
-    expect(card.printings[0].setPrice === 250 && card.printings[0].quantity === 3);
-    addPrinting(card, { set: "S2", rarity: "Rare", price: 1, setPrice: 40 });
-    expect(card.printings[1].setPrice === 40);
+    addPrinting(card, { set: "S1", rarity: "Rare", price: 0.11 });
+    expect(printingSaleValue(card.printings[0]) === 11, "the price its details show, in cents");
+    addPrinting(card, { set: "S1", rarity: "Rare", price: 9 });
+    expect(card.printings[0].price === 0.11 && card.printings[0].quantity === 2, "the price stays the one of the first pull");
+    addPrinting(card, { set: "S2", rarity: "Rare", price: 0 });
+    expect(printingSaleValue(card.printings[1]) === 1, "no price recorded: worth 0.01");
+    expect(printingSaleValue(null) === 1 && printingSaleValue({ price: "abc" }) === 1 && printingSaleValue({ price: -3 }) === 1, "nothing usable: worth 0.01");
+    expect(card.printings.every((p) => !("setPrice" in p)), "no separate sale price is stored");
   });
 
   check("printings: the set code is stored at first pull and filled in once if missing", () => {
@@ -197,13 +190,13 @@ function runContractTests() {
     expect(card.printings[0].setCode === "LOB-EN001" && card.printings[0].quantity === 3);
   });
 
-  check("mergeCardsIntoBacklog carries setPrice into the printing", () => {
+  check("mergeCardsIntoBacklog carries the price into the printing", () => {
     createProfile("SetPrice", "progression");
     const key = profileKey("ygoCollection");
     saveData({ cards: [] }, key);
-    mergeCardsIntoBacklog([{ name: "Dragon", set: "S1", rarity: "Ultra Rare", price: 5, setPrice: 697 }]);
+    mergeCardsIntoBacklog([{ name: "Dragon", set: "S1", rarity: "Ultra Rare", price: 5 }]);
     const printing = loadData(key).cards[0].printings[0];
-    expect(printing.setPrice === 697 && printingSaleValue(printing) === 697);
+    expect(printing.price === 5 && printingSaleValue(printing) === 500);
   });
 
   /* ---- Store: selling, buying, bought packs (spec 011) ---- */
@@ -215,8 +208,8 @@ function runContractTests() {
         name: "Dragon",
         quantityOwned: 4,
         printings: [
-          { set: "S1", rarity: "Ultra Rare", price: 5, setPrice: 697, quantity: 2 },
-          { set: "S2", rarity: "Common", price: 0.1, quantity: 1 },
+          { set: "S1", rarity: "Ultra Rare", price: 5, quantity: 2 },
+          { set: "S2", rarity: "Common", price: 0, quantity: 1 },
         ],
       },
     ],
@@ -227,30 +220,30 @@ function runContractTests() {
   check("canSell: every copy sells; unpriced ones for 0.01", () => {
     const col = storeCollection();
     const card = col.cards[0];
-    expect(canSell(card, 0).ok && canSell(card, 0).valueCents === 697);
-    expect(canSell(card, 1).ok && canSell(card, 1).valueCents === 1, "printing without setPrice sells for 0.01");
+    expect(canSell(card, 0).ok && canSell(card, 0).valueCents === 500);
+    expect(canSell(card, 1).ok && canSell(card, 1).valueCents === 1, "a printing with no price sells for 0.01");
     expect(!canSell(card, 5).ok, "no such printing");
     expect(canSell({ quantityOwned: 2 }, -1).ok && canSell({ quantityOwned: 2 }, -1).valueCents === 1, "unknown copies sell for 0.01");
     expect(!canSell({ quantityOwned: 2, printings: [{ set: "S", rarity: null, quantity: 2 }] }, -1).ok, "no unknown copy left");
   });
 
-  check("sellPrinting: credits the set price, removes one copy, clamps engines and decks", () => {
+  check("sellPrinting: credits the printing price, removes one copy, clamps engines and decks", () => {
     const col = storeCollection();
     let run = { completed: [], current: "A", balanceCents: 100, futureField: "keep" };
     run = sellPrinting(run, col, "c1", 0);
-    expect(run.balanceCents === 797 && run.futureField === "keep");
+    expect(run.balanceCents === 600 && run.futureField === "keep");
     expect(col.cards[0].quantityOwned === 3 && col.cards[0].printings[0].quantity === 1);
     run = sellPrinting(run, col, "c1", 0);
-    expect(run.balanceCents === 1494);
+    expect(run.balanceCents === 1100);
     expect(col.cards[0].printings.length === 1 && col.cards[0].printings[0].set === "S2", "printing removed at 0");
     expect(col.cards[0].quantityOwned === 2);
     expect(col.engines[0].cards[0].quantity === 2 && col.decks[0].main[0].quantity === 2, "allocations clamped to owned");
     expect(allocationsOverLimit(col, "c1", 1).length === 2, "selling one more would shrink the engine and the deck");
     run = sellPrinting(run, col, "c1", 0);
-    expect(run.balanceCents === 1495, "the printing without a set price sold for 0.01");
+    expect(run.balanceCents === 1101, "the printing without a price sold for 0.01");
     expect(col.cards[0].printings.length === 0 && col.cards[0].quantityOwned === 1);
     run = sellPrinting(run, col, "c1", -1);
-    expect(run.balanceCents === 1496 && col.cards[0].quantityOwned === 0, "the unknown copy sold for 0.01");
+    expect(run.balanceCents === 1102 && col.cards[0].quantityOwned === 0, "the unknown copy sold for 0.01");
     let threw = false;
     try { sellPrinting(run, col, "c1", -1); } catch (err) { threw = true; }
     expect(threw, "nothing left to sell");
@@ -264,12 +257,12 @@ function runContractTests() {
           name: "A",
           quantityOwned: 9,
           printings: [
-            { set: "S1", rarity: "Common", price: 0.1, setPrice: 10, quantity: 5 },
-            { set: "S2", rarity: "Common", price: 0.1, setPrice: 20, quantity: 2 },
-            { set: "S3", rarity: "Rare", price: 1, setPrice: 100, quantity: 1 },
+            { set: "S1", rarity: "Common", price: 0.1, quantity: 5 },
+            { set: "S2", rarity: "Common", price: 0.2, quantity: 2 },
+            { set: "S3", rarity: "Rare", price: 1, quantity: 1 },
           ],
         },
-        { id: "b", name: "B", quantityOwned: 3, printings: [{ set: "S1", rarity: "Rare", setPrice: 50, quantity: 3 }] },
+        { id: "b", name: "B", quantityOwned: 3, printings: [{ set: "S1", rarity: "Rare", price: 0.5, quantity: 3 }] },
         { id: "c", name: "C", quantityOwned: 5 },
       ],
       engines: [],

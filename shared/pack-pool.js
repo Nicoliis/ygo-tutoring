@@ -12,11 +12,6 @@ function getBoosterSize(setName) {
     : DEFAULT_BOOSTER_SIZE;
 }
 
-function cardmarketPrice(apiCard) {
-  const prices = Array.isArray(apiCard.card_prices) ? apiCard.card_prices[0] : null;
-  return prices ? prices.cardmarket_price : null;
-}
-
 function parsePrice(apiCard) {
   const prices = Array.isArray(apiCard.card_prices) ? apiCard.card_prices[0] : null;
   const raw = prices && prices.tcgplayer_price;
@@ -65,7 +60,6 @@ function fetchSetCardPool(setName) {
           set: setName,
           weight: getWeightForRarity(rarity),
           price: parsePrice(card),
-          setPrice: resolveSalePriceCents(match ? match.set_price : null, cardmarketPrice(card)),
           setCode: match && match.set_code ? match.set_code : null,
           ...extractCardFields(card),
         };
