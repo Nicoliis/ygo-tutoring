@@ -17,6 +17,7 @@ const AREAS = [
       { label: "Backlog", href: "workshop/backlog.html" },
       { label: "Synergy Builder", href: "workshop/synergy.html" },
       { label: "Deckbuilding", href: "workshop/deckbuilding.html" },
+      { label: "Completionist Binder", href: "workshop/completionist.html" },
     ],
   },
   {

@@ -163,3 +163,8 @@ function finishExtraPack(run) {
   const extra = getExtraPack(run);
   return { cards: extra ? extra.pack.cards : [], run: { ...run, extraPack: null } };
 }
+
+/* Completed stages plus the current one, in booster-list order (the boosters a run can buy and browse). */
+function reachedBoosters(run, boosterList) {
+  return boosterList.filter((name) => run.completed.includes(name) || name === run.current);
+}

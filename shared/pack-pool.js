@@ -1,5 +1,6 @@
 /* Pack-generation pieces shared by the Booster Draft and Progression Run (UI-free). */
 const SET_CARDS_URL = CARD_API_BASE + "cardinfo.php";
+const setApiCardsCache = new Map(); // setName -> raw cards of the set (shared by the pack pool and the completionist binder)
 const setCardPoolCache = new Map();
 
 const DEFAULT_BOOSTER_SIZE = 9;
@@ -33,9 +34,9 @@ function weightedRandomPick(pool) {
   return pool[pool.length - 1];
 }
 
-/* Resolves to the set's weighted card pool; rejects (no UI side effects) on failure. */
-function fetchSetCardPool(setName) {
-  if (setCardPoolCache.has(setName)) return Promise.resolve(setCardPoolCache.get(setName));
+/* Resolves to the raw cards of a set, requested once per set; a failed request is not remembered (it can be retried). */
+function fetchSetApiCards(setName) {
+  if (setApiCardsCache.has(setName)) return Promise.resolve(setApiCardsCache.get(setName));
   const url = `${SET_CARDS_URL}?cardset=${encodeURIComponent(setName)}`;
   return fetch(url)
     .then((res) => {
@@ -44,6 +45,16 @@ function fetchSetCardPool(setName) {
     })
     .then((data) => {
       const cards = Array.isArray(data.data) ? data.data : [];
+      setApiCardsCache.set(setName, cards);
+      return cards;
+    });
+}
+
+/* Resolves to the set's weighted card pool; rejects (no UI side effects) on failure. */
+function fetchSetCardPool(setName) {
+  if (setCardPoolCache.has(setName)) return Promise.resolve(setCardPoolCache.get(setName));
+  return fetchSetApiCards(setName)
+    .then((cards) => {
       const pool = cards.map((card) => {
         const sets = Array.isArray(card.card_sets) ? card.card_sets : [];
         const match = sets.find((s) => s.set_name === setName);

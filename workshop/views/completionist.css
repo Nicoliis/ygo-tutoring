@@ -1,0 +1,58 @@
+/* Completionist binder layout. Rendering only. The binder pages themselves use ../collection/views/binder.css. */
+:root {
+  --completionist-missing-opacity: 0.45; /* how faint a card you do not own looks */
+  --completionist-panel-max: 640px;
+}
+
+.completionist-panel { max-width: var(--completionist-panel-max); flex: 1 1 520px; }
+.completionist-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-bottom: 8px; }
+.completionist-chooser { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--text-dim); }
+.completionist-select {
+  min-width: 0;
+  max-width: 100%;
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 5px 8px;
+}
+.completionist-select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.completionist-progress { font-size: 0.85rem; font-weight: 600; }
+.completionist-note, .completionist-status { color: var(--text-dim); font-size: 0.8rem; margin: 0 0 8px; }
+.completionist-note[hidden], .completionist-status:empty { display: none; }
+
+/* A card you do not own: grey and faint, but still readable and with its rarity tag. */
+.completionist-missing .card-face { filter: grayscale(1); opacity: var(--completionist-missing-opacity); }
+.completionist-missing-text { font-style: italic; }
+
+/* The rarity tag sits over the lower edge of the picture, so the quantity row keeps its fixed height. */
+.completionist-slot .binder-card { position: relative; }
+.completionist-tag { position: absolute; left: 2px; right: 2px; bottom: 2px; display: flex; justify-content: center; pointer-events: none; }
+.completionist-tag .rarity-badge { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* The set number sits over the upper edge of the picture, on a dark chip so it reads on any card art. */
+.completionist-code {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  max-width: calc(100% - 4px);
+  padding: 0 4px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.75);
+  color: var(--text);
+  font-size: 0.55rem;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+@media (max-width: 700px) {
+  .completionist-panel { max-width: none; }
+}
+
+/* The pages stay inside the panel; a short window scrolls the binder instead of clipping it. */
+.completionist-binder { flex: 1 1 auto; min-height: 0; overflow-y: auto; }

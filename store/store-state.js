@@ -57,11 +57,6 @@ function sellPrinting(run, collection, cardId, printingIndex) {
 
 /* ---- Buying ---- */
 
-/* Completed stages plus the current one, in booster-list order. */
-function reachedBoosters(run, boosterList) {
-  return boosterList.filter((name) => run.completed.includes(name) || name === run.current);
-}
-
 function nextPriceCents(run, setName) {
   return priceForPurchase(getBoosterBuys(run, setName));
 }

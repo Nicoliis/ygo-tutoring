@@ -328,6 +328,71 @@ function runContractTests() {
     expect(positionLabel(9, 40, 1) === "Page 2 of 5");
   });
 
+  /* ---- Completionist binder (spec 015) ---- */
+
+  function apiCardFixture(id, name, entries) {
+    return { id, name, type: "Effect Monster", card_images: [{ image_url_small: `s${id}`, image_url: `f${id}` }], desc: `text ${name}`, card_sets: entries };
+  }
+  const SET_A = "Set A";
+  const apiCards = [
+    apiCardFixture(2, "Beta", [
+      { set_name: SET_A, set_code: "SA-002", set_rarity: "Common" },
+      { set_name: SET_A, set_code: "SA-002", set_rarity: "Ultra Rare" },
+      { set_name: "Set B", set_code: "SB-009", set_rarity: "Common" },
+    ]),
+    apiCardFixture(1, "Alpha", [
+      { set_name: SET_A, set_code: "SA-001", set_rarity: "Rare" },
+      { set_name: SET_A, set_code: "SA-E001", set_rarity: "Rare" },
+      { set_name: SET_A, set_code: "SA-EN001", set_rarity: "Rare" },
+    ]),
+    apiCardFixture(3, "Gamma", [
+      { set_name: SET_A, set_code: "SA-003", set_rarity: "Super Rare" },
+      { set_name: SET_A, set_code: "SA-003", set_rarity: "Common" },
+    ]),
+  ];
+
+  check("set slots: one per card_sets entry of the set, in set-code order", () => {
+    const slots = buildSetSlots(apiCards, SET_A);
+    expect(slots.length === 5, "Beta has two rarities in the set, its Set B entry is left out, Alpha's three regional numbers are one slot");
+    expect(slots.map((sl) => `${sl.setCode}:${sl.rarity}`).join() === "SA-EN001:Rare,SA-002:Common,SA-002:Ultra Rare,SA-003:Common,SA-003:Super Rare", "set code, then common to rare; the English number represents Alpha");
+    expect(new Set(slots.map((sl) => sl.key)).size === 5, "keys are unique");
+    expect(slots[0].card.name === "Alpha" && slots[0].card.effect === "text Alpha" && slots[0].card.imageSmall === "s1");
+    expect(buildSetSlots(apiCards, "Nope").length === 0);
+  });
+
+  check("set slots: ownership counts only the same card, set and rarity", () => {
+    const slots = buildSetSlots(apiCards, SET_A);
+    const beta = { name: "beta", apiId: 2, quantityOwned: 3, printings: [{ set: SET_A, rarity: "common", quantity: 2 }, { set: "Set B", rarity: "Ultra Rare", quantity: 1 }] };
+    const bySlot = (key) => slots.find((sl) => sl.key === key);
+    const alpha = bySlot("1|rare");
+    expect(ownedFor(bySlot("2|common"), [beta]) === 2, "name casing and rarity casing do not matter");
+    expect(ownedFor(bySlot("2|ultra rare"), [beta]) === 0, "another rarity of the same card stays missing");
+    const coded = { name: "Gamma", apiId: 3, quantityOwned: 1, printings: [{ set: SET_A, rarity: "Common", setCode: "SA-003", quantity: 1 }] };
+    expect(ownedFor(bySlot("3|common"), [coded]) === 1 && ownedFor(bySlot("3|super rare"), [coded]) === 0, "a recorded set number does not change which rarity it is");
+    const regional = { name: "Alpha", apiId: 1, quantityOwned: 1, printings: [{ set: SET_A, rarity: "Rare", setCode: "SA-E001", quantity: 1 }] };
+    expect(ownedFor(alpha, [regional]) === 1, "any regional set number of the printing colours its slot");
+    expect(ownedFor(alpha, [beta, coded]) === 0, "another card never matches");
+  });
+
+  check("set slots: completion and unmatched copies", () => {
+    const slots = buildSetSlots(apiCards, SET_A);
+    expect(JSON.stringify(completion([], [])) === JSON.stringify({ owned: 0, total: 0, percent: 0, complete: false }), "empty set");
+    const cards = [{ name: "Alpha", apiId: 1, quantityOwned: 2, printings: [{ set: SET_A, rarity: "Rare", quantity: 2 }] }];
+    const part = completion(slots, cards);
+    expect(part.owned === 1 && part.total === 5 && part.percent === 20 && !part.complete);
+    const everything = [
+      { name: "Alpha", apiId: 1, quantityOwned: 1, printings: [{ set: SET_A, rarity: "Rare", quantity: 1 }] },
+      { name: "Beta", apiId: 2, quantityOwned: 2, printings: [{ set: SET_A, rarity: "Common", quantity: 1 }, { set: SET_A, rarity: "Ultra Rare", quantity: 1 }] },
+      { name: "Gamma", apiId: 3, quantityOwned: 2, printings: [{ set: SET_A, rarity: "Super Rare", quantity: 1 }, { set: SET_A, rarity: "Common", quantity: 1 }] },
+    ];
+    const full = completion(slots, everything);
+    expect(full.owned === 5 && full.percent === 100 && full.complete);
+    expect(unmatchedCopies(everything) === 0, "fully recorded cards leave nothing unmatched");
+    expect(unmatchedCopies([{ name: "Old", quantityOwned: 4 }]) === 4, "cards without printings");
+    expect(unmatchedCopies([{ name: "X", quantityOwned: 3, printings: [{ set: SET_A, rarity: "Rare", quantity: 1 }] }]) === 2, "copies beyond the recorded printings");
+    expect(unmatchedCopies([{ name: "Y", quantityOwned: 2, printings: [{ set: SET_A, rarity: null, quantity: 2 }] }]) === 2, "a printing with no rarity");
+  });
+
   check("clampAllocationsToOwned drops entries that reach zero", () => {
     const col = storeCollection();
     col.cards[0].quantityOwned = 0;
