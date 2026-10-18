@@ -119,8 +119,8 @@ function createPackReveal(containerEl, options) {
     }
     final.style.visibility = "hidden";
     const to = final.getBoundingClientRect();
-    const dx = to.left + to.width / 2 - (fromRect.left + fromRect.width / 2);
-    const dy = to.top + to.height / 2 - (fromRect.top + fromRect.height / 2);
+    const dx = to.left + to.width / MIDPOINT_DIVISOR - (fromRect.left + fromRect.width / MIDPOINT_DIVISOR);
+    const dy = to.top + to.height / MIDPOINT_DIVISOR - (fromRect.top + fromRect.height / MIDPOINT_DIVISOR);
     const scale = fromRect.width > 0 ? to.width / fromRect.width : 1;
 
     const flier = document.createElement("div");

@@ -1,3 +1,4 @@
+const AUTOCOMPLETE_MAX_RESULTS = 30; // suggestions listed under the booster field
 function renderBoosterResults(filterText) {
   const filtered = filterText
     ? MAINLINE_BOOSTERS.filter((name) => name.toLowerCase().includes(filterText.toLowerCase()))
@@ -7,7 +8,7 @@ function renderBoosterResults(filterText) {
     boosterResultsList.hidden = true;
     return;
   }
-  filtered.slice(0, 30).forEach((name) => {
+  filtered.slice(0, AUTOCOMPLETE_MAX_RESULTS).forEach((name) => {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "set-result-row";

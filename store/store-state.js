@@ -3,6 +3,9 @@
  * Pure functions; the caller persists. Needs money.js, printings.js and progression-state.js (for the list/run).
  * The run record keeps: balanceCents, boosterBuys { set: n }, packInventory { set: n }, extraPack.
  */
+const KEEP_COPIES = 3; // copies of each printing "Sell extras" leaves by default
+const KEEP_OPTIONS = [1, 2, 3, 4]; // the choices offered for how many copies to keep
+
 function getBalanceCents(run) {
   return Number.isInteger(run.balanceCents) && run.balanceCents > 0 ? run.balanceCents : 0;
 }
@@ -92,9 +95,6 @@ function buyBoosters(run, setName, amount, boosterList) {
 
 /* ---- Extras: every copy over `keep` (default 3). hasExtras counts a card across all sets (for the list filter);
  * selling extras counts each printing on its own. ---- */
-
-const KEEP_COPIES = 3;
-const KEEP_OPTIONS = [1, 2, 3, 4];
 
 function hasExtras(card, keep = KEEP_COPIES) {
   return (Number(card.quantityOwned) || 0) > keep;

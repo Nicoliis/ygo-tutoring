@@ -24,7 +24,7 @@ function addEngineToDeckSection(deckId, section, engineId) {
   }
   saveCollection();
   if (skipped.length > 0) {
-    showToast(`Skipped or reduced (owned copies or the limit of 3 per section): ${skipped.join(", ")}.`, "warning");
+    showToast(`Skipped or reduced (owned copies or the limit of ${MAX_COPIES_PER_SECTION} per section): ${skipped.join(", ")}.`, "warning");
   }
   return true;
 }

@@ -11,6 +11,9 @@
  *  New storage keys MUST start with SAVE_KEY_PREFIX ("ygo").
  *  Contract tests: shared/save-utils.test.js (run: node shared/save-utils.test.js).
  */
+const ISO_DATE_LENGTH = 10; // "YYYY-MM-DD"
+const JSON_INDENT = 2; // spaces used to pretty-print saved JSON
+
 const SAVE_KEY_PREFIX = "ygo";
 const SAVE_FORMAT = "ygo-tutoring-backup";
 const SAVE_FORMAT_VERSION = 1;
@@ -86,8 +89,8 @@ function buildBackup() {
 }
 
 function exportAll(filename) {
-  const name = filename || `ygo-backup-${new Date().toISOString().slice(0, 10)}.json`;
-  const blob = new Blob([JSON.stringify(buildBackup(), null, 2)], { type: "application/json" });
+  const name = filename || `ygo-backup-${new Date().toISOString().slice(0, ISO_DATE_LENGTH)}.json`;
+  const blob = new Blob([JSON.stringify(buildBackup(), null, JSON_INDENT)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;

@@ -76,7 +76,7 @@ function buildBoosterRail(run) {
   section.appendChild(rail);
   requestAnimationFrame(() => {
     const current = rail.querySelector('[aria-current="step"]');
-    if (current) rail.scrollLeft = Math.max(0, current.offsetLeft - rail.clientWidth / 2 + current.clientWidth / 2);
+    if (current) rail.scrollLeft = Math.max(0, current.offsetLeft - rail.clientWidth / MIDPOINT_DIVISOR + current.clientWidth / MIDPOINT_DIVISOR);
   });
   return section;
 }

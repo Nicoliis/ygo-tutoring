@@ -3,6 +3,10 @@
  * All persistence goes through saveData/loadData/removeData (save-utils.js).
  * Every key starts with "ygo" so exportAll/importAll cover profiles automatically.
  */
+const PROFILE_ID_RADIX = 36; // digits and letters
+const PROFILE_ID_SKIP_PREFIX = 2; // drops the leading "0." of Math.random().toString()
+const PROFILE_ID_LENGTH = 8; // characters of random text in a profile id
+
 const PROFILES_KEY = "ygoProfiles";
 const SANDBOX_ID = "sandbox";
 const PROFILE_NAME_MAX = 40;
@@ -69,7 +73,7 @@ function validateProfileName(name, registry, ignoreId) {
 function generateProfileId(registry) {
   let id;
   do {
-    id = "p" + Math.random().toString(36).slice(2, 10).padEnd(8, "0");
+    id = "p" + Math.random().toString(PROFILE_ID_RADIX).slice(PROFILE_ID_SKIP_PREFIX, PROFILE_ID_SKIP_PREFIX + PROFILE_ID_LENGTH).padEnd(PROFILE_ID_LENGTH, "0");
   } while (registry.profiles.some((p) => p.id === id));
   return id;
 }

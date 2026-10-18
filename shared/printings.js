@@ -6,6 +6,8 @@
  * Identity is the (set, rarity) pair within a card. price and setPrice are recorded at the first pull of a
  * printing; setPrice is also filled in by a later pull if the printing had none yet, and never changed after.
  */
+const PRICE_DECIMALS = 2; // decimals shown in a dollar price
+
 function printingsTotal(card) {
   const list = Array.isArray(card.printings) ? card.printings : [];
   return list.reduce((sum, p) => sum + (Number(p.quantity) || 0), 0);
@@ -107,7 +109,7 @@ function buildPrintingsHtml(card, { showSet = false } = {}) {
   const { printings, unknownQuantity } = printingSummary(card);
   if (printings.length === 0 && unknownQuantity === 0) return "";
   const rows = printings.map((p) => {
-    const price = p.price > 0 ? ` · $${p.price.toFixed(2)}` : "";
+    const price = p.price > 0 ? ` · $${p.price.toFixed(PRICE_DECIMALS)}` : "";
     const where = showSet ? ` — ${escapeHtml(p.set)}${p.setCode ? ` · ${escapeHtml(p.setCode)}` : ""}` : "";
     return `<li><strong>${escapeHtml(rarityLabel(p.rarity))}</strong>${where}${price} × ${p.quantity}</li>`;
   });

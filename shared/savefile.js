@@ -5,6 +5,9 @@
  * Browsers without the API fall back to download / file-input (manual, no autosave).
  * Depends on save-utils.js and profiles.js.
  */
+const FIRST_DUPLICATE_SUFFIX = 2; // an imported profile whose name is taken becomes "Name (2)", "Name (3)"...
+const SAVEFILE_DEBOUNCE_MS = 150; // quiet time after a save before the save file is rewritten
+
 const PROFILE_SAVE_FORMAT = "ygo-tutoring-profile-save";
 const PROFILE_SAVE_VERSION = 1;
 const GLOBAL_SAVE_KEYS = ["ygoProfiles", "ygoSetDates", "ygoSidebarCollapsed"];
@@ -65,7 +68,7 @@ function saveFileName(profile) {
 
 async function writeToHandle(handle, profile) {
   const writable = await handle.createWritable();
-  await writable.write(JSON.stringify(buildProfileSave(profile), null, 2));
+  await writable.write(JSON.stringify(buildProfileSave(profile), null, JSON_INDENT));
   await writable.close();
 }
 
@@ -111,7 +114,7 @@ async function saveNow(profile) {
 }
 
 function downloadProfileSave(profile) {
-  const blob = new Blob([JSON.stringify(buildProfileSave(profile), null, 2)], { type: "application/json" });
+  const blob = new Blob([JSON.stringify(buildProfileSave(profile), null, JSON_INDENT)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
@@ -142,7 +145,7 @@ function applyProfileSave(save) {
   const record = { id: profile.id, name: profile.name, mode: profile.mode, createdAt: profile.createdAt || new Date().toISOString() };
   if (existing === -1) {
     let name = record.name;
-    for (let n = 2; validateProfileName(name, registry, null); n++) name = `${record.name} (${n})`;
+    for (let n = FIRST_DUPLICATE_SUFFIX; validateProfileName(name, registry, null); n++) name = `${record.name} (${n})`;
     registry.profiles.push({ ...record, name });
   } else {
     registry.profiles[existing] = { ...registry.profiles[existing], ...record };
@@ -216,7 +219,7 @@ function onSaveCommitted(key) {
   saveFileTimer = setTimeout(() => {
     saveFileTimer = null;
     mirrorToSaveFile();
-  }, 150);
+  }, SAVEFILE_DEBOUNCE_MS);
 }
 
 /* On each page load: bring the file up to date, and if the browser forgot the permission

@@ -1,7 +1,8 @@
 // The standard trading-card-game limit: no single group (an engine, or one deck section) may
+const MAX_COPIES_PER_SECTION = 3; // most copies of one card a deck or engine section can hold
 // hold more copies of a card than are owned, or more than 3 — whichever is smaller.
 function maxAllowedInGroup(card) {
-  return Math.max(0, Math.min(card.quantityOwned, 3));
+  return Math.max(0, Math.min(card.quantityOwned, MAX_COPIES_PER_SECTION));
 }
 
 /*
@@ -9,7 +10,7 @@ function maxAllowedInGroup(card) {
  * if the card were owned `newOwned` times. Used to warn before selling. Pure: does not change anything.
  */
 function allocationsOverLimit(collection, cardId, newOwned) {
-  const limit = Math.max(0, Math.min(newOwned, 3));
+  const limit = Math.max(0, Math.min(newOwned, MAX_COPIES_PER_SECTION));
   const over = [];
   (collection.engines || []).forEach((engine) => {
     (engine.cards || []).forEach((entry) => {
@@ -29,7 +30,7 @@ function allocationsOverLimit(collection, cardId, newOwned) {
 /* Reduces every engine/deck entry to what the owned quantity allows, dropping entries that reach 0. Returns how many were reduced. */
 function clampAllocationsToOwned(collection) {
   let reduced = 0;
-  const ownedById = new Map((collection.cards || []).map((c) => [c.id, Math.max(0, Math.min(c.quantityOwned, 3))]));
+  const ownedById = new Map((collection.cards || []).map((c) => [c.id, Math.max(0, Math.min(c.quantityOwned, MAX_COPIES_PER_SECTION))]));
   const clampList = (list) =>
     (list || []).reduce((kept, entry) => {
       const limit = ownedById.has(entry.cardId) ? ownedById.get(entry.cardId) : entry.quantity;

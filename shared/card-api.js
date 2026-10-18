@@ -1,3 +1,8 @@
+// Relative pull weights of a rarity tier: the higher the weight, the more often it is drawn.
+const WEIGHT_TOP_RARITY = 1; // secret, ultimate, ghost, ultra
+const WEIGHT_SUPER_RARITY = 1.5;
+const WEIGHT_RARE_RARITY = 3;
+const WEIGHT_COMMON_RARITY = 10;
 const CARD_API_BASE = "https://db.ygoprodeck.com/api/v7/";
 
 function isMonsterCard(apiCard) {
@@ -7,11 +12,11 @@ function isMonsterCard(apiCard) {
 function getWeightForRarity(rarity) {
   const r = (rarity || "").toLowerCase();
   if (r.includes("secret") || r.includes("ultimate") || r.includes("ghost") || r.includes("ultra")) {
-    return 1;
+    return WEIGHT_TOP_RARITY;
   }
-  if (r.includes("super")) return 1.5;
-  if (r.includes("rare")) return 3;
-  return 10;
+  if (r.includes("super")) return WEIGHT_SUPER_RARITY;
+  if (r.includes("rare")) return WEIGHT_RARE_RARITY;
+  return WEIGHT_COMMON_RARITY;
 }
 
 function extractCardFields(apiCard) {

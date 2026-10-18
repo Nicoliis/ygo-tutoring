@@ -3,15 +3,17 @@
  * it goes below the anchor when there is room (above otherwise) and is kept inside the screen.
  * Overlays are position:fixed, so the scrolling backlog list can never clip them or grow a scrollbar.
  */
+const TAG_HOVER_MARGIN_PX = 8; // minimum distance kept from the window edge
+const TAG_HOVER_GAP_PX = 4; // space between the tag and its popup
+
 function positionFloating(overlayEl, anchorRect, preferBelow) {
-  const margin = 8;
   const width = overlayEl.offsetWidth;
   const height = overlayEl.offsetHeight;
   const left = Math.min(Math.max(margin, anchorRect.left), Math.max(margin, window.innerWidth - width - margin));
   let top;
   if (preferBelow) {
-    top = anchorRect.bottom + 4;
-    if (top + height > window.innerHeight - margin) top = anchorRect.top - height - 4;
+    top = anchorRect.bottom + TAG_HOVER_GAP_PX;
+    if (top + height > window.innerHeight - TAG_HOVER_MARGIN_PX) top = anchorRect.top - height - TAG_HOVER_GAP_PX;
   } else {
     top = anchorRect.top;
   }

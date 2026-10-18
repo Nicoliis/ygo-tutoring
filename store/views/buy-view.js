@@ -99,7 +99,7 @@ function renderOfferList(model, handlers) {
   const note = document.createElement("p");
   note.className = "store-note";
   note.innerHTML =
-    "Each booster you buy again costs 50% more than the last one. Bought packs are opened in the " +
+    `Each booster you buy again costs ${Math.round((BOOSTER_PRICE_GROWTH - 1) * 100)}% more than the last one. Bought packs are opened in the ` +
     '<a href="../progression/index.html">Progression Run</a>.';
   panel.appendChild(note);
 

@@ -1,3 +1,4 @@
+const BACKFILL_CHUNK_SIZE = 50; // cards looked up per card-info request
 function maybeBackfillCardDetails(card) {
   const hasEffect = Boolean(card.effect || card.desc || card.pendDesc || card.monsterDesc);
   if (hasEffect || card.detailsTried || backfillAttemptedCardIds.has(card.id)) return;
@@ -57,8 +58,8 @@ function completeMissingCardDetails(cards) {
   const withoutId = todo.filter((card) => !card.apiId);
   const requests = [];
 
-  for (let i = 0; i < withId.length; i += 50) {
-    const chunk = withId.slice(i, i + 50);
+  for (let i = 0; i < withId.length; i += BACKFILL_CHUNK_SIZE) {
+    const chunk = withId.slice(i, i + BACKFILL_CHUNK_SIZE);
     const url = `${API_URL}?id=${chunk.map((c) => c.apiId).join(",")}`;
     requests.push(
       fetchJson(url).then((data) => {

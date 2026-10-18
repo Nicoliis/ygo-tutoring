@@ -1,6 +1,9 @@
 /* Release dates and set images are display-only (never affect stage order). One cached cardsets.php call. */
+const SET_DATES_MAX_AGE_DAYS = 30; // how long cached set dates are trusted
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
 const SET_DATES_KEY = "ygoSetDates";
-const SET_DATES_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+const SET_DATES_MAX_AGE_MS = SET_DATES_MAX_AGE_DAYS * MS_PER_DAY;
 let setDates = {};
 let setImages = {};
 
