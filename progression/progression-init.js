@@ -202,10 +202,38 @@ async function onCompleteStage() {
     setProgressionStatus(check.reason, true);
     return;
   }
-  const ok = await confirmDialog(`Complete "${currentRun.current}" and move to the next booster? This can't be undone.`, { title: "Complete stage", confirmLabel: "Complete" });
-  if (!ok) return;
-  if (persistRun(completeStage(currentRun, MAINLINE_BOOSTERS))) setProgressionStatus("");
+  const leaving = currentRun.current;
+  const result = await chooseDuelResult(leaving);
+  if (result === null) return;
+  const won = result === DUEL_WON;
+  if (persistRun(completeStageWithDuel(currentRun, MAINLINE_BOOSTERS, won))) {
+    setProgressionStatus(
+      won
+        ? `Duel won: ${formatMoney(STAGE_WIN_REWARD_CENTS)} added to your balance.`
+        : `Duel lost: ${formatMoney(STAGE_LOSS_REWARD_CENTS)} and ${STAGE_LOSS_PACKS} × ${leaving} packs added.`
+    );
+  }
   renderRun();
+}
+
+/* Asks how the duel that completes the stage ended; resolves with DUEL_WON, DUEL_LOST, or null when cancelled. */
+const DUEL_WON = "won";
+const DUEL_LOST = "lost";
+function chooseDuelResult(stageName) {
+  return new Promise((resolve) => {
+    showModal({
+      title: "Complete stage",
+      bodyHtml:
+        `<p>How did the duel for <strong>${escapeHtml(stageName)}</strong> end? This can't be undone.</p>` +
+        `<ul><li>Won: ${formatMoney(STAGE_WIN_REWARD_CENTS)} for your balance.</li>` +
+        `<li>Lost: ${formatMoney(STAGE_LOSS_REWARD_CENTS)} and ${STAGE_LOSS_PACKS} packs of ${escapeHtml(stageName)}.</li></ul>`,
+      buttons: [
+        { label: "Cancel", onClick: () => resolve(null) },
+        { label: "I lost the duel", onClick: () => resolve(DUEL_LOST) },
+        { label: "I won the duel", primary: true, onClick: () => resolve(DUEL_WON) },
+      ],
+    });
+  });
 }
 
 function initProgression() {
