@@ -29,10 +29,8 @@
   letter-spacing: 0.02em;
   margin-bottom: 2px;
 }
-.card-effect-block p {
-  margin: 0;
-  white-space: pre-line;
-}
+.card-effect-text { margin: 0; }
+.card-effect-sentence + .card-effect-sentence { margin-top: 4px; } /* a small gap between sentences */
 
 /* The Workshop's backlog rows also use the class "card-tag" (a fixed-size button); inside the details window
    the chips must keep their own size and look. */
