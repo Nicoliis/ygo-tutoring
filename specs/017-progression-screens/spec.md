@@ -8,6 +8,13 @@
 
 **Input**: User description: "At the start of a run, the user can choose the set (booster) where they start. The boosters appear in the same visual manner as they are now in the progression run. The progression run should be split into three screens. Screen 1: progression and the booster list. Screen 2: Current stage pull, where you can see everything you have pulled and what you are pulling; the \"see pulled\" list goes down there, in real time, sorted by rarity. Screen 3: Booster pull, where you have the boosters you can pull (bought or won) and their amount, shown by image and name like the boosters in the progression screen, but the ones you have none of are not there, you only see those you have."
 
+## Clarifications
+
+### Session 2026-10-18
+
+- Q: When a run starts at a later set, what happens to the sets before it? → A: Locked but buyable: they are not completed and not part of the stage count or order, but the Store lets the user buy their boosters.
+- Q: In the real-time "See pulled" list, which order should the cards use? → A: Rarest first (ties by name, identical cards grouped with their count).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Choose the set where my run starts (Priority: P1)
@@ -23,7 +30,7 @@ When the user starts a new run, before anything else, they see the booster list 
 1. **Given** a new Progression Run profile that has not started, **When** the user opens the run, **Then** they see the booster list as pictures with names, in release order, and are asked to choose the set where they start.
 2. **Given** the booster list, **When** the user selects a set, **Then** the set is shown as selected and a confirmation asks them to start there; **When** they confirm, **Then** the run begins with that set as the current stage.
 3. **Given** the user cancels at the confirmation, **When** they look at the list again, **Then** nothing has started and they can choose another set.
-4. **Given** a run started at a chosen set, **When** the user views the booster list, **Then** the sets before the starting set are shown as not part of this run, and the sets from the starting set onward follow the usual states (opened, next, not reached).
+4. **Given** a run started at a chosen set, **When** the user views the booster list, **Then** the sets before the starting set are shown as skipped (locked: not part of the stage order), and the sets from the starting set onward follow the usual states (opened, next, not reached); **When** the user opens the Store, **Then** the boosters of the sets before the starting set can be bought.
 5. **Given** a run that has already started, **When** the user opens the run, **Then** the starting-set choice is not offered again.
 6. **Given** a profile whose run started before this feature existed, **When** the user opens the run, **Then** it continues exactly as before (it started at the first set) and no starting choice is shown.
 
@@ -58,7 +65,7 @@ The second screen is where the stage's box is opened: the pack being pulled, the
 **Acceptance Scenarios**:
 
 1. **Given** a started box, **When** the user opens the current stage pull screen, **Then** they see the pack ready to pull, the cards already pulled from this pack, the box progress (pack x of 24, cards pulled) and below them the "See pulled" list of everything pulled in this stage.
-2. **Given** the user pulls a card, **When** the card is revealed, **Then** it appears in the "See pulled" list immediately, without any button press, placed by rarity order.
+2. **Given** the user pulls a card, **When** the card is revealed, **Then** it appears in the "See pulled" list immediately, without any button press, placed by rarity order (rarest first).
 3. **Given** two identical cards are pulled, **When** the list is shown, **Then** they are one entry with their count.
 4. **Given** a card in the list or in the current pack's pulled cards, **When** the user selects it, **Then** its details open (with the engines panel).
 5. **Given** the user leaves this screen mid-pack and returns, **When** the screen opens, **Then** the pack and the pulled lists are exactly as left.
@@ -120,13 +127,13 @@ The three screens are reachable from the run's navigation and from each other: t
 
 - **FR-001**: A new Progression Run MUST ask the user to choose the starting set before the run begins, from the booster list shown in the same visual style as the progression screen's booster list (picture and name, in release order).
 - **FR-002**: The choice MUST be confirmed before the run starts, MUST be possible to cancel, and MUST be made once: a started run never offers it again.
-- **FR-003**: The run MUST begin with the chosen set as its current stage; sets before it MUST NOT be part of the run (they are shown as not part of it, cannot be completed and are not available to buy), and stage progression continues in list order from the chosen set.
+- **FR-003**: The run MUST begin with the chosen set as its current stage; sets before it MUST NOT be part of the stage order or count and cannot be completed (they are shown as skipped), but their boosters MUST be available to buy in the Store; stage progression continues in list order from the chosen set.
 - **FR-004**: Runs that started before this feature MUST continue unchanged, as if they had started at the first set.
 - **FR-005**: The run MUST be split into three screens: Progression, Current stage pull and Booster pull, each its own page in the Run section of the navigation, listed in that order.
 - **FR-006**: The Progression screen MUST show the run summary, the current stage and its actions (start box, complete stage after choosing the duel result, build decks), the booster list with each set's state, and the completed stages, and MUST NOT show any pack or pulled-card area.
 - **FR-007**: Starting the stage's box MUST take the user to the Current stage pull screen.
 - **FR-008**: The Current stage pull screen MUST show the pack being pulled, the cards pulled from the current pack, the box progress and, below them, the "See pulled" list of every card pulled in the stage's box.
-- **FR-009**: The "See pulled" list MUST update in real time as each card is revealed, with no extra action, MUST be ordered by rarity (rarest first), and MUST group identical pulls with their count.
+- **FR-009**: The "See pulled" list MUST update in real time as each card is revealed, with no extra action, MUST be ordered by rarity (rarest first, then by name), and MUST group identical pulls with their count.
 - **FR-010**: Cards in either list MUST open their details window (including the engines panel) when selected.
 - **FR-011**: The Current stage pull screen MUST explain when the box has not started or is finished and link to the Progression screen.
 - **FR-012**: The Booster pull screen MUST list only the loose boosters (bought or won) the user has at least one of, each with its picture, name and amount, in the same visual style as the booster list; boosters with none MUST NOT appear.
@@ -162,9 +169,9 @@ The three screens are reachable from the run's navigation and from each other: t
 
 - The three screens are three pages under the existing Run area of the navigation: Progression Run (screen 1), Current Stage Pull (screen 2) and Booster Pull (screen 3).
 - The starting-set choice appears on the Progression screen for a run that has not started; once confirmed, the run is created at that set.
-- Sets before the starting set are outside the run: not part of the stage order, not completable, not available in the Store; later sets follow the booster list order as today.
+- Sets before the starting set are locked but buyable (clarified): outside the stage order and count and never completable, but their boosters can be bought in the Store; later sets follow the booster list order as today.
 - The starting choice cannot be changed afterwards (no "restart at another set" in this feature).
-- "See pulled" on the stage screen lists the cards of the stage's box (all packs of the stage so far), and on the booster screen the cards of the open loose pack, both ordered rarest first.
+- "See pulled" on the stage screen lists the cards of the stage's box (all packs of the stage so far), and on the booster screen the cards of the open loose pack, both ordered rarest first (confirmed).
 - The "See pulled" list is part of the page below the pack (not a separate window or a button), as requested.
 - The booster picture and name look reuses the progression booster list's look; on the booster screen the amount is shown on each booster.
 - Loose boosters come from the Store (bought) and from lost duels; no other source is introduced here.

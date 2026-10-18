@@ -31,4 +31,4 @@
 
 ## Notes
 
-- Judgment calls left as assumptions for `/speckit-clarify`: what happens to sets before the starting set (outside the run), whether the starting choice can be changed later, whether the "See pulled" order is rarest first, and whether starting the box takes the user straight to screen 2.
+- Clarified 2026-10-18: sets before the starting set are locked but buyable; "See pulled" is rarest first. Still assumptions: the starting choice cannot be changed later, and starting the box takes the user to the stage pull screen.
