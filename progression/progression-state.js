@@ -1,7 +1,7 @@
 /* Progression Run state (pure logic + persistence). Stages are identified by booster name, never by index. */
 const BOX_PACKS = 24;
-const STAGE_WIN_REWARD_CENTS = 4000; // 40.00 for winning the duel that completes a stage
-const STAGE_LOSS_REWARD_CENTS = 2000; // 20.00 for losing it
+const STAGE_WIN_REWARD_CENTS = 2000; // 20.00 for winning the duel that completes a stage
+const STAGE_LOSS_REWARD_CENTS = 1000; // 10.00 for losing it
 const STAGE_LOSS_PACKS = 5; // packs of the set being left behind, given for a lost duel
 
 function runKey(profileId) {
