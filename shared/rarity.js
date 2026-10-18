@@ -1,6 +1,7 @@
 /*
  * Rarity tiers, ordered from MOST COMMON to RAREST (rank = position + 1; unmatched/unknown = rank 0).
- * Colors climb: faint white -> white -> blue -> cyan -> violet -> yellow -> orange -> red -> pink,
+ * Colors climb: faint white -> white -> green (Rare) -> blue (Super Rare) -> yellow (Ultra Rare) -> purple ->
+ * magenta -> pink -> red, with metals and foils beyond,
  * and foil-style rarities use a multi-color shine (`shine`) so every rarity keeps its own look.
  * A rarity string is matched against every keyword; the LONGEST matching keyword wins, so
  * "Ultra Secret Rare" is never taken for "Secret Rare" or "Rare", whatever the order here.
@@ -9,21 +10,21 @@ const RARITY_GLOW_TIERS = [
   { id: "short-print", keywords: ["short print"], color: "#ffffff" },
   { id: "super-short-print", keywords: ["super short print"], color: "#cfe8ff" },
   { id: "normal-parallel", keywords: ["normal parallel"], color: "#94a3b8" },
-  { id: "rare", keywords: ["rare"], color: "#3b82f6" },
-  { id: "parallel-rare", keywords: ["parallel rare"], color: "#6366f1" },
-  { id: "super-rare", keywords: ["super rare"], color: "#22d3ee" },
-  { id: "super-parallel", keywords: ["super parallel"], color: "#14b8a6" },
-  { id: "ultra-rare", keywords: ["ultra rare"], color: "#8b5cf6" },
-  { id: "ultra-parallel", keywords: ["ultra parallel"], color: "#c084fc" },
-  { id: "pharaohs-rare", keywords: ["pharaoh"], shine: ["#8b5cf6", "#facc15", "#8b5cf6"] },
+  { id: "rare", keywords: ["rare"], color: "#22c55e" },
+  { id: "parallel-rare", keywords: ["parallel rare"], color: "#84cc16" },
+  { id: "super-rare", keywords: ["super rare"], color: "#3b82f6" },
+  { id: "super-parallel", keywords: ["super parallel"], color: "#38bdf8" },
+  { id: "ultra-rare", keywords: ["ultra rare"], color: "#facc15" },
+  { id: "ultra-parallel", keywords: ["ultra parallel"], color: "#f59e0b" },
+  { id: "pharaohs-rare", keywords: ["pharaoh"], shine: ["#facc15", "#a855f7", "#facc15"] },
   { id: "holographic", keywords: ["holographic"], shine: ["#22d3ee", "#c084fc", "#f9a8d4"] },
   { id: "mosaic", keywords: ["mosaic"], shine: ["#3b82f6", "#22d3ee", "#34d399"] },
   { id: "shatterfoil", keywords: ["shatterfoil"], shine: ["#e5e7eb", "#93c5fd", "#fde68a"] },
   { id: "starfoil", keywords: ["starfoil"], shine: ["#fde047", "#fb923c", "#f472b6"] },
-  { id: "ultimate", keywords: ["ultimate"], color: "#fde047" },
-  { id: "secret", keywords: ["secret"], color: "#fb923c" },
-  { id: "secret-parallel", keywords: ["secret parallel"], color: "#f59e0b" },
-  { id: "extra-secret", keywords: ["extra secret"], color: "#f97316" },
+  { id: "ultimate", keywords: ["ultimate"], color: "#a855f7" },
+  { id: "secret", keywords: ["secret"], color: "#d946ef" },
+  { id: "secret-parallel", keywords: ["secret parallel"], color: "#fb7185" },
+  { id: "extra-secret", keywords: ["extra secret"], color: "#f43f5e" },
   { id: "ghost", keywords: ["ghost"], color: "#99f6e4" },
   { id: "gold", keywords: ["gold rare"], color: "#d4a017" },
   { id: "gold-secret", keywords: ["gold secret"], color: "#e6b800" },
