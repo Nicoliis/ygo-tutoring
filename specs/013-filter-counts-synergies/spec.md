@@ -16,6 +16,7 @@
 - Q: Should an effect-text mention count only when the name is quoted, or also as plain text? → A: Only quoted mentions count in effect text; the card's own name matches the name anywhere inside it.
 - Change requested 2026-10-17: Fusion Monsters that are not also Effect Monsters (type does not say "effect" and the whole text is one line, the list of materials) are removed from the synergy rules: the names they quote as materials are not listed and do not tie them; their own name still can.
 - Change requested 2026-10-17: Cards with no effect (Normal monsters, and Fusion Monsters that are not also Effect Monsters) are not counted as sources: they quote no synergy names. A card that quotes its own full name is not counted for it. A card is counted for a name when it quotes it, or when its own name contains it and a different card with an effect quotes it. A name is listed only when some card with an effect quotes it.
+- Change requested 2026-10-18: Synergy names are case sensitive: "Blue-Eyes" and "blue-eyes" are different names, and a card's own name contains a name only when the letters match exactly. Searching the name list in the filter window still ignores case. Selections saved earlier in lower case stay as they were and show with 0 cards until unticked.
 - Q: Should counts stay fixed or update as other values are picked in the window? → A: Fixed: each count covers its tab's whole set of cards regardless of other selections.
 
 ## User Scenarios & Testing *(mandatory)*
