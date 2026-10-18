@@ -90,12 +90,14 @@ function buyBoosters(run, setName, amount, boosterList) {
   };
 }
 
-/* ---- Extras: every copy over 3 of a card, counted across all its rarities and sets ---- */
+/* ---- Extras: every copy over `keep` (default 3). hasExtras counts a card across all sets (for the list filter);
+ * selling extras counts each printing on its own. ---- */
 
 const KEEP_COPIES = 3;
+const KEEP_OPTIONS = [1, 2, 3, 4];
 
-function hasExtras(card) {
-  return (Number(card.quantityOwned) || 0) > KEEP_COPIES;
+function hasExtras(card, keep = KEEP_COPIES) {
+  return (Number(card.quantityOwned) || 0) > keep;
 }
 
 /* The cheapest copy of a card (lowest sale value; ties: least rare), as { index, valueCents }. index -1 = unknown copy. */
@@ -111,31 +113,43 @@ function cheapestCopy(card) {
   return options[0] || null;
 }
 
+/* Copies of a card over `keep` in each separate printing (set + rarity), plus the copies with no recorded printing. */
+function extraPrintings(card, keep = KEEP_COPIES) {
+  const list = (Array.isArray(card.printings) ? card.printings : [])
+    .filter((printing) => printing.quantity > keep)
+    .map((printing) => ({ printing, extra: printing.quantity - keep }));
+  const unknown = (Number(card.quantityOwned) || 0) - printingsTotal(card);
+  if (unknown > keep) list.push({ printing: null, extra: unknown - keep });
+  return list;
+}
+
 /*
- * Sells every copy over 3 of each card, always the cheapest copies first so the best three stay.
- * Changes `collection` IN PLACE and returns { run, soldCount, totalCents }.
+ * Sells every copy over `keep` (default 3) within each printing: the same card from another set or rarity counts
+ * separately, so each printing keeps its own `keep` copies. Changes `collection` IN PLACE and returns
+ * { run, soldCount, totalCents }.
  */
-function sellExtras(run, collection) {
+function sellExtras(run, collection, keep = KEEP_COPIES) {
   let current = run;
   let soldCount = 0;
   let totalCents = 0;
   collection.cards.forEach((card) => {
-    while (hasExtras(card)) {
-      const copy = cheapestCopy(card);
-      if (!copy) break;
-      const before = getBalanceCents(current);
-      current = sellPrinting(current, collection, card.id, copy.index);
-      totalCents += getBalanceCents(current) - before;
-      soldCount += 1;
-    }
+    extraPrintings(card, keep).forEach(({ printing, extra }) => {
+      for (let i = 0; i < extra; i++) {
+        const index = printing ? card.printings.indexOf(printing) : -1;
+        const before = getBalanceCents(current);
+        current = sellPrinting(current, collection, card.id, index);
+        totalCents += getBalanceCents(current) - before;
+        soldCount += 1;
+      }
+    });
   });
   return { run: current, soldCount, totalCents };
 }
 
 /* What sellExtras would do, without changing anything: { soldCount, totalCents, cardCount }. */
-function previewExtras(run, collection) {
+function previewExtras(run, collection, keep = KEEP_COPIES) {
   const copy = JSON.parse(JSON.stringify(collection));
-  const cardCount = copy.cards.filter(hasExtras).length;
-  const result = sellExtras(run, copy);
+  const cardCount = copy.cards.filter((card) => extraPrintings(card, keep).length > 0).length;
+  const result = sellExtras(run, copy, keep);
   return { soldCount: result.soldCount, totalCents: result.totalCents, cardCount };
 }

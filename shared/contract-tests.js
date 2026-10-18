@@ -256,16 +256,16 @@ function runContractTests() {
     expect(threw, "nothing left to sell");
   });
 
-  check("sell extras: every copy over 3 across rarities and sets, cheapest first", () => {
+  check("sell extras: every copy over 3 within each printing; other sets are separate", () => {
     const col = {
       cards: [
         {
           id: "a",
           name: "A",
-          quantityOwned: 6,
+          quantityOwned: 9,
           printings: [
-            { set: "S1", rarity: "Ultra Rare", price: 5, setPrice: 500, quantity: 2 },
-            { set: "S2", rarity: "Common", price: 0.1, setPrice: 10, quantity: 2 },
+            { set: "S1", rarity: "Common", price: 0.1, setPrice: 10, quantity: 5 },
+            { set: "S2", rarity: "Common", price: 0.1, setPrice: 20, quantity: 2 },
             { set: "S3", rarity: "Rare", price: 1, setPrice: 100, quantity: 1 },
           ],
         },
@@ -275,17 +275,19 @@ function runContractTests() {
       engines: [],
       decks: [],
     };
-    expect(hasExtras(col.cards[0]) && !hasExtras(col.cards[1]) && hasExtras(col.cards[2]));
+    expect(hasExtras(col.cards[0]) && !hasExtras(col.cards[1]) && hasExtras(col.cards[2]), "the list filter counts all sets together");
     const preview = previewExtras({ completed: [], current: "A", balanceCents: 0 }, col);
-    expect(preview.soldCount === 5 && preview.cardCount === 2, "3 extras of A + 2 unknown extras of C");
-    expect(col.cards[0].quantityOwned === 6, "preview changes nothing");
+    expect(preview.soldCount === 4 && preview.cardCount === 2, "2 extras of A (S1 only) + 2 unknown extras of C");
+    expect(col.cards[0].quantityOwned === 9, "preview changes nothing");
     const result = sellExtras({ completed: [], current: "A", balanceCents: 1000, futureField: "keep" }, col);
-    // A owns 6 (5 with printings + 1 unknown): its 3 cheapest go (unknown 0.01, two commons 0.10 each); C loses 2 unknown copies at 0.01
-    expect(result.soldCount === 5 && result.totalCents === 1 + 10 + 10 + 1 + 1);
+    // A: S1 has 5 (sell 2 at 0.10); its 1 unknown copy and S2/S3 stay. C: 2 unknown copies at 0.01
+    expect(result.soldCount === 4 && result.totalCents === 10 + 10 + 1 + 1);
     expect(result.run.balanceCents === 1000 + result.totalCents && result.run.futureField === "keep");
-    expect(col.cards[0].quantityOwned === 3 && col.cards[0].printings.map((p) => p.rarity).join() === "Ultra Rare,Rare", "the best copies stay");
+    expect(col.cards[0].quantityOwned === 7 && col.cards[0].printings.map((p) => p.quantity).join() === "3,2,1", "other sets untouched");
     expect(col.cards[1].quantityOwned === 3 && col.cards[2].quantityOwned === 3);
     expect(sellExtras(result.run, col).soldCount === 0, "nothing left to sell");
+    const keepOne = sellExtras({ completed: [], current: "A", balanceCents: 0 }, col, 1);
+    expect(keepOne.soldCount === 2 + 1 + 2 + 2 && col.cards[0].printings.map((p) => p.quantity).join() === "1,1,1", "keep 1 per printing");
   });
 
   check("clampAllocationsToOwned drops entries that reach zero", () => {
