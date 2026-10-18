@@ -113,3 +113,5 @@
   cursor: pointer;
 }
 .card-picture:hover, .card-picture:focus-visible { border-color: var(--accent); outline: none; }
+/* An engine card being dragged over another card of the same engine: the drop re-sorts the list. */
+.card-picture-tile.sort-target { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }

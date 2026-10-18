@@ -16,7 +16,13 @@ function renderEngineCardContents(el, engine) {
         renderCardTile(card, {
           onRemove: () => removeCardFromEngine(engine.id, ec.cardId, 1),
           removeLabel: `Remove one ${card.name} from ${engine.name}`,
-          dragCardPayload: { engineId: engine.id },
+          dragCardPayload: { engineId: engine.id, cardId: ec.cardId },
+          // dropping another card of this same engine here re-sorts the list; anything else goes on to the engine
+          onSortDrop: (payload) => {
+            if (payload.engineId !== engine.id) return false;
+            if (payload.cardId !== ec.cardId) reorderEngineCards(engine.id, payload.cardId, ec.cardId);
+            return true;
+          },
         })
       );
     }

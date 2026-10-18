@@ -31,3 +31,12 @@ function removeCardFromEngine(engineId, cardId, amount = 1) {
   renderAll();
   showToast(`Removed ${card ? card.name : "card"} from "${engine.name}".`, "success");
 }
+
+/* Moves the dragged card's entry to the place of the card it was dropped on (the order engines are drawn in). */
+function reorderEngineCards(engineId, fromCardId, toCardId) {
+  const engine = findEngine(engineId);
+  if (!engine) return false;
+  if (!updateEngine(engineId, { cards: moveCardEntry(engine.cards, fromCardId, toCardId) })) return false;
+  renderAll();
+  return true;
+}

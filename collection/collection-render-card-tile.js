@@ -7,12 +7,13 @@ function openCardDetailsFromPicture(card) {
   openCardDetailModal(card);
 }
 
-function renderCardTile(card, { onRemove, removeLabel, dragMovePayload, dragCardPayload }) {
+function renderCardTile(card, { onRemove, removeLabel, dragMovePayload, dragCardPayload, onSortDrop }) {
   return renderCardPicture(card, {
     onOpen: () => openCardDetailsFromPicture(card),
     onRemove,
     removeLabel,
     dragMovePayload,
     dragCardPayload,
+    onSortDrop,
   });
 }
