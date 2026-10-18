@@ -24,17 +24,6 @@ function isRitualCard(card) {
   return /ritual/i.test(typeText) || (/spell/i.test(typeText) && /^ritual$/i.test(String(card.race || "").trim()));
 }
 
-/* Where the first sentence ends: at a period outside quotes (a name like "Mr. X" does not end it) or a line break. */
-function firstSentenceEnd(text) {
-  let inQuote = false;
-  for (let i = 0; i < text.length; i++) {
-    const ch = text[i];
-    if (ch === '"' || ch === "“" || ch === "”") inQuote = ch === "“" ? true : ch === "”" ? false : !inQuote;
-    else if (!inQuote && (ch === "\n" || (ch === "." && (i + 1 === text.length || /\s/.test(text[i + 1]))))) return i + 1;
-  }
-  return text.length;
-}
-
 /* The text names are taken from: the effect text, without the ritual clause of a Ritual card. */
 function synergyText(card) {
   const text = cardEffectText(card);

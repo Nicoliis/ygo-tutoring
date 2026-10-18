@@ -19,6 +19,7 @@ const source = [
   read("save-utils.js"),
   read("profiles.js"),
   read("money.js"),
+  read("sentences.js"),
   read("backlog-synergy.js"),
   read("backlog-filter.js"),
   read("card-api.js"),

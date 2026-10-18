@@ -810,6 +810,14 @@ function runContractTests() {
     expect(cardTiedTo(ritualSpell, "Gaia Power") === true && cardTiedTo(ritualMonster, "Mr. Volcano") === true, "later sentences still count");
   });
 
+  check("sentences: split at periods outside quotes, so names with a period stay whole", () => {
+    expect(splitSentences('Add "Mr. Volcano" to your hand. Then draw 1 card.').join("|") === 'Add "Mr. Volcano" to your hand.|Then draw 1 card.');
+    expect(splitSentences('You can target "Lv. 4 Dragon"; destroy it.  Once per turn: draw 1.\nCannot be Tributed.').join("|") === 'You can target "Lv. 4 Dragon"; destroy it.|Once per turn: draw 1.|Cannot be Tributed.', "double spaces and line breaks");
+    expect(splitSentences("No final period").join("|") === "No final period" && splitSentences("").length === 0 && splitSentences(null).length === 0 && splitSentences("  \n ").length === 0);
+    expect(splitSentences('Treated as “Mr. X” on the field. Done.').join("|") === 'Treated as “Mr. X” on the field.|Done.', "curly quotes too");
+    expect(splitSentences("Level 4. Then 3.5 times.").length === 2, "a period inside a number is not followed by a space");
+  });
+
   check("synergy: names are case sensitive", () => {
     const upper = { name: "Blue-Eyes White Dragon", type: "Normal Monster", frameType: "normal" };
     const lowerQuote = { name: "Lower Quoter", type: "Effect Monster", frameType: "effect", effect: 'Search "blue-eyes".' };
