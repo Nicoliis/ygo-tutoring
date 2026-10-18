@@ -4,13 +4,20 @@
  *
  *   openBacklogFilterModal({ getCards, onApply })
  *
- * A tenth tab, "Synergy", is cross-type: it lists the names quoted in the cards' effect texts (backlog-synergy.js).
+ * A tenth tab, "Synergy", is cross-type: it lists the names quoted in the cards' effect texts (backlog-synergy.js);
+ * names tied to 3 or more cards are listed in the open, those with 2 cards (and 1 or none) in collapsed sections.
  * Value chips and the Monster include boxes show how many distinct cards have them (fixed counts, not live).
  *
  * Needs backlog-filter.js, backlog-synergy.js, modal.js (showModal) and, for filling in missing card details,
  * collection-backfill.js.
  */
 const SYNERGY_TAB_ID = "synergy";
+const SYNERGY_VISIBLE_MIN_COUNT = 3; // names tied to this many cards or more are listed in the open
+// names tied to fewer cards sit in collapsed sections, most cards first (a saved name no card mentions has 0)
+const SYNERGY_COLLAPSED_TIERS = [
+  { id: "two", min: 2, max: 2, label: "Only 2 cards" },
+  { id: "one", min: 0, max: 1, label: "1 card or fewer" },
+];
 
 
 function openBacklogFilterModal({ getCards, onApply }) {
@@ -139,7 +146,8 @@ function openBacklogFilterModal({ getCards, onApply }) {
     );
   }
 
-  /* The cross-type tab: a search box and one checkbox per quoted name, highest card count first. */
+  /* The cross-type tab: a search box, the names with SYNERGY_VISIBLE_MIN_COUNT or more cards in the open, and the
+   * names with fewer cards in collapsed sections (a section opens by itself when it holds a ticked or found name). */
   function renderSynergyPanel() {
     const el = panelEls[SYNERGY_TAB_ID];
     el.innerHTML = "";
@@ -150,7 +158,45 @@ function openBacklogFilterModal({ getCards, onApply }) {
     search.setAttribute("aria-label", "Search synergy names");
     const list = document.createElement("div");
     list.className = "bf-synergy-list";
-    el.append(search, list);
+    const more = document.createElement("div");
+    more.className = "bf-synergy-more-sections";
+    el.append(search, list, more);
+    const openedByUser = new Set(); // collapsed sections the user opened, kept while the list is redrawn
+
+    function buildChip(entry) {
+      const chip = document.createElement("label");
+      chip.className = "bf-chip";
+      const box = document.createElement("input");
+      box.type = "checkbox";
+      box.checked = draft.synergy.includes(entry.key);
+      box.addEventListener("change", () => {
+        draft.synergy = draft.synergy.filter((k) => k !== entry.key);
+        if (box.checked) draft.synergy.push(entry.key);
+        refreshTabLabels();
+      });
+      const count = document.createElement("span");
+      count.className = "bf-chip-count";
+      count.textContent = `(${entry.count})`;
+      chip.append(box, document.createTextNode(` ${entry.label} `), count);
+      return chip;
+    }
+
+    function buildSection(tier, rows, forceOpen) {
+      const section = document.createElement("details");
+      section.className = "bf-synergy-more";
+      section.open = forceOpen || openedByUser.has(tier.id);
+      section.addEventListener("toggle", () => {
+        if (section.open) openedByUser.add(tier.id);
+        else if (!forceOpen) openedByUser.delete(tier.id);
+      });
+      const summary = document.createElement("summary");
+      summary.textContent = `${tier.label} (${rows.length})`;
+      const body = document.createElement("div");
+      body.className = "bf-synergy-list";
+      rows.forEach((entry) => body.appendChild(buildChip(entry)));
+      section.append(summary, body);
+      return section;
+    }
 
     function renderList() {
       const known = new Set(synergyIndex.entries.map((e) => e.key));
@@ -159,6 +205,7 @@ function openBacklogFilterModal({ getCards, onApply }) {
       const needle = synergyKey(search.value).toLowerCase(); // looking a name up in the list ignores case; the names themselves do not
       const rows = [...synergyIndex.entries, ...stale].filter((e) => !needle || e.key.toLowerCase().includes(needle));
       list.innerHTML = "";
+      more.innerHTML = "";
       if (rows.length === 0) {
         const empty = document.createElement("p");
         empty.className = "bf-empty";
@@ -166,22 +213,12 @@ function openBacklogFilterModal({ getCards, onApply }) {
         list.appendChild(empty);
         return;
       }
-      rows.forEach((entry) => {
-        const chip = document.createElement("label");
-        chip.className = "bf-chip";
-        const box = document.createElement("input");
-        box.type = "checkbox";
-        box.checked = draft.synergy.includes(entry.key);
-        box.addEventListener("change", () => {
-          draft.synergy = draft.synergy.filter((k) => k !== entry.key);
-          if (box.checked) draft.synergy.push(entry.key);
-          refreshTabLabels();
-        });
-        const count = document.createElement("span");
-        count.className = "bf-chip-count";
-        count.textContent = `(${entry.count})`;
-        chip.append(box, document.createTextNode(` ${entry.label} `), count);
-        list.appendChild(chip);
+      rows.filter((e) => e.count >= SYNERGY_VISIBLE_MIN_COUNT).forEach((entry) => list.appendChild(buildChip(entry)));
+      SYNERGY_COLLAPSED_TIERS.forEach((tier) => {
+        const tierRows = rows.filter((e) => e.count >= tier.min && e.count <= tier.max);
+        if (tierRows.length === 0) return;
+        const forceOpen = needle !== "" || tierRows.some((e) => draft.synergy.includes(e.key));
+        more.appendChild(buildSection(tier, tierRows, forceOpen));
       });
     }
     search.addEventListener("input", renderList);

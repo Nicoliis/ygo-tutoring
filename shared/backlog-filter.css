@@ -140,3 +140,9 @@
 .bf-chip:hover { border-color: var(--accent-hover); }
 .bf-chip:has(input:checked) { background: color-mix(in srgb, var(--accent) 16%, var(--panel-alt)); }
 .bf-tab-check { margin-left: 6px; }
+
+/* Synergy names with few cards sit in collapsed sections under the open list. */
+.bf-synergy-more-sections { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+.bf-synergy-more > summary { cursor: pointer; color: var(--text-dim); font-size: 0.8rem; padding: 4px 0; }
+.bf-synergy-more > summary:hover, .bf-synergy-more > summary:focus-visible { color: var(--text); outline: none; }
+.bf-synergy-more[open] > .bf-synergy-list { margin-top: 4px; }
