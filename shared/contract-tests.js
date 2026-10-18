@@ -393,6 +393,55 @@ function runContractTests() {
     expect(unmatchedCopies([{ name: "Y", quantityOwned: 2, printings: [{ set: SET_A, rarity: null, quantity: 2 }] }]) === 2, "a printing with no rarity");
   });
 
+  /* ---- Engines panel in the card details window (spec 016) ---- */
+
+  function enginesFixture() {
+    return {
+      cards: [
+        { id: "k1", name: "Dragon", apiId: 11, quantityOwned: 2 },
+        { id: "k2", name: "Wizard", apiId: 12, quantityOwned: 5 },
+      ],
+      engines: [{ id: "e1", name: "Dragons", cards: [] }, { id: "e2", name: "Dragons", cards: [] }],
+      decks: [],
+    };
+  }
+
+  check("engine rules: the owned card is found by id, apiId or name", () => {
+    const col = enginesFixture();
+    expect(resolveOwnedCard(col, { id: "k2" }).name === "Wizard");
+    expect(resolveOwnedCard(col, { apiId: 11, name: "other" }).id === "k1");
+    expect(resolveOwnedCard(col, { name: "  dragon " }).id === "k1", "name ignores case and spaces");
+    expect(resolveOwnedCard(col, { name: "Unknown" }) === null && resolveOwnedCard(col, {}) === null);
+  });
+
+  check("engine rules: an engine holds at most the copies owned, never more than 3", () => {
+    const col = enginesFixture();
+    const dragon = col.cards[0];
+    const wizard = col.cards[1];
+    expect(canAddCopy(col, "e1", dragon).ok);
+    addCopy(col, "e1", "k1");
+    expect(addCopy(col, "e1", "k1") === 2 && col.engines[0].cards.length === 1, "entries merge by card");
+    expect(!canAddCopy(col, "e1", dragon).ok && canAddCopy(col, "e1", dragon).reason === NO_COPIES_LEFT_REASON, "2 owned, 2 held");
+    expect(canAddCopy(col, "e1", dragon, 1).ok, "a copy that can still be saved counts");
+    expect(canAddCopy(col, "e2", dragon).ok, "engines are independent");
+    for (let i = 0; i < 3; i++) addCopy(col, "e2", "k2");
+    expect(!canAddCopy(col, "e2", wizard).ok && canAddCopy(col, "e2", wizard).reason === ENGINE_LIMIT_REASON, "5 owned but 3 is the cap");
+    expect(!canAddCopy(col, "missing", dragon).ok && !canAddCopy(col, "e1", null).ok);
+  });
+
+  check("engine rules: removing copies and creating an engine with a card", () => {
+    const col = enginesFixture();
+    addCopy(col, "e1", "k1");
+    addCopy(col, "e1", "k1");
+    expect(removeCopy(col, "e1", "k1") === 1);
+    expect(removeCopy(col, "e1", "k1") === 0 && col.engines[0].cards.length === 0, "the last copy drops the entry");
+    expect(removeCopy(col, "e1", "k1") === 0, "removing from an engine without the card does nothing");
+    expect(createEngineWithCard(col, "   ", "k1", "n0") === null && col.engines.length === 2, "an empty name creates nothing");
+    const made = createEngineWithCard(col, "  Dragons ", "k1", "n1");
+    expect(made.name === "Dragons" && made.cards.length === 1 && made.cards[0].quantity === 1 && col.engines.length === 3, "trimmed, one copy");
+    expect(createEngineWithCard(col, "Dragons", "k1", "n2") !== null && col.engines.length === 4, "names do not have to be unique");
+  });
+
   check("clampAllocationsToOwned drops entries that reach zero", () => {
     const col = storeCollection();
     col.cards[0].quantityOwned = 0;

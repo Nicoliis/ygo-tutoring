@@ -28,6 +28,7 @@ const source = [
   read("backlog-merge.js"),
   read("../collection/collection-allocation.js"),
   read("../collection/binder-paging.js"),
+  read("engine-rules.js"),
   read("../progression/progression-state.js"),
   read("../store/store-state.js"),
   read("contract-tests.js"),
