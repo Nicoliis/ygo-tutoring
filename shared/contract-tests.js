@@ -713,7 +713,8 @@ function runContractTests() {
 
   check("quotedNames: straight and curly quotes, trimmed, deduplicated, quoted only", () => {
     const names = quotedNames(synergyCards[1].effect);
-    expect(names.length === 1 && names[0] === "Dark Magician", "case/space duplicates merged, first spelling kept");
+    expect(names.join() === "Dark Magician,dark magician", "names are case sensitive: two spellings, spaces collapsed");
+    expect(quotedNames('"Dark  Magician" and "Dark Magician"').join() === "Dark Magician", "the same spelling is merged");
     expect(quotedNames(synergyCards[3].effect).join() === "Blue-Eyes White Dragon", "curly and straight merge");
     expect(quotedNames("no quotes here dark magician").length === 0);
     expect(quotedNames('"' + "x".repeat(81) + '" and "  Ok   Name "').join() === "Ok Name", "over-long dropped, spaces collapsed");
@@ -723,11 +724,12 @@ function runContractTests() {
   check("buildSynergyIndex: ties by quote or own name, once per card, sorted by count", () => {
     const index = buildSynergyIndex(synergyCards);
     const byKey = Object.fromEntries(index.entries.map((e) => [e.key, e.count]));
-    expect(byKey["dark magician"] === 2, "Dark Magician (name) and Dark Magician Girl (quote and name) only; the unquoted trap mention is ignored");
-    expect(byKey["blue-eyes white dragon"] === 2, "the quoting card and the card with that name");
+    expect(byKey["Dark Magician"] === 2, "Dark Magician (name) and Dark Magician Girl (quote and name) only; the unquoted trap mention is ignored");
+    expect(byKey["dark magician"] === 1, "the lower-case spelling is another name: only the card quoting it");
+    expect(byKey["Blue-Eyes White Dragon"] === 2, "the quoting card and the card with that name");
     expect(index.entries[0].count >= index.entries[1].count, "highest count first");
-    expect(index.entries.length === 2);
-    expect(cardTiedTo(synergyCards[2], "dark magician") === false);
+    expect(index.entries.length === 3);
+    expect(cardTiedTo(synergyCards[2], "Dark Magician") === false);
   });
 
   check("synergy: vanilla Fusion Monsters add no names and are not tied through their materials", () => {
@@ -738,9 +740,9 @@ function runContractTests() {
     expect(!isVanillaFusion(typedEffect), "a Fusion that is also an Effect Monster keeps its materials");
     const index = buildSynergyIndex([vanilla, withEffect, synergyCards[4]]);
     const keys = index.entries.map((e) => e.key).sort().join("|");
-    expect(keys === "material one|material two|polymerization", "only the fusion with an effect adds names");
-    expect(cardTiedTo(vanilla, "blue-eyes white dragon") === false, "its materials do not tie it");
-    expect(cardTiedTo({ ...vanilla, name: "Blue-Eyes Ultimate Dragon" }, "blue-eyes") === true, "its own name still does");
+    expect(keys === "Material One|Material Two|Polymerization", "only the fusion with an effect adds names");
+    expect(cardTiedTo(vanilla, "Blue-Eyes White Dragon") === false, "its materials do not tie it");
+    expect(cardTiedTo({ ...vanilla, name: "Blue-Eyes Ultimate Dragon" }, "Blue-Eyes") === true, "its own name still does");
   });
 
   check("synergy: cards with no effect and self-naming cards are not counted, unless another card names them", () => {
@@ -752,29 +754,40 @@ function runContractTests() {
     let index = buildSynergyIndex([flavor, dm]);
     expect(index.entries.length === 0, "a Normal monster's flavor text names nothing");
     index = buildSynergyIndex([selfNamer]);
-    expect(index.entries.length === 0 && !index.tied(selfNamer, "solo dragon"), "a card that only names itself is not counted");
+    expect(index.entries.length === 0 && !index.tied(selfNamer, "Solo Dragon"), "a card that only names itself is not counted");
     index = buildSynergyIndex([selfNamer, namedByOther, hero2]);
     const byKey = Object.fromEntries(index.entries.map((e) => [e.key, e.count]));
-    expect(byKey["hero two"] === 2 && !("solo dragon" in byKey), "a card with no effect IS counted when a different card names it");
-    expect(index.tied(hero2, "hero two") && index.tied(namedByOther, "hero two") && !index.tied(selfNamer, "hero two"));
+    expect(byKey["Hero Two"] === 2 && !("Solo Dragon" in byKey), "a card with no effect IS counted when a different card names it");
+    expect(index.tied(hero2, "Hero Two") && index.tied(namedByOther, "Hero Two") && !index.tied(selfNamer, "Hero Two"));
     const girl = synergyCards[1];
-    expect(buildSynergyIndex([girl, dm]).tied(dm, "dark magician"), "named by a different card");
-    expect(!buildSynergyIndex([dm]).tied(dm, "dark magician"), "nobody names it: not counted");
-    expect(matchesFilter(hero2, { types: [], values: {}, synergy: ["hero two"] }, index) && !matchesFilter(selfNamer, { types: [], values: {}, synergy: ["hero two"] }, index));
+    expect(buildSynergyIndex([girl, dm]).tied(dm, "Dark Magician"), "named by a different card");
+    expect(!buildSynergyIndex([dm]).tied(dm, "Dark Magician"), "nobody names it: not counted");
+    expect(matchesFilter(hero2, { types: [], values: {}, synergy: ["Hero Two"] }, index) && !matchesFilter(selfNamer, { types: [], values: {}, synergy: ["Hero Two"] }, index));
+  });
+
+  check("synergy: names are case sensitive", () => {
+    const upper = { name: "Blue-Eyes White Dragon", type: "Normal Monster", frameType: "normal" };
+    const lowerQuote = { name: "Lower Quoter", type: "Effect Monster", frameType: "effect", effect: 'Search "blue-eyes".' };
+    const upperQuote = { name: "Upper Quoter", type: "Effect Monster", frameType: "effect", effect: 'Search "Blue-Eyes".' };
+    const index = buildSynergyIndex([upper, lowerQuote, upperQuote]);
+    expect(index.entries.map((e) => e.key).sort().join("|") === "Blue-Eyes|blue-eyes", "two spellings, two names");
+    expect(index.tied(upper, "Blue-Eyes") && !index.tied(upper, "blue-eyes"), "a card name contains a name only with the same letters");
+    expect(index.tied(upperQuote, "Blue-Eyes") && !index.tied(upperQuote, "blue-eyes"));
+    expect(cardTiedTo(upper, "Blue-Eyes") === true && cardTiedTo(upper, "blue-eyes") === false);
   });
 
   check("synergy filter: cross-type, OR inside, AND with the type tabs, empty means no restriction", () => {
     const names = (filter) => synergyCards.filter((c) => matchesFilter(c, filter)).map((c) => c.name).join("|");
-    expect(names({ types: [], values: {}, synergy: ["dark magician"] }) === "Dark Magician|Dark Magician Girl");
-    expect(names({ types: [], values: {}, synergy: ["dark magician", "blue-eyes white dragon"] }).split("|").length === 4, "union of two names");
-    expect(names({ types: ["monster-effect"], values: {}, synergy: ["dark magician"] }) === "Dark Magician Girl", "type AND synergy");
+    expect(names({ types: [], values: {}, synergy: ["Dark Magician"] }) === "Dark Magician|Dark Magician Girl");
+    expect(names({ types: [], values: {}, synergy: ["Dark Magician", "Blue-Eyes White Dragon"] }).split("|").length === 4, "union of two names");
+    expect(names({ types: ["monster-effect"], values: {}, synergy: ["Dark Magician"] }) === "Dark Magician Girl", "type AND synergy");
     expect(synergyCards.every((c) => matchesFilter(c, { types: [], values: {}, synergy: [] })));
     expect(isFilterActive({ types: [], values: {}, synergy: ["x"] }) && activeFilterCount({ types: ["spell"], values: {}, synergy: ["x"] }) === 2);
   });
 
   check("synergy selection: sanitized, saved per profile, restored, cleared, unknown names harmless", () => {
     const clean = sanitizeFilter({ types: [], values: {}, synergy: ["  Dark   Magician ", "dark magician", 5, "", "x".repeat(81)] });
-    expect(clean.synergy.join() === "dark magician", "trimmed, unique, strings only, short");
+    expect(clean.synergy.join() === "Dark Magician,dark magician", "trimmed, case kept, unique, strings only, short");
     expect(sanitizeFilter({ types: ["spell"], values: {} }).synergy.length === 0, "an older record loads without synergy");
     createProfile("SynA", "progression");
     const profileA = getActiveProfile().id;

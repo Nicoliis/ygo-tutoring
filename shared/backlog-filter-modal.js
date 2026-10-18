@@ -156,8 +156,8 @@ function openBacklogFilterModal({ getCards, onApply }) {
       const known = new Set(synergyIndex.entries.map((e) => e.key));
       // a saved name no card mentions any more stays listed (count 0) so it can still be unticked
       const stale = draft.synergy.filter((key) => !known.has(key)).map((key) => ({ key, label: key, count: 0 }));
-      const needle = synergyKey(search.value);
-      const rows = [...synergyIndex.entries, ...stale].filter((e) => !needle || e.key.includes(needle));
+      const needle = synergyKey(search.value).toLowerCase(); // looking a name up in the list ignores case; the names themselves do not
+      const rows = [...synergyIndex.entries, ...stale].filter((e) => !needle || e.key.toLowerCase().includes(needle));
       list.innerHTML = "";
       if (rows.length === 0) {
         const empty = document.createElement("p");

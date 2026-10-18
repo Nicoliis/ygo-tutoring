@@ -6,7 +6,8 @@
  *  - A card never counts for a name it quotes when that name is its own full name (it names itself).
  *  - A card is counted for a name when it quotes it, or when its own name contains it AND some card with an
  *    effect quotes it (a different card names it). Unquoted mentions in effect text do not count.
- * Keys are lower-case with whitespace collapsed; the first-seen spelling is the label.
+ * Names are CASE SENSITIVE: "Blue-Eyes" and "blue-eyes" are different synergy names, and a card's own name only
+ * contains a name when the letters match exactly. Keys are the name with whitespace collapsed (case kept).
  */
 const SYNERGY_NAME_MAX = 80;
 
@@ -15,10 +16,10 @@ function cardEffectText(card) {
 }
 
 function synergyKey(name) {
-  return String(name || "").trim().replace(/\s+/g, " ").toLowerCase();
+  return String(name || "").trim().replace(/\s+/g, " ");
 }
 
-/* Names between straight ("...") or curly (“...”) double quotes, 1-80 characters, without case-insensitive duplicates. */
+/* Names between straight ("...") or curly (“...”) double quotes, 1-80 characters, without duplicates of the same spelling. */
 function quotedNames(text) {
   const found = [];
   const seen = new Set();
