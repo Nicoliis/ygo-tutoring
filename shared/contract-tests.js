@@ -1000,6 +1000,19 @@ function runContractTests() {
     expect(dragon.quantityOwned === 1 && dragon.printings[0].quantity === 1, "one copy and one printing copy remain");
   });
 
+  check("stage duel: winning adds 40 to the balance, losing adds 20 and 5 packs of the set left behind", () => {
+    const base = { ...newRun(LIST), futureField: "keep" };
+    const won = completeStageWithDuel(base, LIST, true);
+    expect(won.balanceCents === 4000 && !won.packInventory, "a win: 40.00 and no packs");
+    expect(won.completed.join() === LIST[0] && won.current === LIST[1] && won.futureField === "keep", "the stage still completes");
+    const lost = completeStageWithDuel(base, LIST, false);
+    expect(lost.balanceCents === 2000 && lost.packInventory[LIST[0]] === 5, "a loss: 20.00 and 5 packs of the set being left");
+    expect(lost.current === LIST[1] && lost.packInventory[LIST[1]] === undefined, "not packs of the next set");
+    const later = completeStageWithDuel({ ...lost, balanceCents: 150, packInventory: { [LIST[1]]: 2, [LIST[0]]: 1 } }, LIST, false);
+    expect(later.balanceCents === 2150 && later.packInventory[LIST[1]] === 7 && later.packInventory[LIST[0]] === 1, "adds to what the run already has");
+    expect(completeStageWithDuel({ ...base, balanceCents: 999 }, LIST, true).balanceCents === 4999);
+  });
+
   check("box: phases, reveal, finish and stage completion", () => {
     let run = newRun(LIST);
     expect(boxPhase(run) === "not-started" && canOpenBox(run).ok);

@@ -1,5 +1,8 @@
 /* Progression Run state (pure logic + persistence). Stages are identified by booster name, never by index. */
 const BOX_PACKS = 24;
+const STAGE_WIN_REWARD_CENTS = 4000; // 40.00 for winning the duel that completes a stage
+const STAGE_LOSS_REWARD_CENTS = 2000; // 20.00 for losing it
+const STAGE_LOSS_PACKS = 5; // packs of the set being left behind, given for a lost duel
 
 function runKey(profileId) {
   return `ygoRun_${profileId}`;
@@ -106,6 +109,23 @@ function completeStage(run, boosterList) {
     boxOpened: false,
     box: emptyBox(),
     finishedAt: next === null ? new Date().toISOString() : null,
+  };
+}
+
+/*
+ * Completes the current stage after its duel. Winning adds STAGE_WIN_REWARD_CENTS to the balance; losing adds
+ * STAGE_LOSS_REWARD_CENTS and STAGE_LOSS_PACKS unopened packs of the set being left behind (the stage just completed).
+ */
+function completeStageWithDuel(run, boosterList, won) {
+  const leaving = run.current;
+  const balance = Number.isInteger(run.balanceCents) && run.balanceCents > 0 ? run.balanceCents : 0;
+  const completed = completeStage(run, boosterList);
+  if (won) return { ...completed, balanceCents: balance + STAGE_WIN_REWARD_CENTS };
+  const inventory = run.packInventory || {};
+  return {
+    ...completed,
+    balanceCents: balance + STAGE_LOSS_REWARD_CENTS,
+    packInventory: { ...inventory, [leaving]: (inventory[leaving] || 0) + STAGE_LOSS_PACKS },
   };
 }
 
