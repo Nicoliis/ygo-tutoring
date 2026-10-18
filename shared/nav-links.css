@@ -52,3 +52,14 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* The profile box holds a name, status messages and action links that can be longer than the sidebar is wide
+   ("Save file disconnected — click anywhere to reconnect"): they wrap instead of being cut with an ellipsis. */
+#appSidebar:not(.collapsed) .sidebar-profile .sidebar-profile-name,
+#appSidebar:not(.collapsed) .sidebar-profile .sidebar-link {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+}
+#appSidebar .sidebar-profile .sidebar-link { padding-top: 8px; padding-bottom: 8px; }
