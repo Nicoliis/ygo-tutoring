@@ -429,6 +429,17 @@ function runContractTests() {
     expect(!canAddCopy(col, "missing", dragon).ok && !canAddCopy(col, "e1", null).ok);
   });
 
+  check("engine rules: moving a card entry re-sorts the engine", () => {
+    const entries = [{ cardId: "a", quantity: 1 }, { cardId: "b", quantity: 2 }, { cardId: "c", quantity: 1 }];
+    const ids = (list) => list.map((e) => e.cardId).join("");
+    expect(ids(moveCardEntry(entries, "c", "a")) === "cab", "moved to the front");
+    expect(ids(moveCardEntry(entries, "a", "c")) === "bca", "moved to the end");
+    expect(ids(moveCardEntry(entries, "a", "b")) === "bac", "moved one place forward");
+    expect(moveCardEntry(entries, "b", "b") !== entries && ids(moveCardEntry(entries, "b", "b")) === "abc", "same card: same order");
+    expect(ids(moveCardEntry(entries, "x", "a")) === "abc" && ids(moveCardEntry(entries, "a", "x")) === "abc", "unknown card: same order");
+    expect(ids(entries) === "abc" && entries[1].quantity === 2, "the original is not changed, quantities travel with their card");
+  });
+
   check("engine rules: removing copies and creating an engine with a card", () => {
     const col = enginesFixture();
     addCopy(col, "e1", "k1");

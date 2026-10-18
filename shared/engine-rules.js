@@ -60,6 +60,17 @@ function removeCopy(collection, engineId, cardId) {
   return copiesInEngine(engine, cardId);
 }
 
+/* The engine's entries with `fromCardId` moved to where `toCardId` is (a new array); unchanged when either is missing. */
+function moveCardEntry(entries, fromCardId, toCardId) {
+  const from = entries.findIndex((e) => e.cardId === fromCardId);
+  const to = entries.findIndex((e) => e.cardId === toCardId);
+  if (from === -1 || to === -1 || from === to) return entries.slice();
+  const moved = entries.slice();
+  const [entry] = moved.splice(from, 1);
+  moved.splice(to, 0, entry);
+  return moved;
+}
+
 /* A new engine holding one copy of the card, or null for an empty name. Names do not have to be unique. */
 function createEngineWithCard(collection, name, cardId, id) {
   const trimmed = String(name || "").trim();
