@@ -17,14 +17,23 @@ function saveRun(profileId, run) {
   return saveData(run, runKey(profileId));
 }
 
-function newRun(boosterList) {
+/* A new run at `startSet` (a name in the list), or at the first set. Only a chosen start is recorded: older runs have none. */
+function newRun(boosterList, startSet) {
+  const chosen = startSet !== undefined && boosterList.includes(startSet) ? startSet : null;
   return {
     completed: [],
-    current: boosterList.length > 0 ? boosterList[0] : null,
+    current: chosen !== null ? chosen : boosterList.length > 0 ? boosterList[0] : null,
+    ...(chosen !== null ? { startSet: chosen } : {}),
     boxOpened: false,
     startedAt: new Date().toISOString(),
     finishedAt: null,
   };
+}
+
+/* Where the run began in the list: the first set for a run saved before the starting choice existed. */
+function startIndex(run, boosterList) {
+  const index = run.startSet ? boosterList.indexOf(run.startSet) : 0;
+  return index === -1 ? 0 : index;
 }
 
 /* ---- Box progress (the 24 packs of the current stage) ---- */
@@ -136,8 +145,9 @@ function remainingStages(run, boosterList) {
   return boosterList.slice(index + 1).filter((name) => !run.completed.includes(name));
 }
 
-/* "opened" (darkened) | "next" (clean) | "locked" (light gray) */
+/* "opened" (darkened) | "next" (clean) | "locked" (light gray) | "skipped" (before the starting set) */
 function stageState(run, name, boosterList) {
+  if (boosterList.indexOf(name) < startIndex(run, boosterList)) return "skipped";
   if (run.completed.includes(name)) return "opened";
   if (name === run.current) return run.boxOpened ? "opened" : "next";
   return "locked";
@@ -147,7 +157,8 @@ function runSummary(run, boosterList) {
   const state = run || newRun(boosterList);
   if (state.current === null) return "Finished";
   const stage = state.completed.length + 1;
-  return `Stage ${stage}/${boosterList.length} – ${state.boxOpened ? "Box opened" : "Box not opened"}`;
+  const total = boosterList.length - startIndex(state, boosterList);
+  return `Stage ${stage}/${total} – ${state.boxOpened ? "Box opened" : "Box not opened"}`;
 }
 
 /* ---- Bought packs opened outside the stage box (run.extraPack) ---- */
@@ -185,9 +196,11 @@ function finishExtraPack(run) {
   return { cards: extra ? extra.pack.cards.filter((card) => !card.savedEarly) : [], run: { ...run, extraPack: null } };
 }
 
-/* Completed stages plus the current one, in booster-list order (the boosters a run can buy and browse). */
+/* The boosters a run can buy and browse, in list order: the sets before the starting one (skipped, but buyable),
+ * the completed stages and the current one. */
 function reachedBoosters(run, boosterList) {
-  return boosterList.filter((name) => run.completed.includes(name) || name === run.current);
+  const first = startIndex(run, boosterList);
+  return boosterList.filter((name, i) => i < first || run.completed.includes(name) || name === run.current);
 }
 
 /* ---- Copies saved early: a pulled card put into an engine is saved to the backlog before its pack is finished ---- */

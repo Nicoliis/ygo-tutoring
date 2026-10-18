@@ -1014,6 +1014,29 @@ function runContractTests() {
     expect(completeStageWithDuel({ ...base, balanceCents: 999 }, LIST, true).balanceCents === 999 + STAGE_WIN_REWARD_CENTS);
   });
 
+  check("starting set: the run begins at the chosen set, earlier sets are skipped but buyable", () => {
+    const five = ["A", "B", "C", "D", "E"];
+    const run = newRun(five, "C");
+    expect(run.current === "C" && run.startSet === "C" && run.completed.length === 0);
+    expect(startIndex(run, five) === 2);
+    expect(["A", "B", "C", "D", "E"].map((n) => stageState(run, n, five)).join() === "skipped,skipped,next,locked,locked");
+    expect(reachedBoosters(run, five).join() === "A,B,C", "the Store sells the skipped sets and the start set");
+    expect(runSummary(run, five) === "Stage 1/3 – Box not opened", "the skipped sets are not in the count");
+    const next = completeStage(openBoxApplied(run), five);
+    expect(next.current === "D" && next.completed.join() === "C" && next.startSet === "C", "progress continues from the start set");
+    expect(reachedBoosters(next, five).join() === "A,B,C,D" && runSummary(next, five) === "Stage 2/3 – Box not opened");
+    expect(stageState(next, "C", five) === "opened" && stageState(next, "D", five) === "next" && stageState(next, "A", five) === "skipped");
+    expect(newRun(five, "Z").current === "A" && !("startSet" in newRun(five, "Z")), "an unknown set falls back to the first");
+    expect(newRun(five).current === "A" && !("startSet" in newRun(five)), "no choice is recorded when none is made");
+  });
+
+  check("starting set: a run saved without a start set behaves as before", () => {
+    const old = { completed: ["A"], current: "B", boxOpened: false };
+    expect(startIndex(old, LIST) === 0 && stageState(old, "A", LIST) === "opened" && stageState(old, "B", LIST) === "next");
+    expect(reachedBoosters(old, LIST).join() === "A,B" && runSummary(old, LIST) === "Stage 2/3 – Box not opened");
+    expect(startIndex({ ...old, startSet: "gone" }, LIST) === 0, "an unknown start set counts as the first");
+  });
+
   check("box: phases, reveal, finish and stage completion", () => {
     let run = newRun(LIST);
     expect(boxPhase(run) === "not-started" && canOpenBox(run).ok);
