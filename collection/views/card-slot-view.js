@@ -2,7 +2,7 @@
  * Card picture and Backlog binder slot: DOM only, no state and no rules. Actions come in through `options`.
  *
  *   buildCardFace(card)                       the card picture, or a stand-in carrying its name
- *   buildCardSlot(card, options)              one binder slot
+ *   buildCardSlot(card, options)              one binder slot (with the glow of its rarest printing)
  *   buildEmptySlot()                          an unused slot
  *   options = { onOpen(), stepper (element|null), onRemove (function|null) }
  */
@@ -42,6 +42,9 @@ function buildCardSlot(card, options) {
   open.setAttribute("aria-label", `${card.name} — view details`);
   open.title = card.name;
   open.draggable = true;
+  // the glow of the rarest printing of the card, pointing inwards (rarity.css), as the old Backlog tags had
+  const rarest = typeof rarestPrinting === "function" ? rarestPrinting(card) : null;
+  if (rarest) applyRarityGlow(open, rarest.rarity);
   open.addEventListener("dragstart", (e) => {
     e.dataTransfer.setData("text/plain", card.id);
     e.dataTransfer.effectAllowed = "copy";
