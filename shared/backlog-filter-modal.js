@@ -1,6 +1,6 @@
 /*
- * The Backlog filter window: one tab per card type, an "Include" checkbox per tab and, per tab, the values
- * that exist in the user's cards of that type. Edits go to a draft; nothing changes until Apply.
+ * The Backlog filter window: one tab per card type, each with its own "include" checkbox on the tab (Monster also
+ * lists normal / effect in its body) and, per tab, the values that exist in the user's cards of that type. Edits go to a draft; nothing changes until Apply.
  *
  *   openBacklogFilterModal({ getCards, onApply })
  *
@@ -58,6 +58,7 @@ function openBacklogFilterModal({ getCards, onApply }) {
   root.append(tabList, panels, note);
 
   const tabButtons = {};
+  const tabChecks = {};
   const panelEls = {};
 
   // "id" below is a tab id; its include boxes are filterIncludesOf(id) (Monster has two).
@@ -73,6 +74,14 @@ function openBacklogFilterModal({ getCards, onApply }) {
 
   function included(id) {
     return filterIncludesOf(id).some((inc) => includeOn(inc.id));
+  }
+
+  /* Ticks every include of a tab (and the Monster boxes in the body, when shown). */
+  function includeWholeTab(id, bodyBoxes) {
+    filterIncludesOf(id).forEach((inc) => setInclude(inc.id, true));
+    bodyBoxes.forEach(({ box }) => {
+      box.checked = true;
+    });
   }
 
   function selectedValues(id, valueGroup) {
@@ -105,13 +114,20 @@ function openBacklogFilterModal({ getCards, onApply }) {
     return getCards().filter((card) => groupOf(card) === id).length;
   }
 
+  /* The tab's own checkbox: ticked when all its includes are on, "partly" when only some are (Monster). */
   function refreshTabLabels() {
     FILTER_GROUPS.forEach((group) => {
       const btn = tabButtons[group.id];
-      const on = included(group.id);
-      btn.textContent = `${on ? "● " : ""}${group.label} (${countCards(group.id)})`;
+      const check = tabChecks[group.id];
+      const includes = filterIncludesOf(group.id);
+      const onCount = includes.filter((inc) => includeOn(inc.id)).length;
+      const on = onCount > 0;
+      check.checked = onCount === includes.length;
+      check.indeterminate = on && onCount < includes.length;
+      btn.textContent = `${group.label} (${countCards(group.id)})`;
       btn.classList.toggle("bf-tab-on", on);
       btn.setAttribute("aria-label", `${group.label}, ${countCards(group.id)} cards${on ? ", included in the filter" : ""}`);
+      check.setAttribute("aria-label", `Include ${group.label} cards in the filter`);
     });
     const synergyBtn = tabButtons[SYNERGY_TAB_ID];
     const synergyOn = draft.synergy.length > 0;
@@ -182,10 +198,12 @@ function openBacklogFilterModal({ getCards, onApply }) {
     el.innerHTML = "";
     const counts = valueCounts(getCards(), id);
 
+    // The tab's own checkbox includes the tab; only Monster also lists its two kinds here (normal / effect).
     const includeRow = document.createElement("div");
     includeRow.className = "bf-includes";
     const includeBoxes = [];
-    filterIncludesOf(id).forEach((inc) => {
+    const bodyIncludes = filterIncludesOf(id).length > 1 ? filterIncludesOf(id) : [];
+    bodyIncludes.forEach((inc) => {
       const includeLabel = document.createElement("label");
       includeLabel.className = "bf-include";
       const includeBox = document.createElement("input");
@@ -201,7 +219,7 @@ function openBacklogFilterModal({ getCards, onApply }) {
       includeRow.appendChild(includeLabel);
       includeBoxes.push({ inc, box: includeBox });
     });
-    el.appendChild(includeRow);
+    if (bodyIncludes.length > 0) el.appendChild(includeRow);
 
     const valuesBox = document.createElement("div");
     valuesBox.className = "bf-values" + (included(id) ? "" : " bf-dim");
@@ -239,10 +257,7 @@ function openBacklogFilterModal({ getCards, onApply }) {
           input.addEventListener("input", () => {
             setRange(id, valueGroup, which, input.value);
             if (input.value.trim() !== "" && !included(id)) {
-              includeBoxes.forEach(({ inc, box: includeBox }) => {
-                setInclude(inc.id, true);
-                includeBox.checked = true;
-              });
+              includeWholeTab(id, includeBoxes);
               valuesBox.classList.remove("bf-dim");
               refreshTabLabels();
             }
@@ -270,10 +285,7 @@ function openBacklogFilterModal({ getCards, onApply }) {
           toggleValue(id, valueGroup, value, box.checked);
           if (box.checked && !included(id)) {
             // picking a value means the tab is wanted: tick its include box(es) so the selection is never silently ignored
-            includeBoxes.forEach(({ inc, box: includeBox }) => {
-              setInclude(inc.id, true);
-              includeBox.checked = true;
-            });
+            includeWholeTab(id, includeBoxes);
             valuesBox.classList.remove("bf-dim");
             refreshTabLabels();
           }
@@ -319,7 +331,22 @@ function openBacklogFilterModal({ getCards, onApply }) {
       e.preventDefault();
       selectTab(tabs[target].id, true);
     });
-    tabList.appendChild(btn);
+    const item = document.createElement("div");
+    item.className = "bf-tab-item";
+    if (group.id !== SYNERGY_TAB_ID) {
+      const check = document.createElement("input");
+      check.type = "checkbox";
+      check.className = "bf-tab-check";
+      check.addEventListener("change", () => {
+        filterIncludesOf(group.id).forEach((inc) => setInclude(inc.id, check.checked));
+        refreshTabLabels();
+        if (activeTab === group.id) renderPanel(group.id);
+      });
+      item.appendChild(check);
+      tabChecks[group.id] = check;
+    }
+    item.appendChild(btn);
+    tabList.appendChild(item);
     tabButtons[group.id] = btn;
 
     const panel = document.createElement("div");

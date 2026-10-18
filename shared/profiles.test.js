@@ -25,6 +25,7 @@ const source = [
   read("printings.js"),
   read("backlog-merge.js"),
   read("../collection/collection-allocation.js"),
+  read("../collection/binder-paging.js"),
   read("../progression/progression-state.js"),
   read("../store/store-state.js"),
   read("contract-tests.js"),

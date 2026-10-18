@@ -1,0 +1,115 @@
+/* Binder, card slot and card grid layout. Rendering only. */
+
+/* The Backlog needs room for two facing 3x3 pages (the old text list was 310px wide). */
+#backlogSection { max-width: 640px; flex: 1 1 520px; }
+
+.card-face {
+  display: block;
+  width: 100%;
+  aspect-ratio: 59 / 86;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #000;
+}
+.card-face img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.card-standin {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  overflow: hidden;
+}
+
+/* ---- Backlog binder ---- */
+:root { --binder-foot-height: 28px; } /* the quantity row under each card */
+.binder-controls { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 8px; }
+.binder-position { min-width: 130px; text-align: center; font-size: 0.8rem; color: var(--text-dim); }
+.binder-spread { display: flex; gap: 14px; align-items: flex-start; }
+.binder-page {
+  flex: 1 1 0;
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+  padding: 6px;
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.binder-slot { position: relative; min-width: 0; display: flex; flex-direction: column; gap: 3px; align-items: center; }
+/* An empty slot is as tall as a filled one (card plus its quantity row), so a page never shrinks. */
+.binder-slot-empty { width: 100%; gap: 3px; }
+.binder-slot-empty::before {
+  content: "";
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  aspect-ratio: 59 / 86;
+  border: 1px dashed var(--border);
+  border-radius: 4px;
+  opacity: 0.5;
+}
+.binder-slot-empty::after { content: ""; display: block; height: var(--binder-foot-height); }
+.binder-card {
+  width: 100%;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: none;
+  cursor: pointer;
+}
+.binder-card:hover, .binder-card:focus-visible { border-color: var(--accent); outline: none; }
+.binder-qty,
+.binder-slot .backlog-qty-stepper { height: var(--binder-foot-height); }
+.binder-qty { display: flex; align-items: center; justify-content: center; }
+.binder-qty { font-size: 0.72rem; color: var(--text-dim); font-variant-numeric: tabular-nums; }
+.binder-remove {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  z-index: 5;
+  width: 16px;
+  height: 16px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 0.6rem;
+  line-height: 1;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.binder-remove:hover, .binder-remove:focus-visible { color: #fff; background: var(--danger); border-color: var(--danger); outline: none; }
+
+/* A narrow window shows a single page (the script uses the same 700px limit). */
+@media (max-width: 700px) {
+  #backlogSection { max-width: none; }
+}
+
+/* ---- Engines and deck sections: every card as a picture in a wrapping grid ---- */
+.engine-card-contents,
+.deck-main-list,
+.deck-extra-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-start;
+}
+.card-picture-tile { width: 72px; }
+.card-picture {
+  width: 100%;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: none;
+  cursor: pointer;
+}
+.card-picture:hover, .card-picture:focus-visible { border-color: var(--accent); outline: none; }

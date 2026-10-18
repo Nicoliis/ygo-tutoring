@@ -20,6 +20,7 @@ let searchCompletionStarted = false;
 
 backlogSearchInput.addEventListener("input", () => {
   backlogFilter = backlogSearchInput.value;
+  resetBinder();
   renderBacklog();
   // Searching also reads effect text: complete cards that lack their details, once (batched, never repeated).
   if (!searchCompletionStarted && backlogFilter.trim() && typeof completeMissingCardDetails === "function") {

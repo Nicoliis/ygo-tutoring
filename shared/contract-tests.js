@@ -290,6 +290,44 @@ function runContractTests() {
     expect(keepOne.soldCount === 2 + 1 + 2 + 2 && col.cards[0].printings.map((p) => p.quantity).join() === "1,1,1", "keep 1 per printing");
   });
 
+  check("binder: every card appears once across the views, empty slots only at the end", () => {
+    [BINDER_WIDE_PAGES, BINDER_NARROW_PAGES].forEach((pages) => {
+      [0, 1, 9, 10, 18, 19, 40].forEach((length) => {
+        const cards = Array.from({ length }, (_, i) => ({ id: `c${i}` }));
+        const size = binderViewSize(pages);
+        const seen = [];
+        let offset = 0;
+        for (let v = 0; v < viewCount(length, pages); v++) {
+          const flat = slotsOfPage(cards, offset, pages).flat();
+          expect(flat.length === size, "a view always has its full number of slots");
+          const firstEmpty = flat.indexOf(null);
+          expect(firstEmpty === -1 || flat.slice(firstEmpty).every((slot) => slot === null), "empty slots only at the end");
+          flat.filter(Boolean).forEach((card) => seen.push(card.id));
+          offset += size;
+        }
+        expect(seen.length === length && new Set(seen).size === length, `each of ${length} cards once (${pages} pages)`);
+      });
+    });
+  });
+
+  check("binder: clampOffset, turn and view counts", () => {
+    expect(viewCount(0, 2) === 1 && viewCount(18, 2) === 1 && viewCount(19, 2) === 2 && viewCount(19, 1) === 3);
+    expect(clampOffset(0, 0, 2) === 0, "no cards: first view");
+    expect(clampOffset(40, 40, 2) === 36, "past the end: last view");
+    expect(clampOffset(20, 40, 2) === 18, "aligned down to a view start");
+    expect(turn(0, BINDER_PREVIOUS, 40, 2) === 0, "previous stops at the first view");
+    expect(turn(0, BINDER_NEXT, 40, 2) === 18 && turn(36, BINDER_NEXT, 40, 2) === 36, "next stops at the last view");
+    expect(turn(27, BINDER_NEXT, 40, 1) === 36 && turn(36, BINDER_PREVIOUS, 40, 1) === 27, "narrow turns one page");
+    expect(clampOffset(27, 40, 2) === 18 && clampOffset(18, 40, 1) === 18, "switching between 2 pages and 1 stays near the same card");
+  });
+
+  check("binder: position label", () => {
+    expect(positionLabel(0, 40, 2) === "Pages 1–2 of 5");
+    expect(positionLabel(36, 40, 2) === "Pages 5–5 of 5".replace("Pages 5–5", "Page 5"), "last view with one page");
+    expect(positionLabel(0, 0, 2) === "Page 1 of 1");
+    expect(positionLabel(9, 40, 1) === "Page 2 of 5");
+  });
+
   check("clampAllocationsToOwned drops entries that reach zero", () => {
     const col = storeCollection();
     col.cards[0].quantityOwned = 0;

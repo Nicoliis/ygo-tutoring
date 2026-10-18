@@ -1,28 +1,17 @@
-// Renders one physical copy of a card as a tile: the shared card-tag plus a small remove
-// control overlaid on its corner — used wherever a group (an engine, or a deck section) lists
-// its cards one tile per copy, no quantity multiplier.
+// Renders one physical copy of a card as a picture tile (card-grid-view.js) — used wherever a group (an engine,
+// or a deck section) lists its cards one tile per copy, no quantity multiplier.
+
+/* A picture opens the card details directly (there is no expanded-image step any more). */
+function openCardDetailsFromPicture(card) {
+  maybeBackfillCardDetails(card);
+  openCardDetailModal(card);
+}
+
 function renderCardTile(card, { onRemove, removeLabel, dragMovePayload }) {
-  const wrapper = document.createElement("div");
-  wrapper.className = "card-tag-row";
-
-  const tag = renderCardTag(card, { draggable: !!dragMovePayload });
-  if (dragMovePayload) {
-    tag.addEventListener("dragstart", (e) => {
-      e.dataTransfer.setData("application/x-deck-card-move", JSON.stringify(dragMovePayload));
-    });
-  }
-  wrapper.appendChild(tag);
-
-  const removeBtn = document.createElement("button");
-  removeBtn.type = "button";
-  removeBtn.className = "btn-remove-item";
-  removeBtn.textContent = "✕";
-  removeBtn.setAttribute("aria-label", removeLabel);
-  removeBtn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    onRemove();
+  return renderCardPicture(card, {
+    onOpen: () => openCardDetailsFromPicture(card),
+    onRemove,
+    removeLabel,
+    dragMovePayload,
   });
-  wrapper.appendChild(removeBtn);
-
-  return wrapper;
 }

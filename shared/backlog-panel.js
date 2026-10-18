@@ -83,6 +83,7 @@ function mountBacklogPanel(containerEl, options = {}) {
   sortSelect.addEventListener("change", () => {
     appliedBacklogSort = sortSelect.value;
     saveBacklogSort(appliedBacklogSort);
+    if (typeof resetBinder === "function") resetBinder();
     if (typeof renderAll === "function") renderAll();
   });
 
@@ -92,6 +93,7 @@ function mountBacklogPanel(containerEl, options = {}) {
       onApply: () => {
         appliedBacklogFilter = loadBacklogFilter();
         updateBacklogFilterButton();
+        if (typeof resetBinder === "function") resetBinder();
         if (typeof renderAll === "function") renderAll();
       },
     });

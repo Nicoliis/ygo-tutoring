@@ -4,34 +4,6 @@ function panelAllows(name) {
   return typeof backlogOption === "function" ? backlogOption(name) : true;
 }
 
-function buildBacklogRow(card) {
-  const row = document.createElement("div");
-  row.className = "backlog-row";
-
-  row.appendChild(renderCardTag(card, { draggable: true, directDetails: true }));
-  if (panelAllows("allowQtyEdit")) {
-    row.appendChild(buildBacklogQtyStepper(card));
-  } else {
-    const qty = document.createElement("span");
-    qty.className = "backlog-qty-static";
-    qty.textContent = `×${card.quantityOwned}`;
-    qty.setAttribute("aria-label", `Owned quantity for ${card.name}: ${card.quantityOwned}`);
-    row.appendChild(qty);
-  }
-
-  if (panelAllows("allowRemove")) {
-    const removeBtn = document.createElement("button");
-    removeBtn.type = "button";
-    removeBtn.className = "btn btn-secondary btn-remove-card";
-    removeBtn.textContent = "X";
-    removeBtn.setAttribute("aria-label", `Remove ${card.name} from backlog`);
-    removeBtn.addEventListener("click", () => removeCard(card.id));
-    row.appendChild(removeBtn);
-  }
-
-  return row;
-}
-
 function renderBacklog() {
   backlogListEl.innerHTML = "";
 
@@ -66,5 +38,5 @@ function renderBacklog() {
   }
 
   const sortId = typeof appliedBacklogSort !== "undefined" ? appliedBacklogSort : "added";
-  sortBacklogCards(filtered, sortId).forEach((card) => backlogListEl.appendChild(buildBacklogRow(card)));
+  renderBinder(sortBacklogCards(filtered, sortId));
 }

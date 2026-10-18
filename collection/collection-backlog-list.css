@@ -7,20 +7,6 @@
   overflow-y: auto;
 }
 
-.backlog-row {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-  background: var(--panel-alt);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 6px 10px;
-}
-.backlog-row .backlog-name { flex: 1 1 160px; font-weight: 600; }
-.backlog-row .backlog-available { font-size: 0.8rem; color: var(--text-dim); }
-.backlog-row .backlog-available.warning { color: var(--danger); font-weight: 700; }
-
 /* Slim, themed vertical scrollbar for the Backlog list. */
 .backlog-list {
   scrollbar-width: thin;

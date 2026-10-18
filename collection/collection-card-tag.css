@@ -41,8 +41,3 @@
   padding: 0 4px;
   font-size: 0.6rem;
 }
-
-/* Backlog tags only (engines and decks keep their size): wider, name first, rarity label shrinks before the name. */
-.backlog-row .card-tag { width: 205px; }
-.backlog-row .card-tag .card-tag-name { flex: 1 1 auto; min-width: 0; text-align: left; }
-.backlog-row .card-tag .rarity-badge { flex: 0 1 auto; min-width: 44px; max-width: 45%; }
