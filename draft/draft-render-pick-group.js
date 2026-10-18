@@ -63,10 +63,15 @@ function renderPickGroup() {
     btn.appendChild(nameEl);
     btn.appendChild(buildRarityBadge(card.rarity));
     btn.addEventListener("click", () =>
-      openCardDetailModal(card, [
-        { label: "Keep This Card", primary: true, onClick: () => handlePick(card) },
-        { label: "Close" },
-      ])
+      openCardDetailModal(
+        card,
+        [
+          { label: "Keep This Card", primary: true, onClick: () => handlePick(card) },
+          { label: "Close" },
+        ],
+        "",
+        draftContextFor(card)
+      )
     );
     btn.addEventListener("dragstart", (e) => {
       e.dataTransfer.setData("text/plain", String(index));

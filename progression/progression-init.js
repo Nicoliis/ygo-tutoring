@@ -13,6 +13,31 @@ function persistRun(run) {
   return true;
 }
 
+/*
+ * What the card details window may do with a card just pulled (see shared/card-engines.js): when the card still has an
+ * unsaved revealed copy in an open pack, putting it in an engine saves that copy to the backlog now and flags it so
+ * finishing the pack skips it. Cards of finished packs are already in the backlog: no pull context.
+ */
+function pullContextFor(card) {
+  const source = [PACK_SOURCE_BOX, PACK_SOURCE_EXTRA].find((src) => unsavedCopiesOf(currentRun, src, card) > 0);
+  if (!source) return null;
+  return {
+    canSave: true,
+    availableCopies: () => unsavedCopiesOf(currentRun, source, card),
+    saveEarly() {
+      if (!mergeCardsIntoBacklog([card])) {
+        setProgressionStatus(SAVE_PULLS_ERROR, true);
+        return false;
+      }
+      if (!persistRun(markCardSavedEarly(currentRun, source, card))) {
+        unmergeCardFromBacklog(card); // the flag could not be saved: take the copy back so it is not counted twice
+        return false;
+      }
+      return true;
+    },
+  };
+}
+
 function setPackAction(action) {
   packActionEl.innerHTML = "";
   if (!action) return;

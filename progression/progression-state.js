@@ -60,10 +60,11 @@ function revealInPack(run, index) {
   };
 }
 
-/* Call once every card of the pack is revealed. Returns { run, cards } where cards must be merged into the backlog. */
+/* Call once every card of the pack is revealed. Returns { run, cards } where cards must be merged into the backlog
+ * (copies already saved early, from the card details window, are left out). */
 function finishPack(run) {
   const box = getBox(run);
-  const cards = box.pack ? box.pack.cards : [];
+  const cards = box.pack ? box.pack.cards.filter((card) => !card.savedEarly) : [];
   const packsOpened = box.packsOpened + 1;
   return {
     cards,
@@ -161,10 +162,48 @@ function revealInExtraPack(run, index) {
 /* Call once every card is revealed: returns { run, cards } (cards must be merged into the backlog). */
 function finishExtraPack(run) {
   const extra = getExtraPack(run);
-  return { cards: extra ? extra.pack.cards : [], run: { ...run, extraPack: null } };
+  return { cards: extra ? extra.pack.cards.filter((card) => !card.savedEarly) : [], run: { ...run, extraPack: null } };
 }
 
 /* Completed stages plus the current one, in booster-list order (the boosters a run can buy and browse). */
 function reachedBoosters(run, boosterList) {
   return boosterList.filter((name) => run.completed.includes(name) || name === run.current);
+}
+
+/* ---- Copies saved early: a pulled card put into an engine is saved to the backlog before its pack is finished ---- */
+
+const PACK_SOURCE_BOX = "box"; // the pack of the stage's box
+const PACK_SOURCE_EXTRA = "extra"; // a bought booster being opened
+
+function openPackOf(run, source) {
+  if (source === PACK_SOURCE_EXTRA) return run.extraPack ? run.extraPack.pack : null;
+  return run.box && run.box.pack ? run.box.pack : null;
+}
+
+function isSamePulledCopy(a, b) {
+  return a.name === b.name && a.set === b.set && a.rarity === b.rarity && (a.setCode || null) === (b.setCode || null);
+}
+
+/* Index of the first revealed copy of `card` in the open pack that is not saved early yet, or -1. */
+function unsavedCopyIndex(run, source, card) {
+  const pack = openPackOf(run, source);
+  if (!pack) return -1;
+  return pack.cards.findIndex((c, i) => pack.revealed[i] && !c.savedEarly && isSamePulledCopy(c, card));
+}
+
+/* How many revealed copies of `card` in the open pack could still be saved early. */
+function unsavedCopiesOf(run, source, card) {
+  const pack = openPackOf(run, source);
+  if (!pack) return 0;
+  return pack.cards.filter((c, i) => pack.revealed[i] && !c.savedEarly && isSamePulledCopy(c, card)).length;
+}
+
+/* A new run where one unsaved copy of `card` is flagged as saved early; the same run when there is none. */
+function markCardSavedEarly(run, source, card) {
+  const index = unsavedCopyIndex(run, source, card);
+  if (index === -1) return run;
+  const pack = openPackOf(run, source);
+  const cards = pack.cards.map((c, i) => (i === index ? { ...c, savedEarly: true } : c));
+  if (source === PACK_SOURCE_EXTRA) return { ...run, extraPack: { ...run.extraPack, pack: { ...pack, cards } } };
+  return { ...run, box: { ...run.box, pack: { ...pack, cards } } };
 }

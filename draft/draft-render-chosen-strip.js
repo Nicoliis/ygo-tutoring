@@ -2,10 +2,13 @@ function renderChosenStrip() {
   chosenStripEl.innerHTML = "";
   const sorted = session.keptCards.slice().sort((a, b) => a.name.localeCompare(b.name));
   sorted.forEach((card) => {
-    const chip = document.createElement("span");
+    const chip = document.createElement("button");
+    chip.type = "button";
     chip.className = "chosen-chip";
     chip.textContent = card.name + " ";
     chip.appendChild(buildRarityBadge(card.rarity));
+    chip.setAttribute("aria-label", `${card.name}, ${rarityLabel(card.rarity)} — view details and engines`);
+    chip.addEventListener("click", () => openCardDetailModal(card, undefined, "", draftContextFor(card)));
     chosenStripEl.appendChild(chip);
   });
 }

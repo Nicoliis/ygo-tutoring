@@ -9,7 +9,8 @@
  * - Cards already revealed in `pack.revealed` are assumed to already be in the pulled strip (the caller
  *   repopulates it); the stack only holds the cards still to pull.
  * Needs rarity.js (applyRarityGlow, buildRarityBadge, rarityLabel) loaded; card detail on click needs
- * shared/card-detail-modal.js (optional).
+ * shared/card-detail-modal.js (optional). A page may define pullContextFor(card) to let the details window save a
+ * pulled copy early (see shared/card-engines.js).
  */
 const PACK_FLIGHT_MS = 700;
 
@@ -28,7 +29,9 @@ function buildRevealedCardElement(card, interactive = true) {
     el.type = "button";
     el.setAttribute("aria-label", `${card.name}, ${rarityLabel(card.rarity)} — view details`);
     el.addEventListener("click", () => {
-      if (typeof openCardDetailModal === "function") openCardDetailModal(card);
+      if (typeof openCardDetailModal !== "function") return;
+      // a page that opens packs can say what the details window may do with this pulled card (see card-engines.js)
+      openCardDetailModal(card, undefined, "", typeof pullContextFor === "function" ? pullContextFor(card) : null);
     });
   }
   applyRarityGlow(el, card.rarity);

@@ -881,6 +881,67 @@ function runContractTests() {
     expect(blob.cards[0].printings[0].price === 5);
   });
 
+  /* ---- Copies saved early from the card details window (spec 016) ---- */
+
+  const earlyCopy = { name: "Dragon", set: "S1", rarity: "Ultra Rare", setCode: "S1-001" };
+  function openBoxPack() {
+    let run = startPack(newRun(LIST), { cards: [{ ...earlyCopy }, { ...earlyCopy }, { name: "Wizard", set: "S1", rarity: "Common" }] });
+    run = revealInPack(run, 0);
+    run = revealInPack(run, 1);
+    return run;
+  }
+
+  check("saved early: marking flags one identical revealed copy at a time", () => {
+    let run = openBoxPack();
+    expect(unsavedCopiesOf(run, PACK_SOURCE_BOX, earlyCopy) === 2, "two revealed identical copies");
+    expect(unsavedCopiesOf(run, PACK_SOURCE_BOX, { name: "Wizard", set: "S1", rarity: "Common" }) === 0, "an unrevealed card cannot be saved early");
+    run = markCardSavedEarly(run, PACK_SOURCE_BOX, earlyCopy);
+    expect(run.box.pack.cards.filter((c) => c.savedEarly).length === 1 && unsavedCopiesOf(run, PACK_SOURCE_BOX, earlyCopy) === 1);
+    run = markCardSavedEarly(run, PACK_SOURCE_BOX, earlyCopy);
+    expect(unsavedCopiesOf(run, PACK_SOURCE_BOX, earlyCopy) === 0);
+    const same = markCardSavedEarly(run, PACK_SOURCE_BOX, earlyCopy);
+    expect(same === run, "with no copy left the run is unchanged");
+    expect(run.box.pack.cards[2].savedEarly === undefined, "other cards are left alone");
+  });
+
+  check("saved early: a bought pack is marked the same way", () => {
+    let run = { ...newRun(LIST), extraPack: { setName: "A", pack: { cards: [{ ...earlyCopy }], revealed: [true] } } };
+    run = markCardSavedEarly(run, PACK_SOURCE_EXTRA, earlyCopy);
+    expect(run.extraPack.pack.cards[0].savedEarly === true);
+    expect(finishExtraPack(run).cards.length === 0, "a copy saved early is not saved again");
+  });
+
+  check("saved early: finishing the pack skips flagged copies, so the backlog gets exactly the pulled copies", () => {
+    createProfile("Early", "progression");
+    const key = profileKey("ygoCollection");
+    saveData({ cards: [] }, key);
+    let run = openBoxPack();
+    run = revealInPack(run, 2);
+    // the user puts one of the two Dragons in an engine: that single copy is saved now and flagged
+    expect(mergeCardsIntoBacklog([earlyCopy]) === true);
+    run = markCardSavedEarly(run, PACK_SOURCE_BOX, earlyCopy);
+    const finished = finishPack(run);
+    expect(finished.cards.length === 2, "the flagged copy is left out");
+    expect(mergeCardsIntoBacklog(finished.cards) === true);
+    const blob = loadData(key);
+    const dragon = blob.cards.find((c) => c.name === "Dragon");
+    expect(dragon.quantityOwned === 2 && dragon.printings[0].quantity === 2, "two Dragons were pulled, two are owned");
+    expect(blob.cards.find((c) => c.name === "Wizard").quantityOwned === 1);
+    expect(mergeCardsIntoBacklog([{ ...earlyCopy, savedEarly: true }]) === true && loadData(key).cards.find((c) => c.name === "Dragon").quantityOwned === 2, "the merge itself ignores flagged copies");
+  });
+
+  check("saved early: an early save can be taken back", () => {
+    createProfile("Undo", "progression");
+    const key = profileKey("ygoCollection");
+    saveData({ cards: [] }, key);
+    mergeCardsIntoBacklog([earlyCopy]);
+    expect(unmergeCardFromBacklog(earlyCopy) === true && loadData(key).cards.length === 0, "the only copy goes away with its card");
+    mergeCardsIntoBacklog([earlyCopy, earlyCopy]);
+    unmergeCardFromBacklog(earlyCopy);
+    const dragon = loadData(key).cards[0];
+    expect(dragon.quantityOwned === 1 && dragon.printings[0].quantity === 1, "one copy and one printing copy remain");
+  });
+
   check("box: phases, reveal, finish and stage completion", () => {
     let run = newRun(LIST);
     expect(boxPhase(run) === "not-started" && canOpenBox(run).ok);
