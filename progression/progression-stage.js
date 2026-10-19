@@ -8,6 +8,7 @@ let packActionEl = null;
 let pulledStripEl = null;
 let pulledListEl = null;
 let pendingFinish = null; // { run } when the backlog merge succeeded but the run could not be saved yet
+let pulledOpen = false; // the "Pulled this box" list starts collapsed and closes again with every next pack
 
 /* "Pack x/24 · y/z cards" for the whole box, plus a thin progress bar. Safe to call at any time. */
 function updateBoxProgress() {
@@ -23,9 +24,16 @@ function updateBoxProgress() {
   bar.value = box.pulled.length;
 }
 
-/* Every card pulled in this stage's box so far, rarest first. */
+/* Every card pulled in this stage's box so far, rarest first; its cards are only drawn while the list is open. */
 function drawPulledList() {
-  renderPulledList(pulledListEl, getBox(currentRun).pulled);
+  renderPulledList(pulledListEl, getBox(currentRun).pulled, "Pulled this box", {
+    open: pulledOpen,
+    onToggle: (open) => {
+      if (open === pulledOpen) return; // the redraw below opens it again: nothing more to do
+      pulledOpen = open;
+      drawPulledList();
+    },
+  });
 }
 
 function setPackAction(action) {
@@ -132,6 +140,8 @@ function startNewPack() {
 function onNextPack() {
   if (busy || getBox(currentRun).pack) return;
   setPackAction(null);
+  pulledOpen = false; // each next pack collapses the list
+  drawPulledList();
   startNewPack().then(() => {
     if (getBox(currentRun).pack) {
       packAreaEl.innerHTML = "";

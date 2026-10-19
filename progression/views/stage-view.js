@@ -3,7 +3,9 @@
  * always visible below it. DOM only, no state and no rules.
  *
  *   renderStage(rootEl, model) -> { packAreaEl, packActionEl, pulledStripEl, pulledListEl } | null
- *   renderPulledList(listEl, cards, title)      redraws only the list: rarest first, identical cards grouped
+ *   renderPulledList(listEl, cards, title, collapsible)   redraws only the list: rarest first, identical cards grouped.
+ *     With collapsible = { open, onToggle(open) } the list is a collapsible section: while it is closed its cards
+ *     are NOT drawn (so the pictures are not drawn twice next to the pack's strip).
  *   model = { stageName, state: "no-run" | "not-started" | "in-progress" | "finished" | "run-finished" }
  *
  * Needs pack-reveal.js (buildRevealedCardElement) and rarity.js (rarityRank).
@@ -41,19 +43,34 @@ function buildPulledGrid(cards) {
 }
 
 /* Redraws one pulled list panel; the pack being revealed elsewhere on the page is never touched. */
-function renderPulledList(listEl, cards, title = "Pulled this box") {
+function renderPulledList(listEl, cards, title = "Pulled this box", collapsible = null) {
   listEl.innerHTML = "";
-  const heading = document.createElement("h2");
-  heading.textContent = `${title} (${cards.length})`;
-  listEl.appendChild(heading);
+  const heading = `${title} (${cards.length})`;
+  let container = listEl;
+  if (collapsible) {
+    const details = document.createElement("details");
+    details.className = "pulled-details";
+    details.open = collapsible.open;
+    const summary = document.createElement("summary");
+    summary.textContent = heading;
+    details.appendChild(summary);
+    details.addEventListener("toggle", () => collapsible.onToggle(details.open));
+    listEl.appendChild(details);
+    if (!collapsible.open) return; // closed: nothing is drawn, so nothing is drawn twice
+    container = details;
+  } else {
+    const h = document.createElement("h2");
+    h.textContent = heading;
+    listEl.appendChild(h);
+  }
   if (cards.length === 0) {
     const empty = document.createElement("p");
     empty.className = "status";
     empty.textContent = PULLED_LIST_EMPTY_TEXT;
-    listEl.appendChild(empty);
+    container.appendChild(empty);
     return;
   }
-  listEl.appendChild(buildPulledGrid(cards));
+  container.appendChild(buildPulledGrid(cards));
 }
 
 function buildStageMessage(text, linkText) {
