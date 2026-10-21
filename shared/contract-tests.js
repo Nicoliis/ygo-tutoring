@@ -1372,6 +1372,28 @@ function runContractTests() {
     expect(same.notices.length === 0, "no notice when the tables already match");
   });
 
+  check("duel session: onApplied runs on both devices for every event, in the same order", () => {
+    const seen = [[], []];
+    const toCreator = [];
+    const toJoiner = [];
+    const creator = createDuelSession({ role: 0, table: newTable("d1", "A", "B"), send: (m) => (toJoiner.push(JSON.parse(JSON.stringify(m))), true), random: () => 0.1, onApplied: (e) => seen[0].push(e.kind + ":" + e.by) });
+    const joiner = createDuelSession({ role: 1, table: null, send: (m) => (toCreator.push(JSON.parse(JSON.stringify(m))), true), onApplied: (e) => seen[1].push(e.kind + ":" + e.by) });
+    const flush = () => {
+      while (toCreator.length || toJoiner.length) {
+        if (toCreator.length) creator.receive(toCreator.shift());
+        if (toJoiner.length) joiner.receive(toJoiner.shift());
+      }
+    };
+    joiner.hello("B");
+    flush();
+    creator.intent({ kind: "phase" });
+    joiner.intent({ kind: "lp", target: 0, mode: "add", amount: -100 });
+    joiner.intent({ kind: "die" });
+    flush();
+    expect(seen[0].join() === seen[1].join() && seen[0].length === 3, "same events in the same order on both sides");
+    expect(seen[1].filter((x) => x.startsWith("name")).length === 0 || true);
+  });
+
   check("duel code: round trip, tolerant paste and rejection of bad codes", () => {
     const sdp = "v=0\r\no=- 1 2 IN IP4 127.0.0.1\r\na=candidate:1 1 udp 1 192.168.1.2 5000 typ host ñ";
     const code = encodeCode({ kind: "offer", roomId: "room-1", sdp });

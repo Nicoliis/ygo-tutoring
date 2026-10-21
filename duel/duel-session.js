@@ -4,18 +4,21 @@
  * and sends each applied event to the joiner, who applies the same event with the same pure rules (duel-table.js).
  * No DOM, no network and no storage here: the caller gives it a `send` function and calls `receive` with what arrives.
  *
- *   const session = createDuelSession({ role: 0 | 1, table, send, random, onChange, onNotice, onRefused })
+ *   const session = createDuelSession({ role: 0 | 1, table, send, random, onChange, onNotice, onRefused, onApplied })
  *   session.intent(event)      ask for a change (creator: applies it; joiner: sends it to the creator)
  *   session.receive(message)   feed a message from the other side
  *   session.hello(name)        joiner: introduce itself when the link opens
  *   session.getTable()
+ *
+ * onApplied(event, table) is called on BOTH devices right after an event is applied (own or the other player's), in the
+ * same order on both; the card simulator uses it to update its private state once the public side accepted an event.
  *
  * Messages: hello, snapshot, intent, event, resync, refused (see data-model.md). Needs duel-table.js.
  */
 const ROLE_CREATOR = 0;
 const ROLE_JOINER = 1;
 
-function createDuelSession({ role, table, send, random = Math.random, onChange = () => {}, onNotice = () => {}, onRefused = () => {} }) {
+function createDuelSession({ role, table, send, random = Math.random, onChange = () => {}, onNotice = () => {}, onRefused = () => {}, onApplied = () => {} }) {
   let current = table || null;
 
   function setTable(next) {
@@ -38,6 +41,7 @@ function createDuelSession({ role, table, send, random = Math.random, onChange =
     if (!result.ok) return result;
     setTable(result.table);
     send({ type: "event", base, event });
+    onApplied(event, current);
     return result;
   }
 
@@ -78,6 +82,7 @@ function createDuelSession({ role, table, send, random = Math.random, onChange =
       return;
     }
     setTable(result.table);
+    onApplied(message.event, current);
   }
 
   return {
