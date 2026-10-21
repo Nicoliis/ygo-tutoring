@@ -52,6 +52,7 @@ function drawRoom() {
       notice: room.notice,
       code: room.code,
       table: room.session ? room.session.getTable() : null,
+      deckChoice: room.phase === "connected" ? deckChoiceModel() : null,
       you: room.role === null ? 0 : room.role,
       savedDuel: saved && room.phase === "start" ? { names: saved.table.players.map((p) => p.name), turn: saved.table.turn } : null,
     },
@@ -69,6 +70,8 @@ function drawRoom() {
       onDie: () => intent({ kind: "die" }),
       onUndo: () => intent({ kind: "undo" }),
       onRename: (name) => intent({ kind: "name", name }),
+      onChooseDeck: chooseDeck,
+      onNoCards: playWithoutCards,
     }
   );
 }
@@ -111,12 +114,30 @@ function makeSession(table) {
     },
     onNotice: (text) => setRoom({ notice: text }),
     onRefused: (reason) => setRoom({ error: reason }),
+    onApplied: (event, table) => onDuelEvent(event, table),
   });
+}
+
+/* The decks and, for a duel that was already going, this device's private cards, once the link is open. */
+function prepareCards() {
+  loadWorkshopDecks();
+  const table = room.session && room.session.getTable();
+  if (!table || !table.sim || !table.sim.started) return;
+  const saved = restorePrivate(table);
+  if (saved) {
+    play.priv = saved.priv;
+    play.chosenDeckId = saved.deckId;
+    const built = buildDuelDeck(play.collection, saved.deckId, room.role);
+    play.built = built.ok ? built : null;
+  } else {
+    play.priv = null;
+  }
 }
 
 function onLinkStatus(status, detail) {
   if (status === "connected") {
     clearTimeout(room.expiryTimer);
+    prepareCards();
     if (room.role === ROLE_JOINER) {
       room.session.hello(myName());
       setRoom({ phase: room.session.getTable() ? "connected" : "joining", status: "Connected. Syncing the table…", error: "" });

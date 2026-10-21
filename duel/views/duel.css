@@ -42,3 +42,10 @@
 @media (max-width: 700px) {
   .duel-players { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* Deck choice */
+.duel-decks { list-style: none; margin: 10px 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; }
+.duel-deck-btn { width: 100%; text-align: left; display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; background: var(--panel-alt); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; font: inherit; }
+.duel-deck-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.duel-deck-chosen .duel-deck-btn { border-color: var(--accent); }
+.duel-deck-counts { color: var(--text-dim); font-size: 0.8rem; }

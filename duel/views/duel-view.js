@@ -219,7 +219,7 @@ function updateTable(refs, model) {
 
 function renderRoom(rootEl, model, h) {
   const showsTable = model.phase === "connected" || (model.phase === "disconnected" && model.table);
-  const screen = showsTable ? "table" : model.phase;
+  const screen = model.phase === "connected" && model.deckChoice ? "deck" : showsTable ? "table" : model.phase;
   if (rootEl.dataset.screen !== screen) {
     rootEl.dataset.screen = screen;
     rootEl.innerHTML = "";
@@ -236,6 +236,11 @@ function renderRoom(rootEl, model, h) {
     if (screen === "start") body.appendChild(buildStart(model, h));
     else if (screen === "creating" || screen === "joining") body.appendChild(buildWaiting(model, h));
     else if (screen === "failed") body.appendChild(buildFailed(model, h));
+    else if (screen === "deck") {
+      const host = el("div", "duel-deck-host");
+      body.appendChild(host);
+      rootEl._refs = { static: true, deckHost: host };
+    }
     else if (screen === "table") {
       rootEl._refs = buildTable(h);
       body.appendChild(rootEl._refs.root);
@@ -243,6 +248,7 @@ function renderRoom(rootEl, model, h) {
     if (!rootEl._refs) rootEl._refs = { static: true };
     rootEl.appendChild(body);
   }
+  if (screen === "deck") renderDeckChoice(rootEl._refs.deckHost, model.deckChoice, { onChoose: h.onChooseDeck, onNoCards: h.onNoCards });
   if (screen === "table" && model.table) {
     updateTable(rootEl._refs, model);
     let banner = rootEl.querySelector(":scope > .duel-banner");

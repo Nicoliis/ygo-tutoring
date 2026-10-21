@@ -124,7 +124,7 @@ function applyPhase(table, event) {
   };
 }
 
-const SIM_KINDS = ["ready", "start", "draw", "move", "flip", "position", "reveal", "hide", "search", "shuffle", "rematch", "rematch-accept", "reset"];
+const SIM_KINDS = ["ready", "nocards", "start", "draw", "move", "flip", "position", "reveal", "hide", "search", "shuffle", "rematch", "rematch-accept", "reset"];
 const ZONE_WORDS = { monster: "monster zone", spell: "spell and trap zone", field: "field zone", pendulum: "pendulum zone", gy: "graveyard", banished: "banished zone", hand: "hand", deck: "deck", extra: "extra deck" };
 
 /* The log line of a board event. It only names a card that is visible to both players. */
@@ -134,6 +134,8 @@ function describeSim(table, event, result) {
   switch (event.kind) {
     case "ready":
       return `${who} chose the deck ${event.deckName} (${event.mainCount} cards, ${event.extraCount} in the extra deck)`;
+    case "nocards":
+      return `${who} chose to play without cards`;
     case "start":
       return "The duel starts: each player draws the starting hand";
     case "draw":

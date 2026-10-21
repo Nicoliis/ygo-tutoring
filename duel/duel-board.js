@@ -28,7 +28,7 @@ function emptySide() {
 }
 
 function newSim() {
-  return { started: false, generation: 0, rematch: null, players: [emptySide(), emptySide()] };
+  return { started: false, nocards: false, generation: 0, rematch: null, players: [emptySide(), emptySide()] };
 }
 
 const copyOf = (value) => JSON.parse(JSON.stringify(value));
@@ -228,6 +228,10 @@ function applyBoardEvent(sim, event) {
       });
       return { sim: next, ok: true };
     }
+    case "nocards":
+      if (next.started) return refuseBoard(sim, "The duel already started.");
+      next.nocards = true; // both players play with the life point table only
+      return { sim: next, ok: true };
     case "rematch":
       next.rematch = event.by;
       return { sim: next, ok: true };
