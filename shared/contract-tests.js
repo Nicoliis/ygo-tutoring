@@ -1116,6 +1116,89 @@ function runContractTests() {
     expect(JSON.stringify(frozen) === before, "the old table is not changed");
   });
 
+  /* Two sessions joined by an in-memory link whose delivery order the test controls. */
+  function duelPair(seedTable) {
+    const toCreator = [];
+    const toJoiner = [];
+    const notices = [];
+    let randoms = [0.1, 0.9, 0.5, 0.2];
+    const creator = createDuelSession({ role: 0, table: seedTable, send: (m) => (toJoiner.push(JSON.parse(JSON.stringify(m))), true), random: () => randoms.shift() ?? 0.3 });
+    const joiner = createDuelSession({ role: 1, table: null, send: (m) => (toCreator.push(JSON.parse(JSON.stringify(m))), true), onNotice: (n) => notices.push(n) });
+    const flush = () => {
+      while (toCreator.length || toJoiner.length) {
+        if (toCreator.length) creator.receive(toCreator.shift());
+        if (toJoiner.length) joiner.receive(toJoiner.shift());
+      }
+    };
+    return { creator, joiner, flush, toCreator, toJoiner, notices };
+  }
+
+  check("duel session: the creator is the authority and both tables end identical", () => {
+    const pair = duelPair(newTable("d9", "Ana", ""));
+    pair.joiner.hello("Bo");
+    pair.flush();
+    expect(pair.joiner.getTable().players[1].name === "Bo" && pair.creator.getTable().players[1].name === "Bo", "the joiner's name is applied and the table is sent");
+    expect(JSON.stringify(pair.creator.getTable()) === JSON.stringify(pair.joiner.getTable()));
+    // interleaved changes from both players, queued before anything is delivered
+    pair.creator.intent({ kind: "lp", target: 1, mode: "add", amount: -1000 });
+    pair.joiner.intent({ kind: "lp", target: 0, mode: "add", amount: -500 });
+    pair.creator.intent({ kind: "phase" });
+    pair.joiner.intent({ kind: "phase" });
+    pair.joiner.intent({ kind: "coin" });
+    pair.creator.intent({ kind: "die" });
+    pair.flush();
+    const a = pair.creator.getTable();
+    const b = pair.joiner.getTable();
+    expect(JSON.stringify(a) === JSON.stringify(b), "same table, same log order");
+    expect(a.players[1].lp === 7000 && a.players[0].lp === 7500 && a.phase === "Main 1", "every change applied once");
+    expect(a.log.filter((e) => e.by === 1).length >= 3, "the joiner's changes are logged under the joiner");
+    expect(["heads", "tails"].includes(a.coin) && a.die >= 1 && a.die <= 6 && b.coin === a.coin && b.die === a.die, "one coin and die result for both");
+  });
+
+  check("duel session: 200 changes from both sides stay identical, results are chosen by the creator", () => {
+    const pair = duelPair(newTable("d9", "Ana", "Bo"));
+    pair.joiner.hello("Bo");
+    pair.flush();
+    for (let i = 0; i < 200; i++) {
+      const event = i % 4 === 0 ? { kind: "phase" } : i % 4 === 1 ? { kind: "lp", target: i % 2, mode: "add", amount: -(i % 7) * 10 } : i % 4 === 2 ? { kind: "die" } : { kind: "coin" };
+      (i % 3 === 0 ? pair.joiner : pair.creator).intent(event);
+      if (i % 5 === 0) pair.flush();
+    }
+    pair.flush();
+    expect(JSON.stringify(pair.creator.getTable()) === JSON.stringify(pair.joiner.getTable()), "identical after 200 changes");
+    expect(pair.creator.getTable().seq >= 200, "every change was numbered");
+    pair.joiner.intent({ kind: "die", result: 99, by: 0 });
+    pair.flush();
+    expect(pair.creator.getTable().die >= 1 && pair.creator.getTable().die <= 6 && pair.creator.getTable().log.slice(-1)[0].by === 1, "a joiner cannot choose a result or act as the creator");
+  });
+
+  check("duel session: a missed event asks for the whole table; a creator table replaces a different one with a notice", () => {
+    const pair = duelPair(newTable("d9", "Ana", "Bo"));
+    pair.joiner.hello("Bo");
+    pair.flush();
+    pair.creator.intent({ kind: "lp", target: 1, mode: "add", amount: -100 });
+    pair.toJoiner.shift(); // lost on the way
+    pair.creator.intent({ kind: "lp", target: 1, mode: "add", amount: -200 });
+    pair.flush();
+    expect(JSON.stringify(pair.creator.getTable()) === JSON.stringify(pair.joiner.getTable()) && pair.joiner.getTable().players[1].lp === 7700, "resynced after a gap");
+    pair.joiner.receive({ type: "event", base: 0, event: { kind: "die", by: 0, result: 3 } });
+    expect(pair.joiner.getTable().die === null, "an event that was already applied is ignored");
+    // reconnect: the joiner still holds an older table
+    const old = JSON.parse(JSON.stringify(pair.joiner.getTable()));
+    pair.creator.intent({ kind: "phase" });
+    pair.flush();
+    const rejoin = duelPair(pair.creator.getTable());
+    rejoin.joiner.setTable(old);
+    rejoin.joiner.hello("Bo");
+    rejoin.flush();
+    expect(JSON.stringify(rejoin.joiner.getTable()) === JSON.stringify(rejoin.creator.getTable()) && rejoin.notices.length === 1, "the creator's table wins and the joiner is told");
+    const same = duelPair(pair.creator.getTable());
+    same.joiner.setTable(JSON.parse(JSON.stringify(pair.creator.getTable())));
+    same.joiner.hello("Bo");
+    same.flush();
+    expect(same.notices.length === 0, "no notice when the tables already match");
+  });
+
   check("duel code: round trip, tolerant paste and rejection of bad codes", () => {
     const sdp = "v=0\r\no=- 1 2 IN IP4 127.0.0.1\r\na=candidate:1 1 udp 1 192.168.1.2 5000 typ host ñ";
     const code = encodeCode({ kind: "offer", roomId: "room-1", sdp });

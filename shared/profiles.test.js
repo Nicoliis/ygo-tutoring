@@ -32,6 +32,7 @@ const source = [
   read("engine-rules.js"),
   read("../duel/duel-table.js"),
   read("../duel/duel-code.js"),
+  read("../duel/duel-session.js"),
   read("../progression/progression-state.js"),
   read("../store/store-state.js"),
   read("contract-tests.js"),
