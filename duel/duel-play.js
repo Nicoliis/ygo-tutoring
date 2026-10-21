@@ -4,7 +4,8 @@
  * duel-session.js, the drawing in views/. It reads the room's `room` object (duel-room.js) at call time.
  * Needs save-utils.js (loadData, saveData, removeData) and profiles.js (profileKey).
  */
-const PRIVATE_KEY = "ygoDuelPrivate"; // where this device keeps its private part of the duel
+const PRIVATE_KEY_BASE = "ygoDuelPrivate"; // where this device keeps its private part of the duel (one key per side)
+const privateKey = (side) => `${PRIVATE_KEY_BASE}_${side}`;
 const COLLECTION_KEY_BASE = "ygoCollection"; // the saved collection holding the Workshop decks (read only)
 
 let play = {
@@ -74,12 +75,12 @@ function playWithoutCards() {
 
 function savePrivate() {
   if (!play.priv) return;
-  saveData({ duelId: play.priv.duelId, side: room.role, deckId: play.chosenDeckId, priv: play.priv }, PRIVATE_KEY);
+  saveData({ duelId: play.priv.duelId, side: room.role, deckId: play.chosenDeckId, priv: play.priv }, privateKey(room.role));
 }
 
 /* The saved private state of this device when it belongs to this duel, else null. */
 function restorePrivate(table) {
-  const saved = loadData(PRIVATE_KEY);
+  const saved = loadData(privateKey(room.role));
   if (!saved || !saved.priv || saved.duelId !== table.duelId || saved.side !== room.role) return null;
   return saved;
 }
@@ -98,6 +99,10 @@ function onDuelEvent(event, table) {
     drawRoom(); // the hand only exists now
     return;
   }
+  if (event.kind === "rematch-accept" && room.role === ROLE_CREATOR) {
+    room.session.intent({ kind: "reset" }); // both agreed: the creator starts the new duel
+    return;
+  }
   if (event.kind === "reset") {
     // a rematch: the same deck again, reshuffled; each device announces it is ready
     if (play.built) {
@@ -111,6 +116,28 @@ function onDuelEvent(event, table) {
     savePrivate();
     drawRoom(); // the board was drawn before the private side followed the event
   }
+}
+
+/* ---- rematch ---- */
+
+function rematchState() {
+  const table = room.session ? room.session.getTable() : null;
+  const sim = table && table.sim;
+  if (!sim || !sim.started) return "none";
+  if (sim.rematch === null) return "none";
+  return sim.rematch === room.role ? "proposed-by-me" : "proposed-by-them";
+}
+
+function proposeRematch() {
+  room.session.intent({ kind: "rematch" });
+}
+
+function acceptRematch() {
+  room.session.intent({ kind: "rematch-accept" });
+}
+
+function declineRematch() {
+  room.session.intent({ kind: "rematch-decline" });
 }
 
 /* ---- the board ---- */

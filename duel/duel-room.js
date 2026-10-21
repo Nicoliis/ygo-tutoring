@@ -54,6 +54,8 @@ function drawRoom() {
       table: room.session ? room.session.getTable() : null,
       deckChoice: room.phase === "connected" ? deckChoiceModel() : null,
       board: room.session && room.session.getTable() ? boardModel() : null,
+      rematch: rematchState(),
+      privateLost: Boolean(room.session && room.session.getTable() && room.session.getTable().sim && room.session.getTable().sim.started && !play.priv),
       you: room.role === null ? 0 : room.role,
       savedDuel: saved && room.phase === "start" ? { names: saved.table.players.map((p) => p.name), turn: saved.table.turn } : null,
     },
@@ -72,6 +74,9 @@ function drawRoom() {
       onUndo: () => intent({ kind: "undo" }),
       onRename: (name) => intent({ kind: "name", name }),
       boardHandlers: boardHandlers(),
+      onRematch: proposeRematch,
+      onAcceptRematch: acceptRematch,
+      onDeclineRematch: declineRematch,
       onChooseDeck: chooseDeck,
       onNoCards: playWithoutCards,
     }
@@ -108,6 +113,8 @@ function makeSession(table) {
     send: (message) => (room.link ? room.link.send(message) : false),
     onChange: () => {
       saveDuel();
+      // a joiner's table (and so the knowledge that a duel is on) arrives with the creator's snapshot
+      if (room.role === ROLE_JOINER && !play.priv && room.session && room.session.getTable()) prepareCards();
       // the joiner's first table arrives after the link opens: from then on the table is shown
       if (room.phase === "joining" && room.session && room.session.getTable() && room.link && room.link.getStatus() === "connected") {
         room = { ...room, phase: "connected", status: "Connected." };
@@ -125,6 +132,7 @@ function prepareCards() {
   loadWorkshopDecks();
   const table = room.session && room.session.getTable();
   if (!table || !table.sim || !table.sim.started) return;
+  if (play.priv && play.priv.duelId === table.duelId && play.priv.side === room.role) return; // this page still has its own cards
   const saved = restorePrivate(table);
   if (saved) {
     play.priv = saved.priv;

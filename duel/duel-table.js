@@ -124,7 +124,7 @@ function applyPhase(table, event) {
   };
 }
 
-const SIM_KINDS = ["ready", "nocards", "start", "draw", "move", "flip", "position", "reveal", "hide", "search", "shuffle", "rematch", "rematch-accept", "reset"];
+const SIM_KINDS = ["ready", "nocards", "start", "draw", "move", "flip", "position", "reveal", "hide", "search", "shuffle", "rematch", "rematch-accept", "rematch-decline", "reset"];
 const ZONE_WORDS = { monster: "monster zone", spell: "spell and trap zone", field: "field zone", pendulum: "pendulum zone", gy: "graveyard", banished: "banished zone", hand: "hand", deck: "deck", extra: "extra deck" };
 
 /* The log line of a board event. It only names a card that is visible to both players. */
@@ -166,6 +166,8 @@ function describeSim(table, event, result) {
       return `${who} proposed a rematch`;
     case "rematch-accept":
       return `${who} accepted the rematch`;
+    case "rematch-decline":
+      return `${who} declined the rematch`;
     case "reset":
       return "A new duel starts";
     default:

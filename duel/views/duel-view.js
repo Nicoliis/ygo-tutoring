@@ -159,6 +159,8 @@ function buildTable(h) {
   }
 
   const turn = el("section", "panel duel-turn");
+  refs.rematch = el("section", "panel duel-rematch");
+  refs.rematch.setAttribute("aria-live", "polite");
   refs.turn = el("p", "duel-turn-text");
   refs.turn.setAttribute("aria-live", "polite");
   const bar = el("ol", "duel-phases");
@@ -184,7 +186,7 @@ function buildTable(h) {
   refs.log.setAttribute("aria-live", "polite");
   logPanel.appendChild(refs.log);
 
-  root.append(players, turn, logPanel);
+  root.append(players, turn, refs.rematch, logPanel);
   return refs;
 }
 
@@ -210,6 +212,7 @@ function updateTable(refs, model) {
   refs.root.querySelectorAll(".duel-lp-controls button, .duel-lp-controls input, .duel-rename").forEach((c) => {
     c.disabled = !live;
   });
+  updateRematch(refs, model);
   refs.log.innerHTML = "";
   t.log
     .slice()
@@ -217,7 +220,27 @@ function updateTable(refs, model) {
     .forEach((entry) => refs.log.appendChild(el("li", `duel-log-entry duel-log-${entry.kind}`, entry.text)));
 }
 
+/* The rematch bar: lost private state, a proposal waiting, or the button to propose one. */
+function updateRematch(refs, model) {
+  const bar = refs.rematch;
+  bar.innerHTML = "";
+  const started = Boolean(model.board);
+  bar.hidden = !started;
+  if (!started) return;
+  if (model.privateLost) bar.appendChild(el("p", "duel-error", "The private part of your duel (your hand and deck) was lost on this device. A rematch starts the duel again."));
+  const h = model.handlersForRematch;
+  if (model.rematch === "proposed-by-them") {
+    bar.appendChild(el("p", null, "Your opponent proposes a rematch with the same decks."));
+    bar.append(button("Accept rematch", h.onAccept, "btn btn-primary"), button("Decline", h.onDecline));
+  } else if (model.rematch === "proposed-by-me") {
+    bar.appendChild(el("p", null, "Rematch proposed. Waiting for your opponent…"));
+  } else {
+    bar.appendChild(button("Propose a rematch", h.onPropose));
+  }
+}
+
 function renderRoom(rootEl, model, h) {
+  model = { ...model, handlersForRematch: { onPropose: h.onRematch, onAccept: h.onAcceptRematch, onDecline: h.onDeclineRematch } };
   const showsTable = model.phase === "connected" || (model.phase === "disconnected" && model.table);
   const screen = model.phase === "connected" && model.deckChoice ? "deck" : showsTable ? "table" : model.phase;
   if (rootEl.dataset.screen !== screen) {

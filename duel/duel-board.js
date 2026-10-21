@@ -235,6 +235,9 @@ function applyBoardEvent(sim, event) {
     case "rematch":
       next.rematch = event.by;
       return { sim: next, ok: true };
+    case "rematch-decline":
+      next.rematch = null;
+      return { sim: next, ok: true };
     case "rematch-accept":
       if (next.rematch === null || next.rematch === event.by) return refuseBoard(sim, "There is no rematch to accept.");
       return { sim: next, ok: true };
