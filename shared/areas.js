@@ -36,17 +36,18 @@ const AREAS = [
   {
     id: "tools",
     label: "Tools",
-    description: "Booster Draft, Proxy Sheet Builder and the Pack Puller.",
+    description: "Booster Draft, Proxy Sheet Builder, the Pack Puller and the Duel Room.",
     pages: [
       { label: "Booster Draft", href: "draft/index.html" },
       { label: "Proxy Sheet Builder", href: "proxy-builder/index.html" },
       { label: "Progression Series Pack Puller", href: "tracker/index.html" },
+      { label: "Duel Room", href: "duel/index.html" },
     ],
   },
 ];
 
 // Folders that hold pages one level below the app root (also covers the retired collection redirect).
-const AREA_FOLDERS = ["workshop", "store", "progression", "draft", "proxy-builder", "tracker", "collection"];
+const AREA_FOLDERS = ["workshop", "store", "progression", "draft", "proxy-builder", "tracker", "collection", "duel"];
 
 function pageIsInsideAreaFolder() {
   return AREA_FOLDERS.some((folder) => window.location.pathname.includes(`/${folder}/`));
