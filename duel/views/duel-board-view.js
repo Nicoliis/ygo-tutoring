@@ -6,7 +6,7 @@
  *                picking: { zones: [{ zone, slot }] } | null, menu: { uid, actions: [{ id, label }] } | null,
  *                selected: uid | null }
  *   handlers = { onSelectCard(uid, place), onAction(id), onPickZone(zone, slot), onOpenPile(side, pile),
- *                onDetails(card), onCancel() }
+ *                onDetails(card), onFaceDown(), onCancel() }
  *
  * The opponent's field is drawn upside down at the top, the player's own at the bottom. A card is its image (a named
  * placeholder when it has none), a face-down card a card back. Each lower card of a stack is drawn offset by
@@ -51,6 +51,7 @@ function buildDuelCard(entry, info, own, handlers, place, extraClass = "") {
   btn.addEventListener("click", () => {
     if (own) handlers.onSelectCard(entry.uid, place);
     else if (visible) handlers.onDetails(info);
+    else if (handlers.onFaceDown) handlers.onFaceDown();
   });
   return btn;
 }

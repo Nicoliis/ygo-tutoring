@@ -356,6 +356,7 @@ function boardHandlers() {
     onPickZone: pickZone,
     onOpenPile: openPile,
     onDetails: showCardDetails,
+    onFaceDown: () => showModal({ title: "Face-down card", bodyHtml: "<p>A face-down card: nothing is known about it until its owner flips or reveals it.</p>", buttons: [{ label: "Close", primary: true }] }),
     onCancel: closeDuelMenu,
   };
 }

@@ -1394,6 +1394,121 @@ function runContractTests() {
     expect(seen[1].filter((x) => x.startsWith("name")).length === 0 || true);
   });
 
+  check("duel privacy: no message names a card while it is in a hand, a deck, an extra deck or face-down", () => {
+    const named = (side, n) => ({ id: `s${side}c${n}`, name: `SECRET-${side}-${n}`, apiId: 1000 * (side + 1) + n, type: n === 7 ? "Fusion Monster" : "Effect Monster", effect: `text ${side}-${n}`, imageSmall: `i${side}${n}.jpg` });
+    const collections = [0, 1].map((side) => ({
+      cards: Array.from({ length: 8 }, (_, n) => named(side, n)),
+      decks: [{ id: "d", name: `Deck ${side}`, main: Array.from({ length: 7 }, (_, n) => ({ cardId: `s${side}c${n}`, quantity: 1 })), extra: [{ cardId: `s${side}c7`, quantity: 1 }] }],
+    }));
+    const decks = [0, 1].map((side) => buildDuelDeck(collections[side], "d", side));
+    const privs = [null, null];
+    const messages = [];
+    const toCreator = [];
+    const toJoiner = [];
+    const make = (role) =>
+      createDuelSession({
+        role,
+        table: role === 0 ? newTable("p1", "Ana", "Bo") : null,
+        random: seededRandom(30 + role),
+        send: (m) => {
+          messages.push(JSON.stringify(m));
+          (role === 0 ? toJoiner : toCreator).push(JSON.parse(JSON.stringify(m)));
+          return true;
+        },
+        onApplied: (event, table) => {
+          if (event.kind === "start") privs[role] = dealHand(privs[role]);
+          else if (event.by === role && privs[role] && event.kind !== "ready") privs[role] = applyPrivate(privs[role], event, seededRandom(2)).priv;
+        },
+      });
+    const sessions = [make(0), make(1)];
+    const flush = () => {
+      while (toCreator.length || toJoiner.length) {
+        if (toCreator.length) sessions[0].receive(toCreator.shift());
+        if (toJoiner.length) sessions[1].receive(toJoiner.shift());
+      }
+    };
+    sessions[1].hello("Bo");
+    flush();
+    [0, 1].forEach((side) => {
+      privs[side] = newPrivate("p1", side, decks[side], seededRandom(40 + side));
+      sessions[side].intent({ kind: "ready", deckName: decks[side].name, mainCount: decks[side].main.length, extraCount: decks[side].extra.length });
+      flush();
+    });
+    sessions[0].intent({ kind: "start" });
+    flush();
+    expect(sessions[0].getTable().sim.started && privs[0].hand.length === 5 && privs[1].hand.length === 5, "the duel started");
+    const publicNames = new Set();
+    const random = seededRandom(77);
+    const sizes = { monster: 5, spell: 5, field: 1, pendulum: 2 };
+    for (let i = 0; i < 300; i++) {
+      const by = random() < 0.5 ? 0 : 1;
+      const table = sessions[0].getTable();
+      const side = table.sim.players[by];
+      const priv = privs[by];
+      const r = random();
+      let event = null;
+      if (r < 0.15) event = { kind: "draw" };
+      else if (r < 0.45 && priv.hand.length) {
+        const uid = priv.hand[Math.floor(random() * priv.hand.length)];
+        const zone = ["monster", "spell", "field", "pendulum"][Math.floor(random() * 4)];
+        const faceUp = random() < 0.5;
+        event = { kind: "move", uid, from: { zone: "hand" }, to: { zone, slot: Math.floor(random() * sizes[zone]) }, faceUp, pos: "atk", ...(faceUp ? { card: cardAt(priv, uid) } : {}) };
+      } else if (r < 0.7) {
+        const zones = Object.keys(sizes).flatMap((k) => side.zones[k].map((stack, slot) => ({ k, slot, stack }))).filter((z) => z.stack.length);
+        if (zones.length) {
+          const z = zones[Math.floor(random() * zones.length)];
+          const entry = z.stack[Math.floor(random() * z.stack.length)];
+          const pick = random();
+          if (pick < 0.3) event = { kind: "flip", uid: entry.uid, zone: z.k, slot: z.slot, faceUp: !entry.faceUp, ...(entry.faceUp ? {} : { card: cardAt(priv, entry.uid) }) };
+          else if (pick < 0.55) event = { kind: "move", uid: entry.uid, from: { zone: z.k, slot: z.slot }, to: { zone: "gy" }, faceUp: true, card: cardAt(priv, entry.uid) };
+          else if (pick < 0.75) event = { kind: "move", uid: entry.uid, from: { zone: z.k, slot: z.slot }, to: { zone: "banished" }, faceUp: false };
+          else event = { kind: "move", uid: entry.uid, from: { zone: z.k, slot: z.slot }, to: { zone: "hand" }, faceUp: false };
+        }
+      } else if (r < 0.8) event = { kind: "shuffle" };
+      else if (r < 0.9 && priv.hand.length) {
+        const uid = priv.hand[0];
+        event = random() < 0.5 ? { kind: "reveal", uid, card: cardAt(priv, uid) } : { kind: "hide", uid };
+      } else if (r < 0.95 && priv.deck.length) {
+        // a search: the list is looked through privately, only the chosen card moves to the hand
+        sessions[by].intent({ kind: "search" });
+        flush();
+        event = { kind: "move", uid: priv.deck[Math.floor(random() * priv.deck.length)], from: { zone: "deck" }, to: { zone: "hand" }, faceUp: false };
+      } else event = { kind: "undo" };
+      if (event) {
+        sessions[by].intent(event);
+        flush();
+      }
+    }
+    const traffic = messages.join("\n");
+    // every card the protocol made public: the names inside a `card` field of an event, or in the table's public parts
+    const madePublic = new Set();
+    messages.forEach((text) => {
+      const m = JSON.parse(text);
+      const visit = (value, publicPlace) => {
+        if (!value || typeof value !== "object") return;
+        if (value.card && value.card.name) madePublic.add(value.card.name);
+        Object.values(value).forEach((v) => visit(v));
+      };
+      visit(m);
+    });
+    const allNames = [];
+    for (let side = 0; side < 2; side++) for (let n = 0; n < 8; n++) allNames.push(`SECRET-${side}-${n}`);
+    const neverPublic = allNames.filter((n) => !madePublic.has(n));
+    expect(neverPublic.length > 0, "some cards stayed hidden all duel (the test is meaningful)");
+    neverPublic.forEach((name) => expect(!traffic.includes(name), `${name} never left its device`));
+    expect(!traffic.includes('"hand":[') && !traffic.includes('"deck":[') && !traffic.includes('"cards":{'), "no private lists in any message");
+    expect(!/"extra":\[/.test(traffic), "the extra deck contents never travel");
+    // a card that was face-down is named only after a flip, a public pile or a reveal: its name never appears in a set/hidden move
+    messages.forEach((text) => {
+      const m = JSON.parse(text);
+      const event = m.event;
+      if (m.type === "event" && event && event.kind === "move" && !event.faceUp && event.to && event.to.zone !== "gy") {
+        expect(!("card" in event), "a card played face-down or hidden carries no card data");
+      }
+    });
+    expect(JSON.stringify(sessions[0].getTable()) === JSON.stringify(sessions[1].getTable()), "both public tables still match");
+  });
+
   check("duel code: round trip, tolerant paste and rejection of bad codes", () => {
     const sdp = "v=0\r\no=- 1 2 IN IP4 127.0.0.1\r\na=candidate:1 1 udp 1 192.168.1.2 5000 typ host ñ";
     const code = encodeCode({ kind: "offer", roomId: "room-1", sdp });
