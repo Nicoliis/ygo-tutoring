@@ -159,7 +159,7 @@ The Duel Room is a page in the Tools area of the app. The page explains in short
 
 ### Measurable Outcomes
 
-- **SC-001**: Two players can go from opening the page to a connected duel table in under 2 minutes, using only copy and paste (or QR), when their network allows direct connections.
+- **SC-001**: Two players can go from opening the page to a connected duel table in under 2 minutes, using only copy and paste, when their network allows direct connections.
 - **SC-002**: After linking, a change made by one player shows on the other player's page in under 1 second on the same network and under 3 seconds on different networks, in at least 95% of changes.
 - **SC-003**: Across 200 consecutive changes made by both players, including simultaneous ones, the two pages show identical life points, turn, phase and log in 100% of checks.
 - **SC-004**: When the link cannot be made, 100% of attempts end with a clear message and a way to retry within 30 seconds, with no frozen or blank screen.
