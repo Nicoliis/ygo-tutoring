@@ -95,6 +95,7 @@ function onDuelEvent(event, table) {
   if (event.kind === "start") {
     if (play.priv) play.priv = dealHand(play.priv);
     savePrivate();
+    drawRoom(); // the hand only exists now
     return;
   }
   if (event.kind === "reset") {
@@ -108,6 +109,7 @@ function onDuelEvent(event, table) {
   if (event.by === room.role && play.priv && event.kind !== "ready") {
     play.priv = applyPrivate(play.priv, event).priv;
     savePrivate();
+    drawRoom(); // the board was drawn before the private side followed the event
   }
 }
 
@@ -136,36 +138,224 @@ function showCardDetails(card) {
   openCardDetailModal(card, undefined, "", null, false);
 }
 
-/* The cards of a pile as the viewer may see them. */
+/* ---- moving cards: the card menu and the zone picker ---- */
+
+const EXTRA_DECK_TYPES = ["Fusion", "Synchro", "Xyz", "Link"]; // cards that return to the extra deck, not the deck
+
+function isExtraDeckCard(card) {
+  return Boolean(card && card.type && EXTRA_DECK_TYPES.some((t) => card.type.includes(t)));
+}
+
+const ACTION_LABELS = {
+  summon: "Normal summon", set: "Set face-down", special: "Special summon", place: "Place face-up (spell/trap/field)",
+  move: "Move to another zone", position: "Change position", flipUp: "Flip face-up", flipDown: "Flip face-down",
+  gy: "Send to graveyard", banish: "Banish", banishDown: "Banish face-down", hand: "Return to hand",
+  deckTop: "Return to top of deck", deckBottom: "Return to bottom of deck", extra: "Return to extra deck",
+  reveal: "Reveal to opponent", hide: "Hide again", details: "View card",
+  draw: "Draw", shuffle: "Shuffle deck", search: "Search deck", lookTop: "Look at the top card",
+};
+const ZONES_FOR = {
+  summon: [["monster"]], special: [["monster"]], set: [["monster", "spell"]], place: [["spell", "field", "pendulum"]], move: [["monster", "spell", "field", "pendulum"]],
+};
+
+function actionList(ids) {
+  return ids.map((id) => ({ id, label: ACTION_LABELS[id] }));
+}
+
+/* The actions that make sense for a card of this player where it is now. */
+function menuFor(place, uid) {
+  const card = cardAt(play.priv, uid);
+  const returns = isExtraDeckCard(card) ? ["extra"] : ["deckTop", "deckBottom"];
+  if (place.zone === "hand") {
+    const revealed = room.session.getTable().sim.players[room.role].revealed[uid];
+    return actionList(["summon", "set", "special", "place", "gy", "banish", "banishDown", revealed ? "hide" : "reveal", "details"]);
+  }
+  if (place.zone === "gy") return actionList(["special", "hand", ...returns, "banish", "details"]);
+  if (place.zone === "banished") return actionList(["special", "hand", ...returns, "gy", "details"]);
+  if (place.zone === "extra") return actionList(["special", "details"]);
+  const entry = fieldEntry(uid, place);
+  const flip = entry && entry.faceUp ? "flipDown" : "flipUp";
+  return actionList([...(place.zone === "monster" ? ["position"] : []), flip, "move", "gy", "banish", "banishDown", "hand", ...returns, "details"]);
+}
+
+/* The card's entry on this player's field (its face and position), or null. */
+function fieldEntry(uid, place) {
+  const sim = room.session.getTable().sim;
+  const stack = sim.players[room.role].zones[place.zone] && sim.players[room.role].zones[place.zone][place.slot];
+  return stack ? stack.find((c) => c.uid === uid) || null : null;
+}
+
+function closeDuelMenu() {
+  play.selected = null;
+  play.menu = null;
+  play.picking = null;
+  drawRoom();
+}
+
+function selectCard(uid, place) {
+  if (!play.priv || !cardAt(play.priv, uid)) return;
+  play.selected = uid;
+  play.place = place;
+  play.picking = null;
+  play.menu = { title: cardAt(play.priv, uid).name, actions: menuFor(place, uid) };
+  drawRoom();
+}
+
+function closeDuelModal() {
+  const close = document.querySelector("#modalRoot .modal-actions button");
+  if (close) close.click();
+}
+
+/* Starts an action on the selected card: either it needs a zone (picker) or it is sent at once. */
+function chooseAction(id) {
+  const uid = play.selected;
+  if (!uid) return;
+  if (id === "details") {
+    showCardDetails(cardAt(play.priv, uid));
+    return;
+  }
+  const kinds = ZONES_FOR[id];
+  if (kinds) {
+    const zones = [];
+    kinds[0].forEach((kind) => {
+      for (let slot = 0; slot < ZONE_SIZES[kind]; slot++) zones.push({ zone: kind, slot });
+    });
+    play.picking = { actionId: id, zones };
+    play.menu = null;
+    drawRoom();
+    return;
+  }
+  performAction(id, uid, play.place, null);
+  closeDuelMenu();
+}
+
+function pickZone(zone, slot) {
+  if (!play.picking || !play.selected) return;
+  performAction(play.picking.actionId, play.selected, play.place, { zone, slot });
+  closeDuelMenu();
+}
+
+/* Builds the public event for an action and sends it; the private side follows when the event is confirmed. */
+function performAction(id, uid, place, target) {
+  const card = cardAt(play.priv, uid);
+  const from = place.slot === undefined ? { zone: place.zone } : { zone: place.zone, slot: place.slot };
+  const move = (to, faceUp, pos, withCard) => room.session.intent({ kind: "move", uid, from, to, faceUp, pos, ...(withCard ? { card } : {}) });
+  const entry = fieldEntry(uid, place);
+  switch (id) {
+    case "summon":
+    case "special":
+      return move(target, true, "atk", true);
+    case "set":
+      return move(target, false, target.zone === "monster" ? "def" : "atk", false);
+    case "place":
+      return move(target, true, "atk", true);
+    case "move":
+      return move(target, entry ? entry.faceUp : true, entry ? entry.pos : "atk", Boolean(entry && entry.faceUp));
+    case "gy":
+      return move({ zone: "gy" }, true, "atk", true);
+    case "banish":
+      return move({ zone: "banished" }, true, "atk", true);
+    case "banishDown":
+      return move({ zone: "banished" }, false, "atk", false);
+    case "hand":
+      return move({ zone: "hand" }, false, "atk", false);
+    case "deckTop":
+      return move({ zone: "deck", end: "top" }, false, "atk", false);
+    case "deckBottom":
+      return move({ zone: "deck", end: "bottom" }, false, "atk", false);
+    case "extra":
+      return move({ zone: "extra" }, false, "atk", false);
+    case "position":
+      return room.session.intent({ kind: "position", uid, zone: place.zone, slot: place.slot, pos: entry && entry.pos === "atk" ? "def" : "atk" });
+    case "flipUp":
+      return room.session.intent({ kind: "flip", uid, zone: place.zone, slot: place.slot, faceUp: true, card });
+    case "flipDown":
+      return room.session.intent({ kind: "flip", uid, zone: place.zone, slot: place.slot, faceUp: false });
+    case "reveal":
+      return room.session.intent({ kind: "reveal", uid, card });
+    case "hide":
+      return room.session.intent({ kind: "hide", uid });
+    default:
+      return null;
+  }
+}
+
+/* ---- the deck pile and the piles' lists ---- */
+
+function openDeckMenu() {
+  if (!play.priv) return;
+  play.selected = null;
+  play.picking = null;
+  play.menu = { title: `Deck (${play.priv.deck.length})`, actions: actionList(["draw", "shuffle", "search", "lookTop"]) };
+  drawRoom();
+}
+
+function deckAction(id) {
+  if (id === "draw") room.session.intent({ kind: "draw" });
+  else if (id === "shuffle") room.session.intent({ kind: "shuffle" });
+  else if (id === "lookTop") {
+    const top = play.priv.deck[0];
+    if (top) showCardDetails(cardAt(play.priv, top));
+    else setRoom({ error: "Your deck is empty." });
+  } else if (id === "search") openDeckSearch();
+}
+
+/* Looking through the deck is private; taking a card to the hand logs "searched the deck", moves the card, then shuffles. */
+function openDeckSearch() {
+  const items = play.priv.deck.map((uid) => ({ uid, card: cardAt(play.priv, uid), actions: [{ id: "take", label: "Add to hand" }] }));
+  showModal({ title: "Search your deck", bodyHtml: '<div id="duelPileList"></div>', buttons: [{ label: "Close", primary: true }] });
+  renderPileList(document.getElementById("duelPileList"), items, {
+    onDetails: showCardDetails,
+    onAction: (_id, uid) => {
+      closeDuelModal();
+      room.session.intent({ kind: "search" });
+      room.session.intent({ kind: "move", uid, from: { zone: "deck" }, to: { zone: "hand" }, faceUp: false });
+      room.session.intent({ kind: "shuffle" });
+    },
+  });
+}
+
 function pileItems(sideIndex, pile) {
   const table = room.session.getTable();
   const side = table.sim.players[sideIndex];
-  if (pile === "gy" || pile === "banished") return side[pile].map((e) => ({ uid: e.uid, card: e.card || (sideIndex === room.role && play.priv ? cardAt(play.priv, e.uid) : null), actions: [] }));
-  if (sideIndex !== room.role || !play.priv) return [];
-  const uids = pile === "deck" ? play.priv.deck : play.priv.extra;
-  return uids.map((uid) => ({ uid, card: cardAt(play.priv, uid), actions: [] }));
+  const own = sideIndex === room.role && play.priv;
+  if (pile === "gy" || pile === "banished") {
+    return side[pile].map((e) => ({
+      uid: e.uid,
+      card: e.card || (own ? cardAt(play.priv, e.uid) : null),
+      actions: own ? menuFor({ zone: pile }, e.uid).filter((a) => a.id !== "details") : [],
+    }));
+  }
+  if (!own) return [];
+  return play.priv.extra.map((uid) => ({ uid, card: cardAt(play.priv, uid), actions: menuFor({ zone: "extra" }, uid).filter((a) => a.id !== "details") }));
 }
 
 function openPile(sideIndex, pile) {
-  if ((pile === "deck" || pile === "extra") && sideIndex !== room.role) return; // only counts are known
-  if (pile === "deck") return; // the deck pile has its own menu (draw, search...) with the card actions
+  if (pile === "deck") {
+    if (sideIndex === room.role) openDeckMenu();
+    return;
+  }
+  if (pile === "extra" && sideIndex !== room.role) return; // only the count is known
   const titles = { gy: "Graveyard", banished: "Banished", extra: "Extra deck" };
   showModal({ title: `${sideIndex === room.role ? "Your" : "Opponent's"} ${titles[pile]}`, bodyHtml: '<div id="duelPileList"></div>', buttons: [{ label: "Close", primary: true }] });
-  renderPileList(document.getElementById("duelPileList"), pileItems(sideIndex, pile), { onDetails: showCardDetails, onAction: () => {} });
-}
-
-function selectCard(uid) {
-  const card = play.priv ? cardAt(play.priv, uid) : null;
-  if (card) showCardDetails(card);
+  renderPileList(document.getElementById("duelPileList"), pileItems(sideIndex, pile), {
+    onDetails: showCardDetails,
+    onAction: (id, uid) => {
+      closeDuelModal();
+      play.selected = uid;
+      play.place = { zone: pile };
+      chooseAction(id);
+    },
+  });
 }
 
 function boardHandlers() {
   return {
     onSelectCard: selectCard,
-    onAction: () => {},
-    onPickZone: () => {},
+    onAction: (id) => (play.selected === null ? deckAction(id) : chooseAction(id)),
+    onPickZone: pickZone,
     onOpenPile: openPile,
     onDetails: showCardDetails,
-    onCancel: () => {},
+    onCancel: closeDuelMenu,
   };
 }
