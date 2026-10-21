@@ -48,7 +48,9 @@ entry = { seq, by: 0|1, kind: "lp"|"phase"|"coin"|"die"|"name"|"undo"|"win", tex
 hello    { type, duelId, name }
 snapshot { type, table }           // creator -> joiner, after hello
 intent   { type, event }           // joiner -> creator (without seq and without random results)
-event    { type, seq, event }      // creator -> joiner: the numbered event to apply
+event    { type, base, event }     // creator -> joiner: the event to apply; base = the table's seq before it (applied only when it equals the joiner's seq)
+resync   { type }                   // joiner -> creator: an event was missed, send the whole table
+refused  { type, reason }          // creator -> joiner: the joiner's intent was not valid
 ping | pong { type }
 ```
 
@@ -64,5 +66,6 @@ ping | pong { type }
 
 - Life points: integer, never below 0 in the table (a value below 0 is stored as 0); `set` amounts and `add` amounts are integers within ±1,000,000.
 - A phase move always follows `DUEL_PHASES` order; the turn changes only after `End`.
-- The creator numbers events consecutively; the joiner applies an event only when `seq` is the next number, otherwise it asks the creator for a `snapshot`.
+- The joiner applies an event only when its `base` equals the joiner's own `seq`; an older `base` is ignored as already applied, a newer one asks the creator for a `snapshot` (`resync`).
+- A joiner can never choose the player or a random result: the creator forces `by` and picks coin and die results.
 - Names are trimmed text of 1–24 characters.

@@ -9,6 +9,8 @@ node shared/profiles.test.js     # must end with "profiles contract: OK"
 ```
 Open `shared/tests.html`: the duel table and code checks pass.
 
+> Note: two tabs of the same browser share the browser's saved duel (one saved table per browser), so use two different browsers or devices to check "close and reopen the page"; reconnecting from the page that still shows the duel works in the same browser.
+
 ## 2. Link (User Stories 1 and 2)
 1. Window A: "Create room": an invitation code appears; Copy puts all of it on the clipboard; the page says it is waiting for the reply.
 2. Window B: "Join room", paste the code (try it with extra spaces, line breaks and a sentence around it): a reply code appears; Copy it.

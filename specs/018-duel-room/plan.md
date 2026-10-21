@@ -67,6 +67,7 @@ duel/
 ├── index.html               # NEW page: Duel Room
 ├── duel-table.js            # NEW pure rules: table, events, applyEvent, log, undo, winner
 ├── duel-code.js             # NEW pure codec: invitation/reply code encode, decode, validate
+├── duel-session.js          # NEW the authority: creator applies and numbers events, joiner applies them; resync and snapshots
 ├── duel-link.js             # NEW link wrapper over RTCPeerConnection: offer/answer, channel, timeouts, status
 ├── duel-room.js             # NEW behaviour: room state machine, authority, sync, save/restore, reconnect
 └── views/                   # NEW folder: rendering only
