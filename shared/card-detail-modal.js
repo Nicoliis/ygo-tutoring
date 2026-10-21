@@ -1,5 +1,5 @@
 /* `extraHtml` (optional) is shown right under the picture, e.g. which printing of the card is being looked at. */
-function openCardDetailModal(card, buttons, extraHtml = "", pull = null) {
+function openCardDetailModal(card, buttons, extraHtml = "", pull = null, engines = true) {
   const imageHtml = card.imageFull
     ? `<img src="${card.imageFull}" alt="${escapeHtml(card.name)}">`
     : "";
@@ -20,5 +20,6 @@ function openCardDetailModal(card, buttons, extraHtml = "", pull = null) {
     detailHtml,
     buttons: buttons || [{ label: "Close", primary: true }],
     pull,
+    engines,
   });
 }

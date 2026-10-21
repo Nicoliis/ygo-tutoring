@@ -5,9 +5,15 @@
  *   showCardDetailWindow({ card, title, detailHtml, buttons, pull })
  *
  * `pull` is null, or the pull context a page gives for a card just pulled or picked (see card-engines.js).
+ * `engines: false` shows the details alone, without the engines panel (used while playing a duel).
  * Needs modal.js (showModal); the panel itself comes from card-engines.js when that script is loaded.
  */
-function showCardDetailWindow({ card, title, detailHtml, buttons, pull = null }) {
+function showCardDetailWindow({ card, title, detailHtml, buttons, pull = null, engines = true }) {
+  if (!engines) {
+    // the duel simulator: details only, nothing here may change the player's collection
+    showModal({ title, bodyHtml: detailHtml, buttons });
+    return;
+  }
   const bodyHtml =
     '<div class="card-detail-layout">' +
     `<div class="card-detail-main">${detailHtml}</div>` +
