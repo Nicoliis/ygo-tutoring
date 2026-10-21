@@ -1,0 +1,44 @@
+/* Duel Room layout. Rendering only. */
+:root {
+  --duel-lp-size: 2.6rem; /* size of the life point numbers */
+  --duel-code-height: 6rem;
+  --duel-log-max-height: 260px;
+}
+
+#duelRoot { display: flex; flex-direction: column; gap: 14px; }
+.duel-body { display: flex; flex-direction: column; gap: 14px; }
+.duel-explain { color: var(--text-dim); font-size: 0.85rem; margin: 6px 0; }
+.duel-messages { min-height: 1.2em; }
+.duel-status { color: var(--accent); margin: 0 0 6px; }
+.duel-error { color: var(--danger); margin: 0 0 6px; }
+.duel-notice { color: var(--text); background: var(--panel-alt); border: 1px solid var(--border); border-radius: var(--radius); padding: 6px 10px; margin: 0 0 6px; }
+.duel-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.duel-label { display: block; font-size: 0.85rem; color: var(--text-dim); margin-bottom: 6px; }
+.duel-code-box { display: block; width: 100%; min-height: var(--duel-code-height); box-sizing: border-box; margin-top: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.75rem; background: var(--panel-alt); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px; word-break: break-all; resize: vertical; }
+.duel-paste, .duel-code { margin: 8px 0 12px; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+
+.duel-players { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.duel-player { text-align: center; }
+.duel-player.duel-active-player { border-color: var(--accent); }
+.duel-player.duel-winner { border-color: var(--accent); box-shadow: inset 0 0 0 2px var(--accent); }
+.duel-player-name { margin: 0 0 6px; overflow: hidden; text-overflow: ellipsis; }
+.duel-rename { max-width: 100%; margin-bottom: 6px; }
+.duel-lp { font-size: var(--duel-lp-size); font-weight: 800; font-variant-numeric: tabular-nums; margin: 6px 0 10px; }
+.duel-lp-controls { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; align-items: center; }
+.duel-amount { width: 7rem; text-align: center; }
+
+.duel-turn-text { margin: 0 0 8px; font-weight: 700; }
+.duel-phases { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; padding: 0; }
+.duel-phase { padding: 3px 10px; border: 1px solid var(--border); border-radius: 999px; font-size: 0.8rem; color: var(--text-dim); }
+.duel-phase.duel-phase-current { border-color: var(--accent); color: var(--text); background: var(--panel-alt); font-weight: 700; }
+.duel-results { color: var(--text-dim); margin: 10px 0 0; font-size: 0.85rem; }
+.duel-log { list-style: none; margin: 0; padding: 0; max-height: var(--duel-log-max-height); overflow-y: auto; display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; }
+.duel-log-entry { padding: 3px 8px; background: var(--panel-alt); border-radius: 4px; }
+.duel-log-win { font-weight: 700; border-left: 3px solid var(--accent); }
+.duel-log-undo { color: var(--text-dim); font-style: italic; }
+.duel-banner { border-color: var(--danger); }
+
+/* On a narrow window the two players stack and nothing is cut off. */
+@media (max-width: 700px) {
+  .duel-players { grid-template-columns: minmax(0, 1fr); }
+}
