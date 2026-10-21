@@ -8,6 +8,13 @@
 
 **Input**: User description: "Duel Simulator: turn the Duel Room into a simulation for playing a full duel with cards. Each player brings one of their own decks (from the Workshop decks: main, extra and side are not needed in play except main and extra), the deck is shuffled and each player draws a starting hand of 5. The shared table (already existing: life points, turn, phase, coin, die, log) gets a playing field for both players: monster zones, spell and trap zones, field zone, pendulum zones, graveyard, banished zone, deck, extra deck and hand. Players move their own cards by hand between zones (draw, normal summon or set, special summon, change position, flip face up or down, send to graveyard, banish, return to hand or deck, shuffle the deck, search the deck, summon from the extra deck), and there is no rule enforcement: it is a manual simulator like playing on a table. The opponent never sees your hand, your deck order, or your face-down cards until you reveal them, because that private information stays on your own device and only public information is sent to the other player. Cards are shown by their images, with the card details window available on any visible card. The simulator must keep working when the connection drops (reconnect to the same duel) and give a way to restart the duel (rematch) with the same decks."
 
+## Clarifications
+
+### Session 2026-10-20
+
+- Q: How should players move their cards between zones in this first version? → A: With a card menu only (choose a card, choose an action, choose a zone when needed); drag and drop is left for a later feature.
+- Q: What should happen when a player moves a card into a zone that already holds a card? → A: Zones allow stacking: the new card is placed on top and the cards below it stay accessible because each lower card is drawn with a slight horizontal and vertical offset, so any card of a stack can be selected.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Bring a deck and start the duel (Priority: P1)
@@ -67,7 +74,7 @@ A player moves only their own cards, one at a time, choosing a card and then an 
 6. **Given** your deck, **When** you press Draw, **Then** the top card goes to your hand, the opponent sees your hand count and deck count change, and the log says "drew a card".
 7. **Given** your deck, **When** you search it, **Then** you can look through every card, pick one to put in your hand, and the deck is shuffled; the opponent sees only that you searched.
 8. **Given** your extra deck, **When** you special summon from it, **Then** the card goes face-up to a zone and its image is visible to both players.
-9. **Given** an occupied zone, **When** you move another card there, **Then** it is not blocked (there is no rule enforcement): the new card replaces nothing and the previous card is sent to the graveyard only if you choose to, otherwise the move is refused with a hint to free the zone first.
+9. **Given** an occupied zone, **When** you move another card there, **Then** it is not blocked: the new card is placed on top of the stack, the cards below stay in the zone and remain visible with a slight offset, and any card of the stack can be selected and moved separately.
 10. **Given** an opponent's card, **When** you look at the actions available, **Then** you cannot move it (only its owner can).
 11. **Given** a mistaken move, **When** you press Undo, **Then** your last move is reverted on both pages and the log records it.
 
@@ -133,6 +140,8 @@ If the connection drops, each player's private information (hand, deck order, fa
 - Both players move cards at nearly the same time: both pages end identical on everything public; each player's private information is changed only by their own moves.
 - The connection drops in the middle of a move: the move is either completed on both pages or not applied on either; nothing is half done.
 - A deck that has the same card several times: each copy is its own card in play (moving one does not move the others).
+- A stack of many cards in one zone: the offsets stay small so the stack does not cover the neighbouring zones; the stack's count is shown and the whole stack can be listed.
+- A card in the middle of a stack is moved away: the others stay in place and keep their order.
 - Many cards in the graveyard or hand: lists scroll and counts stay exact.
 - A player leaves for a long time: the other can wait, reconnect or rematch; no timer ends the duel.
 - A player tries to move a card they do not own, or a card that is no longer where the page showed it: the move is refused with a short reason and nothing changes.
@@ -149,7 +158,7 @@ If the connection drops, each player's private information (hand, deck order, fa
 - **FR-005**: Cards MUST be shown by their images (a named placeholder when an image is missing); the opponent's hand MUST be shown only as card backs and a count.
 - **FR-006**: A card in a zone MUST show whether it is face-up or face-down and, for monsters, attack or defense position, to both players; face-down cards MUST appear to the opponent as card backs.
 - **FR-007**: A player MUST be able to move only their own cards, with the actions: draw, normal summon, set, special summon (including from the extra deck), change position, flip face-up or face-down, send to the graveyard, banish (face-up or face-down), return to the hand, return to the top or the bottom of the deck, shuffle the deck, search the deck.
-- **FR-008**: There MUST be no rule enforcement: any move of the player's own cards is allowed, except that a move to an occupied zone is refused with a hint to free it first.
+- **FR-008**: There MUST be no rule enforcement: any move of the player's own cards is allowed. A zone MAY hold several cards stacked: the newest is on top and each card below is drawn with a slight horizontal and vertical offset so every card of the stack can be seen and selected.
 - **FR-009**: Every move MUST show on both pages at once and be written in the log in words that do not reveal private information (for example "a card was set", "drew a card", "searched the deck").
 - **FR-010**: A player MUST be able to undo their last move, which reverts it on both pages and is logged.
 - **FR-011**: The graveyard and the banished zone (face-up cards) MUST be public: either player can open them and read every card in them.
@@ -167,7 +176,7 @@ If the connection drops, each player's private information (hand, deck order, fa
 
 - **Duel deck**: The deck a player brings: its main cards (each copy a separate card in play) and its extra deck, taken from a Workshop deck.
 - **Card in play**: One copy of a card with its own identity during the duel, its current place (zone), whether it is face-up or face-down, and its position.
-- **Zone**: A place on a field: monster zone, spell and trap zone, field zone, pendulum zone, graveyard, banished zone, deck, extra deck, hand.
+- **Zone**: A place on a field: monster zone, spell and trap zone, field zone, pendulum zone, graveyard, banished zone, deck, extra deck, hand. A field zone (monster, spell and trap, field, pendulum) can hold a stack of cards, ordered from bottom to top.
 - **Public state**: What both players see: what is face-up on the field and in the graveyard and banished zone, the counts of hand, deck and extra deck, life points, turn, phase and log.
 - **Private state**: What only its owner sees: the hand, the deck and its order, the extra deck, face-down card identities.
 - **Move**: One action of a player on one of their cards (for example set, flip, send to the graveyard) with its public effect and its log line.
@@ -195,6 +204,6 @@ If the connection drops, each player's private information (hand, deck order, fa
 - The room creator moves first (as the existing table starts with the creator's turn); the existing coin flip is available to decide otherwise.
 - Starting life points are 8000 and the starting hand is 5 cards; there is one deck choice per duel and a rematch keeps the same decks.
 - Tokens, counters on cards, card equip and attachment, chains and effect resolution, and automatic game rules are out of scope; the log and the table are the only aids.
-- Cards are moved with a card menu (choose a card, choose an action, choose a zone when needed); dragging cards between zones is a possible later improvement and not required here.
+- Cards are moved with a card menu (choose a card, choose an action, choose a zone when needed); dragging cards between zones is left for a later feature (confirmed).
 - The player's private state is saved only in their own browser; clearing the browser data loses it, and the page says so.
 - The playing field is for exactly two players; spectators are out of scope.

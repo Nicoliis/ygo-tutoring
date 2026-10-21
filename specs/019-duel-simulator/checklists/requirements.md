@@ -31,4 +31,4 @@
 
 ## Notes
 
-- Judgment calls left as assumptions for `/speckit-clarify`: how moves are made (menu vs drag and drop), who goes first, what happens when a zone is occupied, and whether the details window hides the engines panel during a duel.
+- Clarified 2026-10-20: moves by card menu only (no drag and drop yet); zones allow stacking with the lower cards offset. Still assumptions: the creator moves first, and the details window hides the engines panel during a duel.
