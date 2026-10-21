@@ -30,6 +30,8 @@ const source = [
   read("../collection/collection-allocation.js"),
   read("../collection/binder-paging.js"),
   read("engine-rules.js"),
+  read("../duel/duel-table.js"),
+  read("../duel/duel-code.js"),
   read("../progression/progression-state.js"),
   read("../store/store-state.js"),
   read("contract-tests.js"),

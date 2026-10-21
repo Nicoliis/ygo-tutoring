@@ -1037,6 +1037,102 @@ function runContractTests() {
     expect(startIndex({ ...old, startSet: "gone" }, LIST) === 0, "an unknown start set counts as the first");
   });
 
+  /* ---- Duel Room: table rules and connection codes (spec 018) ---- */
+
+  const duelApply = (table, event) => {
+    const result = applyEvent(table, event);
+    expect(result.ok, result.reason || "the event was refused");
+    return result.table;
+  };
+
+  check("duel table: starting values, life points and the win", () => {
+    let t = newTable("d1", "Ana", "");
+    expect(t.players[0].lp === 8000 && t.players[1].lp === 8000 && t.turn === 1 && t.phase === "Draw" && t.active === 0 && t.seq === 0);
+    expect(t.players[1].name === "Player 2" && t.players[0].name === "Ana", "a missing name gets a default");
+    t = duelApply(t, { kind: "lp", by: 0, target: 1, mode: "add", amount: -1500 });
+    expect(t.players[1].lp === 6500 && t.log[0].text.includes("took 1500 from Player 2") && t.log[0].before.lp === 8000 && t.seq === 1);
+    t = duelApply(t, { kind: "lp", by: 1, target: 1, mode: "set", amount: 3000 });
+    expect(t.players[1].lp === 3000);
+    t = duelApply(t, { kind: "lp", by: 0, target: 1, mode: "add", amount: -99999 });
+    expect(t.players[1].lp === 0 && t.winner === 0, "never below zero; the other player wins");
+    expect(t.log.filter((e) => e.kind === "win").length === 1 && t.log[t.log.length - 1].text === "Ana wins the duel");
+    t = duelApply(t, { kind: "lp", by: 0, target: 1, mode: "add", amount: -10 });
+    expect(t.log.filter((e) => e.kind === "win").length === 1, "the win is logged once");
+    expect(!applyEvent(t, { kind: "lp", by: 0, target: 1, mode: "add", amount: 1.5 }).ok && !applyEvent(t, { kind: "lp", by: 0, target: 2, mode: "add", amount: 1 }).ok && !applyEvent(t, { kind: "lp", by: 0, target: 1, mode: "add", amount: 5000000 }).ok && !applyEvent(t, { kind: "lp", by: 3, target: 1, mode: "add", amount: 1 }).ok, "invalid changes are refused");
+  });
+
+  check("duel table: phases in order, the turn passes after End, coin, die and names", () => {
+    let t = newTable("d1", "Ana", "Bo");
+    const seen = [];
+    for (let i = 0; i < 6; i++) {
+      t = duelApply(t, { kind: "phase", by: 1 });
+      seen.push(t.phase);
+    }
+    expect(seen.join() === "Standby,Main 1,Battle,Main 2,End,Draw", "after End the phases start again");
+    expect(t.turn === 2 && t.active === 1, "the other player's turn");
+    t = duelApply(t, { kind: "coin", by: 0, result: "tails" });
+    t = duelApply(t, { kind: "die", by: 1, result: 5 });
+    expect(t.coin === "tails" && t.die === 5 && t.log[t.log.length - 1].text.includes("rolled a die: 5"));
+    expect(!applyEvent(t, { kind: "coin", by: 0, result: "edge" }).ok && !applyEvent(t, { kind: "die", by: 0, result: 7 }).ok && !applyEvent(t, { kind: "die", by: 0, result: 0 }).ok);
+    t = duelApply(t, { kind: "name", by: 0, name: "  Ana   María  " });
+    expect(t.players[0].name === "Ana María" && !applyEvent(t, { kind: "name", by: 0, name: "   " }).ok);
+    expect(cleanName("x".repeat(40)).length === 24);
+  });
+
+  check("duel table: undo reverts only your own last life or phase change", () => {
+    let t = newTable("d1", "Ana", "Bo");
+    t = duelApply(t, { kind: "lp", by: 0, target: 0, mode: "add", amount: -1000 });
+    expect(!applyEvent(t, { kind: "undo", by: 1 }).ok, "not the other player's change");
+    expect(applyEvent(newTable("d1", "A", "B"), { kind: "undo", by: 0 }).ok === false, "nothing to undo");
+    const undone = duelApply(t, { kind: "undo", by: 0 });
+    expect(undone.players[0].lp === 8000 && undone.log[undone.log.length - 1].kind === "undo");
+    expect(!applyEvent(undone, { kind: "undo", by: 0 }).ok, "an undo cannot be undone");
+    let p = duelApply(newTable("d1", "A", "B"), { kind: "phase", by: 1 });
+    p = duelApply(p, { kind: "undo", by: 1 });
+    expect(p.phase === "Draw" && p.turn === 1);
+    // a win: the undo of the losing change removes the win
+    let w = duelApply(newTable("d1", "A", "B"), { kind: "lp", by: 0, target: 1, mode: "set", amount: 0 });
+    expect(w.winner === 0);
+    w = duelApply(w, { kind: "undo", by: 0 });
+    expect(w.players[1].lp === 8000 && w.winner === null, "undoing the change that ended the duel reopens it");
+    // a turn passing and undone
+    let turn = newTable("d1", "A", "B");
+    for (let i = 0; i < 6; i++) turn = duelApply(turn, { kind: "phase", by: 0 });
+    turn = duelApply(turn, { kind: "undo", by: 0 });
+    expect(turn.phase === "End" && turn.turn === 1 && turn.active === 0, "undo restores phase, turn and whose turn it is");
+  });
+
+  check("duel table: deterministic, numbered log, capped", () => {
+    const events = [{ kind: "lp", by: 0, target: 1, mode: "add", amount: -300 }, { kind: "phase", by: 1 }, { kind: "die", by: 0, result: 3 }];
+    const run = () => events.reduce((t, e) => duelApply(t, e), newTable("d1", "A", "B"));
+    expect(JSON.stringify(run()) === JSON.stringify(run()), "the same events give the same table");
+    expect(run().log.map((e) => e.seq).join() === "1,2,3" && run().seq === 3);
+    let t = newTable("d1", "A", "B");
+    for (let i = 0; i < 520; i++) t = duelApply(t, { kind: "die", by: 0, result: 1 + (i % 6) });
+    expect(t.log.length === 500 && t.seq === 520 && t.log[0].seq === 21, "the oldest entries are dropped");
+    const frozen = newTable("d1", "A", "B");
+    const before = JSON.stringify(frozen);
+    applyEvent(frozen, { kind: "lp", by: 0, target: 1, mode: "add", amount: -1 });
+    expect(JSON.stringify(frozen) === before, "the old table is not changed");
+  });
+
+  check("duel code: round trip, tolerant paste and rejection of bad codes", () => {
+    const sdp = "v=0\r\no=- 1 2 IN IP4 127.0.0.1\r\na=candidate:1 1 udp 1 192.168.1.2 5000 typ host ñ";
+    const code = encodeCode({ kind: "offer", roomId: "room-1", sdp });
+    expect(code.startsWith("YGO1.") && !/[+/=\s]/.test(code.slice(5)), "url-safe text");
+    const back = decodeCode(code);
+    expect(back.ok && back.kind === "offer" && back.roomId === "room-1" && back.sdp === sdp, "round trip with non-ASCII text");
+    expect(decodeCode(`  \n${code}\n  `).ok && decodeCode(`Here is my code: ${code} see you!`).ok, "spaces, line breaks and chat text around it");
+    expect(decodeCode(encodeCode({ kind: "answer", roomId: "r", sdp: "x" })).kind === "answer");
+    expect(!decodeCode("").ok && !decodeCode(null).ok && !decodeCode("hello").ok, "empty or foreign text");
+    expect(!decodeCode(code.slice(0, 30)).ok && !decodeCode("YGO1.@@@").ok && !decodeCode("YGO1.AAAA").ok, "damaged codes");
+    const wrongVersion = "YGO1." + toBase64Url(JSON.stringify({ v: 2, k: "offer", r: "a", s: "b" }));
+    expect(decodeCode(wrongVersion).ok === false && decodeCode(wrongVersion).reason.includes("version"));
+    const wrongKind = "YGO1." + toBase64Url(JSON.stringify({ v: 1, k: "hello", r: "a", s: "b" }));
+    expect(!decodeCode(wrongKind).ok);
+    expect(!decodeCode("YGO1." + "A".repeat(30000)).ok, "too long");
+  });
+
   check("box: phases, reveal, finish and stage completion", () => {
     let run = newRun(LIST);
     expect(boxPhase(run) === "not-started" && canOpenBox(run).ok);
