@@ -31,4 +31,4 @@
 
 ## Notes
 
-- Judgment calls left as assumptions for `/speckit-clarify`: scope of the table (numbers only, no cards), either player may edit either life total, how disagreeing saved tables are resolved on reconnect, and the constitution amendment needed for peer-to-peer data.
+- Clarified 2026-10-20: copy/paste only (QR later); on reconnect the room creator's table wins. Still assumptions: table covers numbers only (no cards), either player may edit either life total, and the constitution needs an amendment for peer-to-peer data.
