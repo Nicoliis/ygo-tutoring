@@ -66,7 +66,7 @@ function buildStart(model, h) {
   const intro = el("section", "panel");
   intro.appendChild(el("h2", null, "Duel Room"));
   intro.appendChild(
-    el("p", "duel-explain", "Play a duel with a friend, browser to browser. One of you creates a room and sends the invitation code; the other pastes it and sends back a reply code. Once the reply is pasted the two browsers connect directly: no server keeps the duel, and only your names and the duel table are shared.")
+    el("p", "duel-explain", "Play a duel with a friend, browser to browser. One of you creates a room and sends the invitation code; the other pastes it and sends back a reply code. Once the reply is pasted the two browsers connect directly: no server keeps the duel. Only your names and what both players can see on the table are shared; your hand, your deck and your face-down cards stay on your own device until you play or reveal them.")
   );
   frag.appendChild(intro);
   if (model.savedDuel) {

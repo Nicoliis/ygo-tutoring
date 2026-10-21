@@ -264,6 +264,10 @@ async function clearDuel() {
   const ok = await confirmDialog("Clear the saved duel? The table and its log will be deleted from this browser.", { title: "Clear duel", confirmLabel: "Clear" });
   if (!ok) return;
   removeData(SAVED_DUEL_KEY);
+  [0, 1].forEach((side) => removeData(privateKey(side))); // this device's hand and deck go too
+  play.priv = null;
+  play.built = null;
+  play.chosenDeckId = null;
   startOver();
 }
 
