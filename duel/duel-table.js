@@ -31,6 +31,7 @@ function newTable(duelId, creatorName, joinerName) {
     coin: null,
     die: null,
     winner: null,
+    sim: null, // the cards' board (duel-board.js); null while no cards are used
     log: [],
   };
 }
@@ -123,13 +124,91 @@ function applyPhase(table, event) {
   };
 }
 
+const SIM_KINDS = ["ready", "start", "draw", "move", "flip", "position", "reveal", "hide", "search", "shuffle", "rematch", "rematch-accept", "reset"];
+const ZONE_WORDS = { monster: "monster zone", spell: "spell and trap zone", field: "field zone", pendulum: "pendulum zone", gy: "graveyard", banished: "banished zone", hand: "hand", deck: "deck", extra: "extra deck" };
+
+/* The log line of a board event. It only names a card that is visible to both players. */
+function describeSim(table, event, result) {
+  const who = table.players[event.by] ? table.players[event.by].name : "?";
+  const named = (card) => (card ? card.name : "a card");
+  switch (event.kind) {
+    case "ready":
+      return `${who} chose the deck ${event.deckName} (${event.mainCount} cards, ${event.extraCount} in the extra deck)`;
+    case "start":
+      return "The duel starts: each player draws the starting hand";
+    case "draw":
+      return result.note === "empty-deck" ? `${who} tried to draw from an empty deck` : `${who} drew a card`;
+    case "move": {
+      const known = event.card || publicCardName(table.sim, event.by, event.uid) ? { name: (event.card && event.card.name) || publicCardName(table.sim, event.by, event.uid) } : null;
+      const to = event.to.zone;
+      if (to === "gy") return `${who} sent ${named(event.card)} to the graveyard`;
+      if (to === "banished") return event.faceUp ? `${who} banished ${named(event.card)}` : `${who} banished a card face-down`;
+      if (to === "hand") return `${who} returned ${named(known)} to the hand`;
+      if (to === "deck") return `${who} returned ${named(known)} to the ${event.to.end === "bottom" ? "bottom" : "top"} of the deck`;
+      if (to === "extra") return `${who} returned ${named(known)} to the extra deck`;
+      return event.faceUp ? `${who} placed ${named(event.card)} in the ${ZONE_WORDS[to]}` : `${who} set a card in the ${ZONE_WORDS[to]}`;
+    }
+    case "flip":
+      return event.faceUp ? `${who} flipped ${named(event.card || (table.sim && { name: publicCardName(table.sim, event.by, event.uid) }))} face-up` : `${who} flipped a card face-down`;
+    case "position":
+      return `${who} changed a monster to ${event.pos === "def" ? "defense" : "attack"} position`;
+    case "reveal":
+      return `${who} revealed ${named(event.card)} from the hand`;
+    case "hide":
+      return `${who} hid a revealed card`;
+    case "search":
+      return `${who} searched the deck`;
+    case "shuffle":
+      return `${who} shuffled the deck`;
+    case "rematch":
+      return `${who} proposed a rematch`;
+    case "rematch-accept":
+      return `${who} accepted the rematch`;
+    case "reset":
+      return "A new duel starts";
+    default:
+      return "";
+  }
+}
+
+function applySim(table, event) {
+  const result = applyBoardEvent(table.sim || newSim(), event);
+  if (!result.ok) return refuse(table, result.reason);
+  let patch = { sim: result.sim };
+  if (event.kind === "reset") {
+    patch = {
+      sim: result.sim,
+      players: table.players.map((p) => ({ ...p, lp: STARTING_LP })),
+      turn: 1,
+      active: 0,
+      phase: DUEL_PHASES[0],
+      coin: null,
+      die: null,
+      winner: null,
+    };
+  }
+  return {
+    table: withEntry(table, patch, { by: event.by, kind: "sim", sim: event.kind, text: describeSim(table, event, result), inverse: result.inverse || null }),
+    ok: true,
+  };
+}
+
 function applyUndo(table, event) {
   // the last change that is not an automatic "win" note
   let at = table.log.length - 1;
   while (at >= 0 && table.log[at].kind === "win") at--;
   const last = at >= 0 ? table.log[at] : null;
-  if (!last || last.by !== event.by || (last.kind !== "lp" && last.kind !== "phase")) {
-    return refuse(table, "Only your own last life point or phase change can be undone.");
+  const undoableMove = last && last.kind === "sim" && last.inverse;
+  if (!last || last.by !== event.by || (last.kind !== "lp" && last.kind !== "phase" && !undoableMove)) {
+    return refuse(table, "Only your own last life point, phase or card move can be undone.");
+  }
+  if (undoableMove) {
+    const reverted = applyBoardEvent(table.sim, last.inverse);
+    if (!reverted.ok) return refuse(table, reverted.reason);
+    return {
+      table: withEntry(table, { sim: reverted.sim }, { by: event.by, kind: "undo", text: describeEvent(table, event), undoes: last.seq }),
+      ok: true,
+    };
   }
   let patch;
   if (last.kind === "lp") {
@@ -170,6 +249,7 @@ function applyEvent(table, event) {
     case "undo":
       return applyUndo(table, event);
     default:
+      if (SIM_KINDS.includes(event.kind)) return applySim(table, event);
       return refuse(table, "Unknown change.");
   }
 }

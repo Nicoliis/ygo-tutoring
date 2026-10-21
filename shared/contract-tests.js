@@ -1116,6 +1116,179 @@ function runContractTests() {
     expect(JSON.stringify(frozen) === before, "the old table is not changed");
   });
 
+  /* ---- Duel Simulator: decks, private state and the board (spec 019) ---- */
+
+  const simCollection = () => ({
+    cards: [
+      { id: "c1", name: "Alpha", apiId: 1, type: "Normal Monster", level: 4, atk: 1000, def: 500, effect: "A text.", imageSmall: "a.jpg", imageFull: "A.jpg", quantityOwned: 3, printings: [{ set: "S", quantity: 3 }] },
+      { id: "c2", name: "Beta", apiId: 2, type: "Spell Card", effect: "B text.", imageSmall: "b.jpg", quantityOwned: 2 },
+      { id: "c3", name: "Gamma Fusion", apiId: 3, type: "Fusion Monster", imageSmall: "g.jpg", quantityOwned: 1 },
+    ],
+    decks: [
+      { id: "d1", name: "Test deck", main: [{ cardId: "c1", quantity: 3 }, { cardId: "c2", quantity: 2 }, { cardId: "gone", quantity: 4 }], extra: [{ cardId: "c3", quantity: 1 }] },
+      { id: "d2", name: "Empty", main: [], extra: [{ cardId: "c3", quantity: 1 }] },
+    ],
+    engines: [],
+  });
+  const seededRandom = (seed) => {
+    let x = seed;
+    return () => {
+      x = (x * 1664525 + 1013904223) % 4294967296;
+      return x / 4294967296;
+    };
+  };
+  /* A started duel: both players ready with the decks of the fixture, returned as { table, priv: [p0, p1] }. */
+  function startedDuel(seed = 7) {
+    const collection = simCollection();
+    const decks = [buildDuelDeck(collection, "d1", 0), buildDuelDeck(collection, "d1", 1)];
+    let table = newTable("sim1", "Ana", "Bo");
+    decks.forEach((deck, i) => {
+      table = duelApply(table, { kind: "ready", by: i, deckName: deck.name, mainCount: deck.main.length, extraCount: deck.extra.length });
+    });
+    table = duelApply(table, { kind: "start", by: 0 });
+    const priv = decks.map((deck, i) => dealHand(newPrivate("sim1", i, deck, seededRandom(seed + i))));
+    return { table, priv };
+  }
+
+  check("duel cards: a duel deck from a saved deck, each copy its own card, nothing changed", () => {
+    const collection = simCollection();
+    const before = JSON.stringify(collection);
+    const built = buildDuelDeck(collection, "d1", 1);
+    expect(built.ok && built.name === "Test deck" && built.main.length === 5 && built.extra.length === 1, "a missing card is skipped");
+    expect(new Set(built.main.concat(built.extra).map((i) => i.uid)).size === 6 && built.main[0].uid === "1-0", "unique uids numbered by side");
+    expect(built.main[0].card.name === "Alpha" && built.main[0].card.desc === "A text." && built.main[0].card.imageSmall === "a.jpg", "card data");
+    expect(!("quantityOwned" in built.main[0].card) && !("printings" in built.main[0].card), "nothing of the collection travels");
+    expect(!buildDuelDeck(collection, "d2", 0).ok && !buildDuelDeck(collection, "nope", 0).ok, "no main cards or no deck is refused");
+    expect(JSON.stringify(collection) === before, "the collection is not changed");
+    const order = (seed) => shuffled([1, 2, 3, 4, 5, 6, 7, 8], seededRandom(seed)).join();
+    expect(order(3) === order(3) && order(3) !== order(4) && [...order(3).split(",")].sort().join() === "1,2,3,4,5,6,7,8", "shuffle is deterministic for a random and keeps every card");
+  });
+
+  check("duel board: ready, start and draw; the hand and deck are counts only", () => {
+    const { table, priv } = startedDuel();
+    expect(table.sim.started && table.sim.players.every((p) => p.handCount === 5 && p.deckCount === 0 && p.extraCount === 1), "5 main cards: the whole deck is the hand");
+    expect(priv[0].hand.length === 5 && priv[0].deck.length === 0 && priv[0].extra.length === 1);
+    expect(!applyEvent(table, { kind: "start", by: 0 }).ok, "a started duel does not start again");
+    const empty = duelApply(table, { kind: "draw", by: 0 });
+    expect(empty.sim.players[0].handCount === 5 && empty.log[empty.log.length - 1].text.includes("empty deck"), "drawing from an empty deck is allowed and logged");
+    expect(!applyEvent(newTable("x", "A", "B"), { kind: "draw", by: 0 }).ok, "nothing can be done before the duel starts");
+  });
+
+  check("duel board: every action takes effect and Undo restores the board", () => {
+    const base = startedDuel().table;
+    const card = { name: "Alpha", apiId: 1, imageSmall: "a.jpg", type: "Normal Monster" };
+    const steps = [
+      { name: "normal summon", event: { kind: "move", by: 0, uid: "0-0", from: { zone: "hand" }, to: { zone: "monster", slot: 0 }, faceUp: true, pos: "atk", card }, check: (t) => t.sim.players[0].zones.monster[0][0].card.name === "Alpha" && t.sim.players[0].handCount === 4 },
+      { name: "set", event: { kind: "move", by: 0, uid: "0-1", from: { zone: "hand" }, to: { zone: "spell", slot: 2 }, faceUp: false }, check: (t) => t.sim.players[0].zones.spell[2][0].card === null && !t.log[t.log.length - 1].text.includes("Alpha") },
+      { name: "to graveyard", event: { kind: "move", by: 0, uid: "0-2", from: { zone: "hand" }, to: { zone: "gy" }, faceUp: true, card }, check: (t) => t.sim.players[0].gy.length === 1 && t.sim.players[0].gy[0].card.name === "Alpha" },
+      { name: "banish face-down", event: { kind: "move", by: 0, uid: "0-2", from: { zone: "hand" }, to: { zone: "banished" }, faceUp: false }, check: (t) => t.sim.players[0].banished[0].card === null },
+      { name: "banish face-up", event: { kind: "move", by: 0, uid: "0-2", from: { zone: "hand" }, to: { zone: "banished" }, faceUp: true, card }, check: (t) => t.sim.players[0].banished[0].card.name === "Alpha" },
+      { name: "special summon from the extra deck", event: { kind: "move", by: 0, uid: "0-5", from: { zone: "extra" }, to: { zone: "monster", slot: 1 }, faceUp: true, pos: "def", card: { name: "Gamma Fusion" } }, check: (t) => t.sim.players[0].extraCount === 0 && t.sim.players[0].zones.monster[1][0].pos === "def" },
+      { name: "to the deck bottom", event: { kind: "move", by: 0, uid: "0-3", from: { zone: "hand" }, to: { zone: "deck", end: "bottom" }, faceUp: false }, check: (t) => t.sim.players[0].deckCount === 1 && t.sim.players[0].handCount === 4 },
+      { name: "draw", event: { kind: "draw", by: 0 }, pre: { kind: "move", by: 0, uid: "0-3", from: { zone: "hand" }, to: { zone: "deck", end: "top" }, faceUp: false }, check: (t) => t.sim.players[0].handCount === 5 && t.sim.players[0].deckCount === 0 },
+      { name: "reveal", event: { kind: "reveal", by: 0, uid: "0-4", card }, check: (t) => t.sim.players[0].revealed["0-4"].name === "Alpha" && t.sim.players[0].handCount === 5 },
+    ];
+    steps.forEach((step) => {
+      let t = base;
+      if (step.pre) t = duelApply(t, step.pre);
+      const before = JSON.stringify(t.sim);
+      t = duelApply(t, step.event);
+      expect(step.check(t), `${step.name} takes effect`);
+      const undone = duelApply(t, { kind: "undo", by: 0 });
+      expect(JSON.stringify(undone.sim) === before, `${step.name} is undone`);
+    });
+    // flip, position and moves off the field, then undo
+    let t = duelApply(base, { kind: "move", by: 0, uid: "0-0", from: { zone: "hand" }, to: { zone: "monster", slot: 0 }, faceUp: false, pos: "def" });
+    expect(t.sim.players[0].zones.monster[0][0].card === null);
+    let before = JSON.stringify(t.sim);
+    let f = duelApply(t, { kind: "flip", by: 0, uid: "0-0", zone: "monster", slot: 0, faceUp: true, card });
+    expect(f.sim.players[0].zones.monster[0][0].faceUp && f.sim.players[0].zones.monster[0][0].card.name === "Alpha" && f.log[f.log.length - 1].text.includes("Alpha"), "flipping publishes the card");
+    expect(JSON.stringify(duelApply(f, { kind: "undo", by: 0 }).sim) === before, "flip undone");
+    f = duelApply(t, { kind: "position", by: 0, uid: "0-0", zone: "monster", slot: 0, pos: "atk" });
+    expect(f.sim.players[0].zones.monster[0][0].pos === "atk" && JSON.stringify(duelApply(f, { kind: "undo", by: 0 }).sim) === before, "position and its undo");
+    f = duelApply(t, { kind: "move", by: 0, uid: "0-0", from: { zone: "monster", slot: 0 }, to: { zone: "hand" }, faceUp: false });
+    expect(f.sim.players[0].zones.monster[0].length === 0 && f.sim.players[0].handCount === 5 && JSON.stringify(duelApply(f, { kind: "undo", by: 0 }).sim) === before, "back to the hand and its undo");
+  });
+
+  check("duel board: zones hold stacks, a middle card can leave, others cannot move yours", () => {
+    let t = startedDuel().table;
+    const put = (uid) => (t = duelApply(t, { kind: "move", by: 0, uid, from: { zone: "hand" }, to: { zone: "monster", slot: 2 }, faceUp: false }));
+    put("0-0");
+    put("0-1");
+    put("0-2");
+    expect(t.sim.players[0].zones.monster[2].map((c) => c.uid).join() === "0-0,0-1,0-2", "newest on top, in order");
+    t = duelApply(t, { kind: "move", by: 0, uid: "0-1", from: { zone: "monster", slot: 2 }, to: { zone: "gy" }, faceUp: true, card: { name: "Mid" } });
+    expect(t.sim.players[0].zones.monster[2].map((c) => c.uid).join() === "0-0,0-2" && t.sim.players[0].gy.length === 1, "only the middle card left");
+    const undone = duelApply(t, { kind: "undo", by: 0 });
+    expect(undone.sim.players[0].zones.monster[2].map((c) => c.uid).join() === "0-0,0-1,0-2", "undo puts it back in the same place of the stack");
+    expect(!applyEvent(t, { kind: "move", by: 0, uid: "9-9", from: { zone: "monster", slot: 2 }, to: { zone: "gy" }, faceUp: true, card: {} }).ok, "a card that is not there");
+    expect(!applyEvent(t, { kind: "move", by: 0, uid: "0-0", from: { zone: "monster", slot: 9 }, to: { zone: "gy" }, faceUp: true, card: {} }).ok, "a zone that does not exist");
+    expect(!applyEvent(t, { kind: "move", by: 0, uid: "0-0", from: { zone: "monster", slot: 2 }, to: { zone: "monster", slot: 0 }, faceUp: true }).ok, "a face-up card needs its data");
+    expect(!applyEvent(t, { kind: "undo", by: 1 }).ok, "the other player cannot undo it");
+    const theirs = duelApply(t, { kind: "draw", by: 1 });
+    expect(!applyEvent(theirs, { kind: "undo", by: 0 }).ok, "not after the opponent moved");
+  });
+
+  check("duel board and private state: counts and cards stay consistent over a long random duel", () => {
+    let { table, priv } = startedDuel(11);
+    const random = seededRandom(5);
+    const total = (side) => 6;
+    const place = (n) => ["monster", "spell", "field", "pendulum"][n % 4];
+    const sizes = { monster: 5, spell: 5, field: 1, pendulum: 2 };
+    const apply = (event) => {
+      const result = applyEvent(table, event);
+      if (!result.ok) return false;
+      table = result.table;
+      priv[event.by] = applyPrivate(priv[event.by], event, seededRandom(1)).priv;
+      return true;
+    };
+    for (let i = 0; i < 400; i++) {
+      const by = random() < 0.5 ? 0 : 1;
+      const side = table.sim.players[by];
+      const p = priv[by];
+      const r = random();
+      if (r < 0.2) apply({ kind: "draw", by });
+      else if (r < 0.5 && p.hand.length) {
+        const uid = p.hand[Math.floor(random() * p.hand.length)];
+        const kind = place(Math.floor(random() * 4));
+        apply({ kind: "move", by, uid, from: { zone: "hand" }, to: { zone: kind, slot: Math.floor(random() * sizes[kind]) }, faceUp: random() < 0.5, pos: "atk", card: cardAt(p, uid) });
+      } else if (r < 0.75) {
+        const zones = Object.keys(sizes).flatMap((k) => side.zones[k].map((stack, slot) => ({ k, slot, stack }))).filter((z) => z.stack.length);
+        if (zones.length) {
+          const z = zones[Math.floor(random() * zones.length)];
+          const entry = z.stack[Math.floor(random() * z.stack.length)];
+          const dest = random() < 0.4 ? { zone: "hand" } : random() < 0.5 ? { zone: "deck", end: random() < 0.5 ? "top" : "bottom" } : { zone: "gy" };
+          apply({ kind: "move", by, uid: entry.uid, from: { zone: z.k, slot: z.slot }, to: dest, faceUp: dest.zone === "gy", card: cardAt(p, entry.uid) });
+        }
+      } else if (r < 0.85) apply({ kind: "shuffle", by });
+      else if (r < 0.95) apply({ kind: "undo", by });
+      else apply({ kind: "search", by });
+      [0, 1].forEach((s) => {
+        const pub = table.sim.players[s];
+        const onField = Object.values(pub.zones).flat().reduce((n, stack) => n + stack.length, 0);
+        expect(pub.handCount + pub.deckCount + pub.extraCount + onField + pub.gy.length + pub.banished.length === total(s), `every card is in exactly one place (step ${i})`);
+        expect(pub.handCount === priv[s].hand.length && pub.deckCount === priv[s].deck.length && pub.extraCount === priv[s].extra.length, `private lists match the public counts (step ${i})`);
+      });
+    }
+  });
+
+  check("duel table: the log never names a hidden card; an old table without a board still works", () => {
+    const { table } = startedDuel();
+    const t = duelApply(table, { kind: "move", by: 0, uid: "0-0", from: { zone: "hand" }, to: { zone: "spell", slot: 0 }, faceUp: false });
+    expect(t.log[t.log.length - 1].text === "Ana set a card in the spell and trap zone");
+    const drawn = duelApply(table, { kind: "draw", by: 1 });
+    expect(drawn.log[drawn.log.length - 1].text.startsWith("Bo ") && !drawn.log[drawn.log.length - 1].text.includes("Alpha"));
+    const old = { ...newTable("old", "A", "B") };
+    delete old.sim;
+    const moved = duelApply(old, { kind: "lp", by: 0, target: 1, mode: "add", amount: -100 });
+    expect(moved.players[1].lp === 7900, "life points work without a board");
+    expect(!applyEvent(old, { kind: "draw", by: 0 }).ok, "cards cannot be used without a started duel");
+    const reset = duelApply(duelApply(table, { kind: "rematch", by: 0 }), { kind: "rematch-accept", by: 1 });
+    const fresh = duelApply(reset, { kind: "reset", by: 0 });
+    expect(fresh.sim.generation === 1 && !fresh.sim.started && fresh.sim.players[0].deckName === "Test deck" && !fresh.sim.players[0].ready && fresh.players[0].lp === 8000 && fresh.turn === 1 && fresh.log.length > reset.log.length, "a reset clears the board, life points and turn but keeps the log");
+    expect(!applyEvent(table, { kind: "rematch-accept", by: 1 }).ok && !applyEvent(duelApply(table, { kind: "rematch", by: 0 }), { kind: "rematch-accept", by: 0 }).ok, "an accept needs another player's proposal");
+  });
+
   /* Two sessions joined by an in-memory link whose delivery order the test controls. */
   function duelPair(seedTable) {
     const toCreator = [];
