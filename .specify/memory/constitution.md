@@ -1,5 +1,14 @@
 <!--
 Sync Impact Report
+- Version change: 1.0.0 → 1.1.0 (MINOR: guidance materially expanded)
+- Modified: Principle II (Minimal API Footprint) and the Additional Constraints gain one exception, the Duel Room's
+  player-to-player link (names and the duel table only, plus a public STUN lookup to find a path); no new calls to
+  the card database, no polling, no backend.
+- Rationale: the Duel Room (specs/018-duel-room) is a match between two people on two devices, which cannot be done
+  without a direct link between them; no server of this project is introduced.
+- Earlier history: 1.0.0 was the initial ratification.
+
+Earlier report (1.0.0)
 - Version change: (template, unratified) → 1.0.0
 - Modified principles: n/a (initial ratification)
 - Added sections:
@@ -34,7 +43,10 @@ handling, and a minimum input length MUST be enforced only where it prevents was
 printing); any confusion or silent failure directly blocks the user's task.
 
 ### II. Minimal API Footprint
-Calls to the external card API (YGOPRODeck) MUST be minimized and never redundant. User input
+Calls to the external card API (YGOPRODeck) MUST be minimized and never redundant. The only other network
+traffic allowed is the Duel Room's direct link between two players' browsers, which carries nothing but the
+players' names and the duel table, and the public STUN lookup browsers use to find a path to each other; it uses
+no server of this project and no polling. User input
 that triggers a network request MUST be debounced (current standard: 400ms) and gated behind a
 minimum query length (current standard: 3 characters). A new request superseding an in-flight
 one MUST abort the stale request via `AbortController` rather than letting both resolve.
@@ -59,7 +71,8 @@ consistency are what keep it safe to change by inspection alone.
 
 The app is client-side only: no backend, no build pipeline, and no server-side state. All
 persistence is local to the browser (`localStorage`); nothing is transmitted except the direct,
-on-demand calls to the YGOPRODeck API described in Principle II. Card data and imagery remain
+on-demand calls to the YGOPRODeck API described in Principle II and, in the Duel Room only, the player-to-player
+link and public STUN lookup described there. Card data and imagery remain
 attributed to YGOPRODeck in the UI (see footer) for as long as that API is used.
 
 ## Development Workflow
@@ -86,4 +99,4 @@ Every subsequent change to this repository (code review, feature work, or self-r
 working solo) MUST verify compliance with the Core Principles above; unjustified complexity or
 scope creep MUST be flagged and either justified in writing or removed.
 
-**Version**: 1.0.0 | **Ratified**: 2026-10-06 | **Last Amended**: 2026-10-06
+**Version**: 1.1.0 | **Ratified**: 2026-10-06 | **Last Amended**: 2026-10-20
