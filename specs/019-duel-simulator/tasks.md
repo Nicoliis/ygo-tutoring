@@ -111,7 +111,7 @@
 ## Phase 9: Polish & Cross-Cutting
 
 - [X] T025 Check every number added by this feature is a named constant at the top of its file, that `duel/views/` contains only DOM and CSS, that the simulator never writes decks or the collection (search `duel/` for `saveData`/`saveCollection` keys other than `ygoDuelRoom` and `ygoDuelPrivate`) and that the Duel Room without decks still works
-- [ ] T026 [P] Verify keyboard-only use (deck choice, selecting a card, choosing an action and a zone, undo, reveal, rematch, closing menus with Escape) and the phone-width layout with both fields and the hand reachable without sideways scrolling; fix what is found
+- [X] T026 [P] Verify keyboard-only use (deck choice, selecting a card, choosing an action and a zone, undo, reveal, rematch, closing menus with Escape) and the phone-width layout with both fields and the hand reachable without sideways scrolling; fix what is found
 - [ ] T027 Update `specs/018-duel-room/quickstart.md` and the Duel Room page text so the room describes cards and decks, then run `node shared/profiles.test.js` and open `shared/tests.html`, and walk through every section of this feature's `quickstart.md`
 
 ---

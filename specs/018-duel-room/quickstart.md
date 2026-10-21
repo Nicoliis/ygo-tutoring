@@ -31,3 +31,6 @@ The Duel Room is listed under Tools; the page explains the two-code exchange in 
 
 ## 6. Layout and keyboard
 At phone width the table stacks with no sideways scrolling; every control (create, join, paste, copy, life points, phase, coin, die, undo, reconnect) is reachable and operable by keyboard.
+
+## 7. Cards (Duel Simulator)
+After linking, each player picks a deck or chooses "Play without cards" to use only the table above. The card duel is checked in `specs/019-duel-simulator/quickstart.md`.
