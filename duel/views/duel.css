@@ -49,3 +49,40 @@
 .duel-deck-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .duel-deck-chosen .duel-deck-btn { border-color: var(--accent); }
 .duel-deck-counts { color: var(--text-dim); font-size: 0.8rem; }
+
+/* The playing field */
+:root {
+  --duel-card-width: 64px; /* width of a card on the field (images are 59:86) */
+  --duel-card-ratio: 59 / 86;
+  --duel-stack-pad: 14px; /* room around a zone for the offset of a stack */
+}
+.duel-board { display: flex; flex-direction: column; gap: 10px; }
+.duel-side { display: flex; flex-direction: column; gap: 6px; padding: 8px; background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); }
+.duel-side-opponent { transform: rotate(180deg); } /* the opponent sits on the other side of the table */
+.duel-field { display: grid; grid-template-columns: repeat(7, var(--duel-card-width)); gap: 6px var(--duel-stack-pad); justify-content: center; }
+.duel-zone { position: relative; width: var(--duel-card-width); aspect-ratio: var(--duel-card-ratio); border: 1px dashed var(--border); border-radius: 4px; }
+.duel-zone-pick { outline: 2px solid var(--accent); }
+.duel-zone-pick-btn { position: absolute; inset: 0; z-index: 99; background: rgba(91, 140, 255, 0.25); color: var(--text); border: 0; cursor: pointer; font-weight: 700; }
+.duel-card { position: absolute; inset: 0; padding: 0; border: 1px solid var(--border); border-radius: 4px; background: var(--panel-alt); cursor: pointer; display: block; overflow: visible; transition: transform 0.12s; }
+.duel-card-face { display: block; width: 100%; height: 100%; border-radius: 3px; overflow: hidden; background: #000; }
+.duel-card-face img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.duel-card-back { background: repeating-linear-gradient(45deg, #5a3a1a, #5a3a1a 6px, #3a2410 6px, #3a2410 12px); }
+.duel-card-name { display: flex; align-items: center; justify-content: center; height: 100%; padding: 2px; text-align: center; font-size: 0.6rem; color: var(--text-dim); }
+.duel-card-def { rotate: 90deg; }
+.duel-card-facedown { box-shadow: inset 0 0 0 2px var(--accent); } /* a face-down card of your own: you see what it is */
+.duel-card-selected, .duel-card:focus-visible, .duel-card:hover { border-color: var(--accent); outline: none; z-index: 50 !important; }
+.duel-stack-count { position: absolute; right: -6px; bottom: -6px; z-index: 60; min-width: 1.3em; text-align: center; font-size: 0.7rem; background: var(--accent); color: #000; border-radius: 999px; padding: 0 4px; }
+.duel-pile-btn { position: absolute; inset: 0; width: 100%; padding: 0; border: 0; background: none; cursor: pointer; }
+.duel-pile-label { position: absolute; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); color: var(--text); font-size: 0.6rem; text-align: center; padding: 1px 0; z-index: 2; }
+.duel-hand { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; min-height: calc(var(--duel-card-width) * 1.45); }
+.duel-hand .duel-card { position: relative; inset: auto; width: var(--duel-card-width); aspect-ratio: var(--duel-card-ratio); }
+.duel-card-revealed { box-shadow: 0 0 0 2px #facc15; }
+.duel-menu { position: fixed; z-index: 200; left: 50%; bottom: 16px; transform: translateX(-50%); display: flex; flex-wrap: wrap; gap: 6px; max-width: min(520px, 94vw); padding: 10px; background: var(--panel); border: 1px solid var(--accent); border-radius: var(--radius); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5); }
+.duel-menu-title { width: 100%; margin: 0; font-weight: 700; }
+.duel-pick-note { margin: 0 0 6px; color: var(--accent); }
+
+/* Phone width: smaller cards so both fields fit without sideways scrolling */
+@media (max-width: 700px) {
+  :root { --duel-card-width: 40px; --duel-stack-pad: 6px; }
+  .duel-card-name { font-size: 0.45rem; }
+}

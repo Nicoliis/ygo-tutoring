@@ -251,6 +251,14 @@ function renderRoom(rootEl, model, h) {
   if (screen === "deck") renderDeckChoice(rootEl._refs.deckHost, model.deckChoice, { onChoose: h.onChooseDeck, onNoCards: h.onNoCards });
   if (screen === "table" && model.table) {
     updateTable(rootEl._refs, model);
+    let host = rootEl._refs.root.querySelector(":scope > .duel-board-host");
+    if (model.board) {
+      if (!host) {
+        host = el("div", "duel-board-host");
+        rootEl._refs.root.prepend(host);
+      }
+      renderBoard(host, model.board, h.boardHandlers);
+    } else if (host) host.remove();
     let banner = rootEl.querySelector(":scope > .duel-banner");
     if (model.phase === "disconnected") {
       if (!banner) {

@@ -53,6 +53,7 @@ function drawRoom() {
       code: room.code,
       table: room.session ? room.session.getTable() : null,
       deckChoice: room.phase === "connected" ? deckChoiceModel() : null,
+      board: room.session && room.session.getTable() ? boardModel() : null,
       you: room.role === null ? 0 : room.role,
       savedDuel: saved && room.phase === "start" ? { names: saved.table.players.map((p) => p.name), turn: saved.table.turn } : null,
     },
@@ -70,6 +71,7 @@ function drawRoom() {
       onDie: () => intent({ kind: "die" }),
       onUndo: () => intent({ kind: "undo" }),
       onRename: (name) => intent({ kind: "name", name }),
+      boardHandlers: boardHandlers(),
       onChooseDeck: chooseDeck,
       onNoCards: playWithoutCards,
     }

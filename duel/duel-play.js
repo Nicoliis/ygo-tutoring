@@ -110,3 +110,62 @@ function onDuelEvent(event, table) {
     savePrivate();
   }
 }
+
+/* ---- the board ---- */
+
+play.selected = null; // the uid of the card whose menu is open
+play.menu = null;
+play.picking = null;
+
+function boardModel() {
+  const table = room.session ? room.session.getTable() : null;
+  if (!table || !table.sim || !table.sim.started) return null;
+  return {
+    sim: table.sim,
+    you: room.role,
+    hand: play.priv ? play.priv.hand : [],
+    cardOf: (uid) => (play.priv ? cardAt(play.priv, uid) : null),
+    picking: play.picking,
+    menu: play.menu,
+    selected: play.selected,
+  };
+}
+
+/* The details window during a duel: the card alone, nothing that could change the player's collection. */
+function showCardDetails(card) {
+  openCardDetailModal(card, undefined, "", null, false);
+}
+
+/* The cards of a pile as the viewer may see them. */
+function pileItems(sideIndex, pile) {
+  const table = room.session.getTable();
+  const side = table.sim.players[sideIndex];
+  if (pile === "gy" || pile === "banished") return side[pile].map((e) => ({ uid: e.uid, card: e.card || (sideIndex === room.role && play.priv ? cardAt(play.priv, e.uid) : null), actions: [] }));
+  if (sideIndex !== room.role || !play.priv) return [];
+  const uids = pile === "deck" ? play.priv.deck : play.priv.extra;
+  return uids.map((uid) => ({ uid, card: cardAt(play.priv, uid), actions: [] }));
+}
+
+function openPile(sideIndex, pile) {
+  if ((pile === "deck" || pile === "extra") && sideIndex !== room.role) return; // only counts are known
+  if (pile === "deck") return; // the deck pile has its own menu (draw, search...) with the card actions
+  const titles = { gy: "Graveyard", banished: "Banished", extra: "Extra deck" };
+  showModal({ title: `${sideIndex === room.role ? "Your" : "Opponent's"} ${titles[pile]}`, bodyHtml: '<div id="duelPileList"></div>', buttons: [{ label: "Close", primary: true }] });
+  renderPileList(document.getElementById("duelPileList"), pileItems(sideIndex, pile), { onDetails: showCardDetails, onAction: () => {} });
+}
+
+function selectCard(uid) {
+  const card = play.priv ? cardAt(play.priv, uid) : null;
+  if (card) showCardDetails(card);
+}
+
+function boardHandlers() {
+  return {
+    onSelectCard: selectCard,
+    onAction: () => {},
+    onPickZone: () => {},
+    onOpenPile: openPile,
+    onDetails: showCardDetails,
+    onCancel: () => {},
+  };
+}

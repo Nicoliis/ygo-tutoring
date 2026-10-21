@@ -8,6 +8,7 @@
 <link rel="stylesheet" href="../draft/draft-base.css">
 <link rel="stylesheet" href="../draft/draft-buttons.css">
 <link rel="stylesheet" href="../shared/modal-dialog.css">
+<link rel="stylesheet" href="../shared/card-tags.css">
 <link rel="stylesheet" href="../collection/collection-panel.css">
 <link rel="stylesheet" href="../shared/areas.css">
 <link rel="stylesheet" href="../shared/nav-layout.css">
@@ -24,9 +25,18 @@
   <main class="app-single">
     <div id="duelRoot"></div>
   </main>
+  <div id="modalRoot" hidden></div>
 </div>
 
 <script src="../shared/dialogs.js"></script>
+<script src="../shared/focus-trap.js"></script>
+<script src="../shared/modal-buttons.js"></script>
+<script src="../shared/modal.js"></script>
+<script src="../shared/card-tags-builder.js"></script>
+<script src="../shared/sentences.js"></script>
+<script src="../shared/card-effect-builder.js"></script>
+<script src="../shared/card-detail-window.js"></script>
+<script src="../shared/card-detail-modal.js"></script>
 <script src="../shared/dom-utils.js"></script>
 <script src="../shared/areas.js"></script>
 <script src="../shared/nav-entries.js"></script>
@@ -48,6 +58,8 @@
 <script src="duel-link.js"></script>
 <script src="views/duel-view.js"></script>
 <script src="views/duel-deck-view.js"></script>
+<script src="views/duel-board-view.js"></script>
+<script src="views/duel-pile-view.js"></script>
 <script src="duel-play.js"></script>
 <script src="duel-room.js"></script>
 </body>
