@@ -242,6 +242,93 @@ function queueKeep(task) {
   return keepQueue;
 }
 
+/* ---- Keeping within the budget ---- */
+
+const QUOTA_HIGH = 0.8; // above this share of the browser's quota for this site, old pictures are dropped...
+const QUOTA_LOW = 0.7; // ...until the share is below this
+const QUOTA_BATCH = 20; // pictures dropped between two looks at the quota
+let keepsSinceQuotaLook = 0;
+const QUOTA_LOOK_EVERY = 25; // the quota is looked at once per this many keeps
+
+async function pictureEntries() {
+  const keys = await (await caches.open(IMAGE_CACHE)).keys();
+  // Cache.keys() lists the oldest kept first, so the position stands for the time.
+  return keys.map((request, index) => ({ key: request.url, keptAt: index, size: estimateImageSize(request.url) }));
+}
+
+async function cardDataEntries() {
+  const cache = await caches.open(API_CACHE);
+  const entries = [];
+  for (const request of await cache.keys()) {
+    const response = await cache.match(request);
+    entries.push({
+      key: request.url,
+      keptAt: Number(response.headers.get(KEPT_AT_HEADER)) || 0,
+      size: Number(response.headers.get(SIZE_HEADER)) || 0,
+    });
+  }
+  return entries;
+}
+
+async function dropEntries(cacheName, keys) {
+  const cache = await caches.open(cacheName);
+  for (const key of keys) await cache.delete(key);
+}
+
+/*
+ * Keeps card data (exact sizes) and pictures (estimated sizes) within OFFLINE_BUDGET_BYTES: pictures go first, oldest
+ * first, then card data answers, oldest first. Never touches the app's own copy or anything outside these two caches.
+ */
+async function enforceBudget() {
+  const budget = await readBudget();
+  let over = budget.apiBytes + budget.imageEstimate - OFFLINE_BUDGET_BYTES;
+  if (over > 0) {
+    const pictures = await pictureEntries();
+    const dropPictures = pickEvictions(pictures, Math.max(0, budget.imageEstimate - over));
+    await dropEntries(IMAGE_CACHE, dropPictures);
+    const freed = pictures.filter((p) => dropPictures.includes(p.key)).reduce((sum, p) => sum + p.size, 0);
+    budget.imageEstimate = Math.max(0, budget.imageEstimate - freed);
+    over -= freed;
+  }
+  if (over > 0) {
+    const answers = await cardDataEntries();
+    const dropAnswers = pickEvictions(answers, Math.max(0, budget.apiBytes - over));
+    await dropEntries(API_CACHE, dropAnswers);
+    const freed = answers.filter((a) => dropAnswers.includes(a.key)).reduce((sum, a) => sum + a.size, 0);
+    budget.apiBytes = Math.max(0, budget.apiBytes - freed);
+  }
+  await writeBudget(budget);
+}
+
+/*
+ * Pictures count at an estimate and browsers pad opaque answers when they add up the quota, so the quota is also
+ * watched: above 80% of it, the oldest pictures are dropped until the share is below 70%.
+ */
+async function guardQuota() {
+  if (!navigator.storage || !navigator.storage.estimate) return;
+  let { usage, quota } = await navigator.storage.estimate();
+  if (!quota || usage / quota <= QUOTA_HIGH) return;
+  const budget = await readBudget();
+  const pictures = await pictureEntries();
+  while (pictures.length > 0 && usage / quota > QUOTA_LOW) {
+    const batch = pictures.splice(0, QUOTA_BATCH);
+    await dropEntries(IMAGE_CACHE, batch.map((p) => p.key));
+    budget.imageEstimate = Math.max(0, budget.imageEstimate - batch.reduce((sum, p) => sum + p.size, 0));
+    ({ usage, quota } = await navigator.storage.estimate());
+  }
+  await writeBudget(budget);
+}
+
+/* Runs after every keep: the budget first, and now and then the quota. */
+async function afterKeep() {
+  await enforceBudget();
+  keepsSinceQuotaLook += 1;
+  if (keepsSinceQuotaLook >= QUOTA_LOOK_EVERY) {
+    keepsSinceQuotaLook = 0;
+    await guardQuota();
+  }
+}
+
 /* Keeps a copy of a good card data answer with its time and exact size, and adds its size to the budget. */
 function keepCardData(request, response) {
   return queueKeep(async () => {
@@ -256,6 +343,7 @@ function keepCardData(request, response) {
     const budget = await readBudget();
     budget.apiBytes = Math.max(0, budget.apiBytes - beforeSize + body.size);
     await writeBudget(budget);
+    await afterKeep();
   });
 }
 
@@ -287,6 +375,7 @@ function keepPicture(request, response) {
     const budget = await readBudget();
     budget.imageEstimate += estimateImageSize(request.url);
     await writeBudget(budget);
+    await afterKeep();
   });
 }
 
