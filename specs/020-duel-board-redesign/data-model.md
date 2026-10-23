@@ -21,7 +21,8 @@ Changes against [019's data model](../019-duel-simulator/data-model.md); everyth
 sim = { layout: 2, started, nocards, generation, rematch,
   players: [ side, side ],
   shared: [ stack, stack ],              // the two shared zones
-  signal: { uid, kind, by, n } | null }  // the last signal; n counts signals
+  signal: { uid, kind, by, n } | null,   // the last signal; n counts signals
+  signalCount }                          // signals made so far, so a cleared marker is never confused with a new signal
 side = { deckName, ready, handCount, deckCount, extraCount,
   field: [ stack x 11 ],                 // replaces zones { monster, spell, field, pendulum }
   gy: [{ uid, card }], banished: [{ uid, card | null }], revealed: { uid: card } }

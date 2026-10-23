@@ -11,7 +11,7 @@ newSim()                         -> sim (layout 2)
 applyBoardEvent(sim, event)      -> { sim, ok, reason?, inverse?, note? }   // events of data-model.md
 isOldBoard(sim)                  -> true when a saved sim lacks layout 2
 // duel-menu.js
-menuFor(context)                 -> node[]            // context = { place, card, faceUp, revealed, isExtraDeckCard }
+menuFor(context)                 -> node[]            // context = { place, faceUp, revealed, isExtraDeckCard }; first level Play, Move to, Signal, Details
 node = { id, label, children?: node[], action?: { kind, ... } , needsZone?: true }
 resolvePath(nodes, ids)          -> { node, action } | null
 // fan-layout.js
@@ -28,5 +28,5 @@ Guarantees: `boardCells(0)` and `boardCells(1)` describe the same 35 cells with 
 
 ## Views (`duel/views/`) - DOM only
 
-- `renderBoard(rootEl, model, handlers)`: model adds `cells` (from `boardCells`), `signal`, `fan`; handlers = `{ onSelectCard(uid, place, anchor), onPickZone(zone, slot), onOpenPile(side, pile, anchor), onDetails(card), onCancel }`.
+- `renderBoard(rootEl, model, handlers)`: model = `{ sim, you, hand, cardOf, picking: { slots: [{ zone, slot, side? }] } | null, selected, fan, signal }` (the grid comes from `boardCells()`); handlers = `{ onSelectCard(uid, place, anchor), onPickZone(zone, slot, side), onOpenPile(side, pile, anchor), onDetails(card), onFaceDown, onCancel, onClearSignal, fan }`.
 - `renderFan(rootEl, fan, handlers)`: fan = `{ anchor, levels: [{ nodes, chosenId }] }`; handlers = `{ onChoose(levelIndex, nodeId), onClose }`. Arrow keys / Tab move between buttons, Enter or Space chooses, Escape or an outside click closes.

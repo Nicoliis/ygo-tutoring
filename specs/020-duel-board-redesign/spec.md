@@ -212,6 +212,7 @@ Private information, undo, reconnecting a duel, rematch, deck choice, the log an
 - Cards on the opponent's side are shown turned 180 degrees, as the opponent's side was before.
 - Both players can use the two shared zones; a card always belongs to its original owner (the player whose deck it came from), whoever controls or placed it, and goes to that owner's piles when it leaves the field.
 - A player who does not own a face-down card cannot send it to a face-up pile (graveyard, face-up banish), because they do not know it; they can still move it to the owner's hand, deck, extra deck or banish it face-down.
+- A fourth first-level button, **Details**, opens the card details window as the earlier menu did (it is not one of the three described buttons, only the way to keep that feature).
 - Give control is in the Move to fan; the giver chooses the opponent's zone; a card given to the opponent can be given back the same way.
 - Flipping or turning a card already on the board is done with Play (choosing the same zone), since the new menu has no separate flip or position actions.
 - Search the deck, look at the top card, shuffle the deck and reveal a hand card from the earlier menu all remain, placed in the deck fan and under Signal.
