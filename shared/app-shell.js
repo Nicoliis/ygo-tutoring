@@ -64,6 +64,48 @@ function markUnsupported(reason) {
   showShellNotice(reason);
 }
 
+/* ---- Installing ---- */
+
+let installOffer = null; // the browser's offer to install the app, kept until the user uses it or it goes away
+
+/* True when the page already runs as an installed app. */
+function isInstalledApp() {
+  return window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+}
+
+/* Shows the "Install app" button(s) of this page only while there is an offer and the app is not installed yet. */
+function refreshInstallButtons() {
+  const visible = Boolean(installOffer) && !isInstalledApp();
+  document.querySelectorAll("#installAppBtn").forEach((btn) => {
+    btn.hidden = !visible;
+  });
+}
+
+window.addEventListener("beforeinstallprompt", (event) => {
+  event.preventDefault(); // keep the offer: the page's own button uses it
+  installOffer = event;
+  refreshInstallButtons();
+});
+
+window.addEventListener("appinstalled", () => {
+  installOffer = null;
+  refreshInstallButtons();
+});
+
+function wireInstallButtons() {
+  document.querySelectorAll("#installAppBtn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      if (!installOffer) return;
+      const offer = installOffer;
+      installOffer = null; // an offer can be used once
+      refreshInstallButtons();
+      offer.prompt();
+      await offer.userChoice.catch(() => {});
+    });
+  });
+  refreshInstallButtons();
+}
+
 function registerWorker() {
   const reason = findUnsupportedReason();
   if (reason) {
@@ -81,8 +123,13 @@ function registerWorker() {
     });
 }
 
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", registerWorker);
-} else {
+function startShell() {
+  wireInstallButtons();
   registerWorker();
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", startShell);
+} else {
+  startShell();
 }
