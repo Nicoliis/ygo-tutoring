@@ -271,10 +271,39 @@ async function answerCardData(request) {
   }
 }
 
+/* ---- Pictures (the picture host): cache first; otherwise fetched and kept ---- */
+
+/*
+ * The picture host sends no CORS headers, so a picture can only be kept as an opaque answer: its size cannot be read
+ * and no header can be added. Each one counts at an estimate (estimateImageSize) and the order of Cache.keys()
+ * (oldest first) tells which is oldest.
+ */
+function keepPicture(request, response) {
+  return queueKeep(async () => {
+    const cache = await caches.open(IMAGE_CACHE);
+    const had = await cache.match(request.url);
+    await cache.put(request.url, response);
+    if (had) return;
+    const budget = await readBudget();
+    budget.imageEstimate += estimateImageSize(request.url);
+    await writeBudget(budget);
+  });
+}
+
+async function answerPicture(request) {
+  const kept = await (await caches.open(IMAGE_CACHE)).match(request.url);
+  if (kept) return kept;
+  // The page's own request is the only fetch for a picture: a copy of its answer is what gets kept.
+  const response = await fetch(request);
+  if (response.ok || response.type === "opaque") keepPicture(request, response.clone());
+  return response;
+}
+
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   if (request.method !== "GET") return;
   const url = new URL(request.url);
   if (url.origin === self.location.origin) event.respondWith(answerFromCopy(request));
   else if (url.hostname === API_HOST) event.respondWith(answerCardData(request));
+  else if (url.hostname === IMAGE_HOST) event.respondWith(answerPicture(request));
 });
