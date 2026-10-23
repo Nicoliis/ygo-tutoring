@@ -71,6 +71,73 @@ function markUnsupported(reason) {
   showShellNotice(reason);
 }
 
+/* ---- Updates ---- */
+
+const REFOCUS_CHECK_MS = 30 * 60 * 1000; // a window that comes back after this long checks for a new version
+const APPLY_FALLBACK_MS = 3000; // if the worker has nothing to apply, Reload just reloads after this long
+
+let lastCheckAt = 0; // kept in this window only, never in browser storage
+let applyRequested = false; // this window pressed Reload and waits for the worker to switch versions
+
+function messageWorker(message) {
+  const worker = navigator.serviceWorker.controller || (appShell.registration && appShell.registration.active);
+  if (worker) worker.postMessage(message);
+}
+
+function requestUpdateCheck() {
+  lastCheckAt = Date.now();
+  messageWorker({ type: "check" });
+}
+
+/* A small notice (top right, polite for screen readers, dismissible) that never covers the work area. */
+function showUpdateNotice(text, onReload) {
+  let box = document.getElementById("appUpdateNotice");
+  if (!box) {
+    box = document.createElement("div");
+    box.id = "appUpdateNotice";
+    box.className = "app-update-notice";
+    box.setAttribute("role", "status");
+    box.setAttribute("aria-live", "polite");
+    document.body.appendChild(box);
+  }
+  box.innerHTML = "";
+  const message = document.createElement("span");
+  message.textContent = text;
+  const reload = document.createElement("button");
+  reload.type = "button";
+  reload.className = "app-update-reload";
+  reload.textContent = "Reload";
+  reload.addEventListener("click", onReload);
+  const close = document.createElement("button");
+  close.type = "button";
+  close.className = "app-notice-close";
+  close.setAttribute("aria-label", "Dismiss this note");
+  close.textContent = "✕";
+  close.addEventListener("click", () => box.remove());
+  box.append(message, reload, close);
+}
+
+/* Reload asks the worker to switch to the new version, then reloads when it says so (or soon, if it has nothing to switch). */
+function reloadForUpdate() {
+  applyRequested = true;
+  messageWorker({ type: "apply" });
+  setTimeout(() => window.location.reload(), APPLY_FALLBACK_MS);
+}
+
+function onWorkerMessage(event) {
+  const message = event.data || {};
+  if (message.type === "update-ready") {
+    showUpdateNotice("A new version is ready.", reloadForUpdate);
+  } else if (message.type === "applied") {
+    if (applyRequested) window.location.reload();
+    else showUpdateNotice("Reload to finish the update.", () => window.location.reload());
+  }
+}
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && lastCheckAt && Date.now() - lastCheckAt >= REFOCUS_CHECK_MS) requestUpdateCheck();
+});
+
 /* ---- Installing ---- */
 
 let installOffer = null; // the browser's offer to install the app, kept until the user uses it or it goes away
@@ -123,6 +190,8 @@ function registerWorker() {
     .register(rootAddress(WORKER_FILE))
     .then((registration) => {
       appShell.registration = registration;
+      // A first visit has just stored the app itself; a window already served by a worker looks for a newer version.
+      if (navigator.serviceWorker.controller) requestUpdateCheck();
     })
     .catch((err) => {
       console.warn("Could not register the offline worker:", err);
@@ -137,6 +206,7 @@ function askForPersistentStorage() {
 }
 
 function startShell() {
+  if ("serviceWorker" in navigator) navigator.serviceWorker.addEventListener("message", onWorkerMessage);
   wireInstallButtons();
   registerWorker();
   askForPersistentStorage();

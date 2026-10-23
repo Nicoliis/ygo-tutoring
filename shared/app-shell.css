@@ -25,3 +25,32 @@
 .install-app-btn[hidden] { display: none; }
 .menu-header-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .menu-header-actions .install-app-btn { margin-top: 0; }
+
+.app-update-notice {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(360px, calc(100vw - 24px));
+  padding: 8px 10px 8px 14px;
+  background: var(--panel, #1e2129);
+  border: 1px solid var(--accent, #5b8cff);
+  border-radius: var(--radius, 8px);
+  color: var(--text, #eef0f4);
+  font-size: 0.82rem;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+}
+.app-update-reload {
+  background: var(--accent, #5b8cff);
+  color: #0b1020;
+  border: 0;
+  border-radius: var(--radius, 8px);
+  padding: 5px 12px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.app-update-reload:focus-visible { outline: 2px solid var(--text, #eef0f4); outline-offset: 2px; }
