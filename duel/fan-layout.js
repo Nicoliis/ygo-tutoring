@@ -1,13 +1,14 @@
 /*
  * Where the round buttons of a fan menu go. Pure: numbers in, numbers out; no DOM.
  *
- *   fanLayout({ anchor, count, direction, span, buttonPx, gap, bounds }) -> [{ x, y }]  (centres of the buttons)
+ *   fanLayout({ anchor, count, direction, span, buttonPx, gap, bounds, avoid }) -> [{ x, y }]  (centres of the buttons)
  *
  * The buttons sit on an arc around `anchor` ({ x, y }), centred on `direction` (degrees, 0 = right, -90 = up) and
  * `span` degrees wide. The radius is the smallest that keeps neighbouring buttons `gap` apart (never below
  * FAN_MIN_RADIUS_PX). When a button would leave `bounds` ({ left, top, right, bottom }) the arc is turned to the
- * nearest direction where all fit; if none does, a narrower arc (with a larger radius) is tried; as a last resort
- * the buttons are moved inside the bounds.
+ * nearest direction where all fit and none touches a point of `avoid` (the buttons of the fans already open); if
+ * none does, a narrower arc (with a larger radius), then a wider radius, is tried; as a last resort the buttons are
+ * moved inside the bounds.
  */
 const FAN_BUTTON_PX = 56; // diameter of a fan button
 const FAN_GAP_PX = 8; // space between neighbouring buttons
@@ -17,14 +18,16 @@ const FAN_SUB_SPAN_DEG = 120; // a submenu fans out from its button
 const FAN_TURN_STEP_DEG = 15; // how far the arc is turned each try when it does not fit
 const FAN_TURN_TRIES = 12; // tries on each side (a full turn)
 const FAN_NARROWER_SPANS = [1, 0.75, 0.5]; // fractions of the span tried when no direction fits (the radius grows with them)
+const FAN_RADIUS_SCALES = [1, 1.35, 1.7]; // multiples of the radius tried when buttons would touch an open fan
 
-function fanArc(anchor, count, direction, span, buttonPx, gap) {
+function fanArc(anchor, count, direction, span, buttonPx, gap, scale = 1) {
   const step = count > 1 ? span / (count - 1) : 0;
   const chord = buttonPx + gap;
   const radius = count > 1 ? Math.max(FAN_MIN_RADIUS_PX, chord / (2 * Math.sin(Math.min(step, 180) * Math.PI / 360))) : FAN_MIN_RADIUS_PX;
+  const far = radius * scale;
   return Array.from({ length: count }, (_, i) => {
     const angle = (count > 1 ? direction - span / 2 + step * i : direction) * Math.PI / 180;
-    return { x: anchor.x + radius * Math.cos(angle), y: anchor.y + radius * Math.sin(angle) };
+    return { x: anchor.x + far * Math.cos(angle), y: anchor.y + far * Math.sin(angle) };
   });
 }
 
@@ -36,17 +39,28 @@ function fanOverflow(points, bounds, half) {
   );
 }
 
-function fanLayout({ anchor, count, direction, span, buttonPx = FAN_BUTTON_PX, gap = FAN_GAP_PX, bounds }) {
+/* How much the buttons overlap the points of `avoid` (buttons already on screen), in pixels. */
+function fanCrowding(points, avoid, buttonPx) {
+  let sum = 0;
+  points.forEach((p) => avoid.forEach((a) => {
+    sum += Math.max(0, buttonPx - Math.hypot(p.x - a.x, p.y - a.y));
+  }));
+  return sum;
+}
+
+function fanLayout({ anchor, count, direction, span, buttonPx = FAN_BUTTON_PX, gap = FAN_GAP_PX, bounds, avoid = [] }) {
   const half = buttonPx / 2;
   const tries = [0];
   for (let i = 1; i <= FAN_TURN_TRIES; i++) tries.push(i * FAN_TURN_STEP_DEG, -i * FAN_TURN_STEP_DEG);
   let best = null;
-  for (const fraction of FAN_NARROWER_SPANS) {
-    for (const turn of tries) {
-      const points = fanArc(anchor, count, direction + turn, span * fraction, buttonPx, gap);
-      const overflow = fanOverflow(points, bounds, half);
-      if (overflow === 0) return points;
-      if (!best || overflow < best.overflow) best = { points, overflow };
+  for (const scale of FAN_RADIUS_SCALES) {
+    for (const fraction of FAN_NARROWER_SPANS) {
+      for (const turn of tries) {
+        const points = fanArc(anchor, count, direction + turn, span * fraction, buttonPx, gap, scale);
+        const cost = fanOverflow(points, bounds, half) + fanCrowding(points, avoid, buttonPx);
+        if (cost === 0) return points;
+        if (!best || cost < best.cost) best = { points, cost };
+      }
     }
   }
   return best.points.map((p) => ({

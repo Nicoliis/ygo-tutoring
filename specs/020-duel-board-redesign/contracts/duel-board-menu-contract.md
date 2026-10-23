@@ -5,7 +5,7 @@
 ```text
 // duel-board.js
 BOARD_LAYOUT, BOARD_LAYOUT_VERSION
-boardCells(you)                  -> [{ row, col, kind: "field"|"shared"|"deck"|"extra"|"gy"|"banished"|"empty", side: "own"|"opp"|null, slot }]   // 35 cells, as seen by `you`
+boardCells()                     -> [{ row, col, kind: "field"|"shared"|"deck"|"extra"|"gy"|"banished"|"empty", side: "own"|"opp"|null, slot }]   // 35 cells as drawn for the viewer (own = uppercase)
 ownerOf(uid)                     -> 0 | 1
 newSim()                         -> sim (layout 2)
 applyBoardEvent(sim, event)      -> { sim, ok, reason?, inverse?, note? }   // events of data-model.md
@@ -15,7 +15,7 @@ menuFor(context)                 -> node[]            // context = { place, card
 node = { id, label, children?: node[], action?: { kind, ... } , needsZone?: true }
 resolvePath(nodes, ids)          -> { node, action } | null
 // fan-layout.js
-fanLayout({ anchor, count, direction, span, buttonPx, gap, bounds }) -> [{ x, y }]   // centres, all inside bounds
+fanLayout({ anchor, count, direction, span, buttonPx, gap, bounds, avoid }) -> [{ x, y }]   // centres, inside bounds and clear of the `avoid` points
 ```
 
 Guarantees: `boardCells(0)` and `boardCells(1)` describe the same 35 cells with sides swapped and each player's slot `n` at the same physical cell; a card is in exactly one place; a card that leaves the field is in its owner's piles; a face-down card is never put in the public board with its data; applying an event and then its `inverse` restores the board; `fanLayout` returns positions inside `bounds` for any anchor inside it; every leaf of `menuFor` resolves to an action.

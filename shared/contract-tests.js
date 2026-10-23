@@ -1614,6 +1614,9 @@ function runContractTests() {
       });
     });
     const up = fanLayout({ anchor: { x: 180, y: 400 }, count: 3, direction: -90, span: FAN_FIRST_SPAN_DEG, bounds });
+    const parent = fanLayout({ anchor: { x: 180, y: 500 }, count: 3, direction: -90, span: FAN_FIRST_SPAN_DEG, bounds });
+    const child = fanLayout({ anchor: parent[1], count: 5, direction: -90, span: FAN_SUB_SPAN_DEG, bounds, avoid: parent });
+    child.forEach((p) => parent.forEach((q) => expect(Math.hypot(p.x - q.x, p.y - q.y) >= FAN_BUTTON_PX, "a submenu button touches the menu it came from")));
     expect(up.every((p) => p.y <= 400.001) && up.some((p) => p.y < 400), "the first fan opens upward when there is room");
   });
 
