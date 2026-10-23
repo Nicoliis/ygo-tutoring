@@ -89,7 +89,7 @@
 
 **Independent Test**: quickstart.md Scenario 5.
 
-- [ ] T024 [US5] In `shared/app-shell.js` add the offline indicator: a fixed strip with `role="status"` and the text "Offline — saved data and kept cards still work", shown while `navigator.onLine` is false (initial state and the `online`/`offline` events), removed when the connection returns, never taking space inside work screens (fixed at the bottom of the window, `pointer-events: none`); style it in `shared/app-shell.css`.
+- [X] T024 [US5] In `shared/app-shell.js` add the offline indicator: a fixed strip with `role="status"` and the text "Offline — saved data and kept cards still work", shown while `navigator.onLine` is false (initial state and the `online`/`offline` events), removed when the connection returns, never taking space inside work screens (fixed at the bottom of the window, `pointer-events: none`); style it in `shared/app-shell.css`.
 - [ ] T025 [US5] In `duel/duel-room.js` check `isOffline()` before creating or joining a link and show "The link needs a connection." with a Retry action (re-checks and continues without reloading); practice alone and viewing a saved duel stay available offline; reuse the room's existing banner/notice mechanism.
 - [ ] T026 [US5] Make sure every action that needs the card database names what failed and what to do: review the card search (Backlog add, Proxy Builder), the booster autocomplete in `draft/`, the set list in `tracker/`, and the Completionist Binder set loading, and align their offline messages to "…needs a connection — reconnect and try again" where one is missing; none may fail silently.
 

@@ -71,6 +71,30 @@ function markUnsupported(reason) {
   showShellNotice(reason);
 }
 
+/* ---- Offline indicator ---- */
+
+/* A thin strip at the bottom of the window while the browser reports no connection. It takes no space and no clicks. */
+function showOfflineIndicator(offline) {
+  let strip = document.getElementById("offlineIndicator");
+  if (!offline) {
+    if (strip) strip.remove();
+    return;
+  }
+  if (strip) return;
+  strip = document.createElement("div");
+  strip.id = "offlineIndicator";
+  strip.className = "app-offline-indicator";
+  strip.setAttribute("role", "status");
+  strip.textContent = "Offline — saved data and kept cards still work";
+  document.body.appendChild(strip);
+}
+
+function watchConnection() {
+  showOfflineIndicator(isOffline());
+  window.addEventListener("online", () => showOfflineIndicator(false));
+  window.addEventListener("offline", () => showOfflineIndicator(true));
+}
+
 /* ---- Updates ---- */
 
 const REFOCUS_CHECK_MS = 30 * 60 * 1000; // a window that comes back after this long checks for a new version
@@ -208,6 +232,7 @@ function askForPersistentStorage() {
 function startShell() {
   if ("serviceWorker" in navigator) navigator.serviceWorker.addEventListener("message", onWorkerMessage);
   wireInstallButtons();
+  watchConnection();
   registerWorker();
   askForPersistentStorage();
 }

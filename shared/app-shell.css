@@ -54,3 +54,19 @@
   cursor: pointer;
 }
 .app-update-reload:focus-visible { outline: 2px solid var(--text, #eef0f4); outline-offset: 2px; }
+
+.app-offline-indicator {
+  position: fixed;
+  left: 50%;
+  bottom: 8px;
+  transform: translateX(-50%);
+  z-index: 1900;
+  max-width: calc(100vw - 24px);
+  padding: 4px 12px;
+  background: var(--panel, #1e2129);
+  border: 1px solid var(--border, #3a3f4b);
+  border-radius: 999px;
+  color: var(--muted, #aab0bd);
+  font-size: 0.74rem;
+  pointer-events: none;
+}
