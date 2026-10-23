@@ -9,7 +9,7 @@
   --duel-signal-attack: #f97316;
   --duel-log-height: 240px; /* the log keeps this height and scrolls */
   --duel-board-max-width: calc(7 * var(--duel-card-max-width) + 6 * var(--duel-stack-pad) + 18px); /* what the board needs at its largest: 7 cards, 6 gaps, padding and border */
-  --duel-columns: minmax(200px, 360px) minmax(0, var(--duel-board-max-width)) minmax(110px, 140px) minmax(260px, 420px); /* card display | board | turn controls | lives and log, each no wider than it needs */
+  --duel-columns: minmax(220px, 2fr) minmax(0, var(--duel-board-max-width)) minmax(110px, 140px) minmax(260px, 3fr); /* card display | board | turn controls | lives and log: only the board and the turn controls are capped, the rest grows with the screen */
 }
 
 #duelRoot { display: flex; flex-direction: column; gap: 14px; }
@@ -45,7 +45,7 @@
 .duel-banner { border-color: var(--danger); }
 
 /* The table: three columns, board | turn controls | opponent's life, log, your life */
-.duel-table { display: grid; grid-template-columns: var(--duel-columns); justify-content: center; gap: 14px; align-items: start; }
+.duel-table { display: grid; grid-template-columns: var(--duel-columns); gap: 14px; align-items: start; }
 .duel-table:not(:has(.duel-board-host)) { grid-template-columns: minmax(0, 1fr); } /* a duel without cards: everything stacked */
 .duel-table:not(:has(.duel-board-host)) .duel-col-board, .duel-table:not(:has(.duel-board-host)) .duel-col-display { display: none; }
 .duel-col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
@@ -136,3 +136,13 @@ body.duel-focus #appSidebar, body.duel-focus .app-header { display: none; }
 .duel-card-display-text { font-size: 0.82rem; }
 /* The whole screen: the table has no page margins and no width limit */
 body.duel-focus .app-single { padding: 8px; max-width: none; }
+
+.duel-result-line { display: block; }
+/* The side column fills the window's height and the log takes what the two life panels leave */
+@media (min-width: 901px) {
+  .duel-col-side { position: sticky; top: 8px; height: calc(100vh - 28px); }
+  .duel-col-side .duel-log-panel { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+  .duel-col-side .duel-log { flex: 1 1 auto; height: auto; min-height: 0; }
+}
+.duel-col-side .duel-player { flex: 0 0 auto; }
+body.duel-focus .duel-messages:empty { display: none; } /* no empty strip above the table */

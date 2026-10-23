@@ -229,7 +229,9 @@ function updateTable(refs, model) {
   });
   refs.turn.textContent = `Turn ${t.turn} · ${t.players[t.active].name}'s turn · ${t.phase}`;
   refs.phases.forEach((li) => li.classList.toggle("duel-phase-current", li.textContent === t.phase));
-  refs.results.textContent = `Coin: ${t.coin || "—"} · Die: ${t.die || "—"}${t.winner !== null ? ` · ${t.players[t.winner].name} wins the duel` : ""}`;
+  // one result under the other: coin, die, and the winner when there is one
+  refs.results.innerHTML = "";
+  [`Coin: ${t.coin || "—"}`, `Die: ${t.die || "—"}`].concat(t.winner !== null ? [`${t.players[t.winner].name} wins the duel`] : []).forEach((line) => refs.results.appendChild(el("span", "duel-result-line", line)));
   const live = model.phase === "connected";
   [refs.next, refs.coin, refs.die, refs.undo].forEach((b) => {
     b.disabled = !live;
