@@ -22,7 +22,10 @@ async function runSearch(query) {
     const data = await res.json();
     lastResults = data.data || [];
     renderResults(lastResults);
-    searchStatus.textContent = `${lastResults.length} card(s) found.`;
+    searchStatus.textContent =
+      typeof isOfflineResponse === "function" && isOfflineResponse(res)
+        ? offlineResultsText(lastResults.length)
+        : `${lastResults.length} card(s) found.`;
   } catch (err) {
     if (err.name === "AbortError") return;
     console.error(err);
