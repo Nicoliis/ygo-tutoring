@@ -50,7 +50,7 @@ After the first visit (or once installed), every screen of the app opens with no
 2. **Given** a card or its picture was shown before, **When** the user is offline, **Then** it is shown again from what was kept.
 3. **Given** the user is offline and searches the card database, **When** the search runs, **Then** the app shows the matches among the cards kept from earlier visits, labelled "offline results", and says the full database needs a connection; with no match it says so instead of showing an empty or broken result.
 4. **Given** the user is offline, **When** they try to open a pack from a set whose cards were never loaded, **Then** the app says that set needs a connection first and changes nothing in the run.
-5. **Given** a first visit with no connection at all, **When** the app is opened, **Then** the user sees a clear message that the first visit needs a connection.
+5. **Given** a first visit with no connection at all, **When** the app is opened, **Then** it cannot open (the browser shows its own offline page, because nothing has been kept yet); the install note and the offline page of later visits state that the first visit needs a connection to keep the app.
 
 ---
 
@@ -106,7 +106,7 @@ The user always knows whether a connection is needed. The app shows when it is o
 
 ### Edge Cases
 
-- First visit with no connection: nothing is stored yet, so the app explains that the first visit needs a connection.
+- First visit with no connection: nothing is stored yet, so the app cannot open; once online the first visit keeps the app, and the install note and the offline page explain that the first visit needs a connection.
 - An interrupted first load: a partially stored copy must never be used; the app falls back to loading normally and completes the copy later.
 - The browser's storage is full or restricted (private window): the app keeps working online and says that offline use is unavailable.
 - Two windows open during an update: both end on the same version.

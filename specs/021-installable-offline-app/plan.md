@@ -9,7 +9,7 @@
 Make the static app installable and fully usable offline with plain browser features and no build step:
 
 1. **Install**: a web app manifest (name, icons, colors, standalone window) and an "Install app" button on the profile screen and the main menu.
-2. **Offline copy**: one `service-worker.js` at the app root keeps a complete, versioned copy of the app's own files (288 small files, about 1.9 MB). The list of what to keep is discovered from a hand-kept list of the pages, by reading each page's scripts, styles and images, so no generated manifest is needed and nothing can be left out silently (a test checks the page list).
+2. **Offline copy**: one `service-worker.js` at the app root keeps a complete, versioned copy of the app's own files (288 small files, about 1.9 MB). The list of what to keep is discovered from a hand-kept list of the pages (the 18 app pages plus the offline page), by reading each page's scripts, styles and images, so no generated manifest is needed and nothing can be left out silently (a test checks the page list).
 3. **Safe updates**: a new version is downloaded in full into a separate staged copy, the user is told and chooses Reload, and the copy is swapped in one step. With a single window open, the swap also happens by itself on the next navigation, so nobody stays on an old version.
 4. **Card data offline**: the card API answers are kept network-first and reused when offline; card pictures are kept within a 150 MB budget (oldest first). While offline the card search looks through the kept data and labels the results "offline results".
 5. **Feedback**: an offline indicator on every screen, clear messages for actions that need a connection, and a Duel Room link that says it needs a connection.
@@ -34,7 +34,7 @@ Saved data is never touched: the service worker only uses the browser's Cache St
 
 **Constraints**: Cross-origin card pictures (`images.ygoprodeck.com`) send no CORS headers, so they can only be kept as opaque responses: their real size cannot be read and the browser counts each against its quota with padding; the 150 MB limit is therefore an estimate for pictures and exact for card data. App-file version checks are conditional requests to the app's own host, made at start and when the window regains focus after 30 minutes, never on a timer
 
-**Scale/Scope**: 19 pages, 288 files, up to a few thousand kept card pictures
+**Scale/Scope**: 18 pages plus the offline page, 288 files, up to a few thousand kept card pictures
 
 ## Constitution Check
 
