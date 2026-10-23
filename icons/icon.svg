@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" fill="#14161c"/>
+  <!-- everything important stays inside the central 80% so the picture also works as a maskable icon -->
+  <g transform="rotate(-8 256 256)">
+    <rect x="171" y="120" width="170" height="248" rx="14" fill="#1e2129" stroke="#5b8cff" stroke-width="10"/>
+    <rect x="189" y="140" width="134" height="134" rx="6" fill="#262a34" stroke="#333844" stroke-width="3"/>
+    <path d="M256 160 l16 34 36 5 -26 25 7 36 -33 -18 -33 18 7 -36 -26 -25 36 -5z" fill="#5b8cff"/>
+    <rect x="189" y="292" width="134" height="10" rx="5" fill="#333844"/>
+    <rect x="189" y="312" width="96" height="10" rx="5" fill="#333844"/>
+  </g>
+  <text x="256" y="428" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="64" font-weight="700" fill="#eef0f4" letter-spacing="6">YGO</text>
+</svg>
