@@ -78,7 +78,8 @@ function newSim() {
     rematch: null,
     players: [emptySide(), emptySide()],
     shared: Array.from({ length: SHARED_SLOTS }, () => []),
-    signal: null,
+    signal: null, // the last signal: { uid, kind, by, n }
+    signalCount: 0, // signals made so far (n of the next one), so a cleared marker is never confused with a new one
   };
 }
 
@@ -259,6 +260,17 @@ function applyEventToSide(next, event) {
       target.push({ uid: event.uid, faceUp: true, pos: taken.entry.pos, card });
       return {};
     }
+    case "signal": {
+      if (!SIGNAL_KINDS.includes(event.signal)) return { error: "Unknown signal." };
+      const onBoard = next.shared.concat(side.field).some((stack) => stack.some((c) => c.uid === event.uid)) || PUBLIC_PILES.some((pile) => side[pile].some((c) => c.uid === event.uid));
+      if (!onBoard) return { error: "Only a card on the board can signal." };
+      next.signalCount += 1;
+      next.signal = { uid: event.uid, kind: event.signal, by: event.by, n: next.signalCount };
+      return {};
+    }
+    case "signal-clear":
+      next.signal = null;
+      return {};
     case "reveal":
       if (!event.card || !event.uid) return { error: "A revealed card needs its card data." };
       side.revealed[event.uid] = event.card;

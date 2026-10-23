@@ -1373,6 +1373,29 @@ function runContractTests() {
     expect(!isForeignMoveOfMine(priv[0], { kind: "move", by: 0, uid, from: { zone: "shared", slot: 0 }, to: { zone: "hand" } }), "the owner's own moves go the usual way");
   });
 
+  check("duel board: signals mark a card, count up, are cleared, never name a face-down card and do not block Undo", () => {
+    const { table } = startedDuel();
+    const card = { name: "Alpha" };
+    let t = duelApply(table, { kind: "move", by: 0, uid: "0-0", from: { zone: "hand" }, to: { zone: "field", slot: 1 }, faceUp: true, pos: "atk", card });
+    t = duelApply(t, { kind: "move", by: 0, uid: "0-1", from: { zone: "hand" }, to: { zone: "field", slot: 2 }, faceUp: false, pos: "def" });
+    let s = duelApply(t, { kind: "signal", by: 0, uid: "0-0", signal: "activate" });
+    expect(s.sim.signal.uid === "0-0" && s.sim.signal.kind === "activate" && s.sim.signal.n === 1 && s.log[s.log.length - 1].text === "Ana activates Alpha");
+    s = duelApply(s, { kind: "signal", by: 0, uid: "0-0", signal: "attack" });
+    expect(s.sim.signal.kind === "attack" && s.sim.signal.n === 2 && s.log[s.log.length - 1].text === "Ana attacks with Alpha");
+    s = duelApply(s, { kind: "signal", by: 0, uid: "0-1", signal: "target" });
+    expect(s.log[s.log.length - 1].text === "Ana targets a face-down card", s.log[s.log.length - 1].text);
+    s = duelApply(s, { kind: "signal-clear", by: 1 });
+    expect(s.sim.signal === null && s.sim.signalCount === 3);
+    s = duelApply(s, { kind: "signal", by: 0, uid: "0-0", signal: "target" });
+    expect(s.sim.signal.n === 4, "a new signal after a clear is a new one");
+    expect(!applyEvent(t, { kind: "signal", by: 0, uid: "0-4", signal: "activate" }).ok, "not a card on the board");
+    expect(!applyEvent(t, { kind: "signal", by: 0, uid: "0-0", signal: "dance" }).ok && !applyEvent(t, { kind: "signal", by: 1, uid: "0-0", signal: "activate" }).ok, "unknown signal; only your own cards");
+    const undone = duelApply(s, { kind: "undo", by: 0 });
+    expect(undone.sim.players[0].field[2].length === 0 && undone.sim.players[0].handCount === 4 && undone.sim.players[0].field[1].length === 1, "undo skips the signals and reverts the last move");
+    const tableSignal = JSON.stringify(s.sim.signal);
+    expect(!tableSignal.includes("Alpha"), "a signal carries no card data");
+  });
+
   /* Two sessions joined by an in-memory link whose delivery order the test controls. */
   function duelPair(seedTable) {
     const toCreator = [];

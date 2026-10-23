@@ -124,7 +124,7 @@ function applyPhase(table, event) {
   };
 }
 
-const SIM_KINDS = ["ready", "nocards", "start", "draw", "move", "give", "flip", "position", "reveal", "hide", "search", "shuffle", "rematch", "rematch-accept", "rematch-decline", "reset"];
+const SIM_KINDS = ["ready", "nocards", "start", "draw", "move", "give", "flip", "position", "reveal", "hide", "search", "shuffle", "signal", "signal-clear", "rematch", "rematch-accept", "rematch-decline", "reset"];
 const ZONE_WORDS = { field: "playable zone", shared: "shared zone", gy: "graveyard", banished: "banished zone", hand: "hand", deck: "deck", extra: "extra deck" };
 
 /* The log line of a board event. It only names a card that is visible to both players. */
@@ -164,6 +164,13 @@ function describeSim(table, event, result) {
       return `${who} revealed ${named(event.card)} from the hand`;
     case "hide":
       return `${who} hid a revealed card`;
+    case "signal": {
+      const name = table.sim ? publicCardName(table.sim, event.by, event.uid) : null;
+      const card = name || "a face-down card";
+      return { activate: `${who} activates ${card}`, target: `${who} targets ${card}`, attack: `${who} attacks with ${card}` }[event.signal] || "";
+    }
+    case "signal-clear":
+      return `${who} cleared the signal`;
     case "search":
       return `${who} searched the deck`;
     case "shuffle":
@@ -206,7 +213,7 @@ function applySim(table, event) {
 function applyUndo(table, event) {
   // the last change that is not an automatic "win" note
   let at = table.log.length - 1;
-  while (at >= 0 && table.log[at].kind === "win") at--;
+  while (at >= 0 && (table.log[at].kind === "win" || table.log[at].sim === "signal" || table.log[at].sim === "signal-clear")) at--; // notes and signals are not moves to undo
   const last = at >= 0 ? table.log[at] : null;
   const undoableMove = last && last.kind === "sim" && last.inverse;
   if (!last || last.by !== event.by || (last.kind !== "lp" && last.kind !== "phase" && !undoableMove)) {
