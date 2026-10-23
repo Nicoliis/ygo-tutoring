@@ -16,6 +16,7 @@
 - Q: Do search the deck, look at the top card, shuffle the deck and reveal a hand card stay? → A: Yes, all features stay, moved into the fitting menu or submenu: the deck fan has Draw, Mill, Search, Look at top and Shuffle; Reveal and Hide (for a card shown to the opponent) go under Signal.
 - Q: Do Attacks and Target also pick the attacked or targeted card? → A: No. A signal only marks the signalling card and adds a log line.
 - Q: Who controls and who gets a card in a shared zone? → A: A card always goes back to its original owner when it leaves the field; a new action Give control lets the opponent control a card while it is on the field; shared zones keep the same rule and both players can place cards in them.
+- Q: What happens to a duel saved with the old board? → A: The page says it used the old board and cannot continue, and offers a rematch with the same decks.
 
 ## User Scenarios & Testing *(mandatory)*
 
