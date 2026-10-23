@@ -23,6 +23,13 @@ function isOfflineResponse(response) {
   return Boolean(response && response.headers && response.headers.get("x-ygo-offline") === "1");
 }
 
+/* What a card search says when its answer came from the cards kept for offline use. */
+function offlineResultsText(count) {
+  return count > 0
+    ? `Offline results (${count}) — the full database needs a connection.`
+    : "No offline results — the full database needs a connection.";
+}
+
 /* The profile screen and the main menu are the only screens that show app notices. */
 function isEntryScreen() {
   return !(typeof pageIsInsideAreaFolder === "function" && pageIsInsideAreaFolder());
