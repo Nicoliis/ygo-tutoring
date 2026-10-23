@@ -124,6 +124,10 @@ function buildFailed(model, h) {
 
 /* ---- the table ---- */
 
+const SIDE_ORDER_OPPONENT = 1; // order of the side column: the opponent's life, then the log, then yours
+const SIDE_ORDER_LOG = 2;
+const SIDE_ORDER_YOU = 3;
+
 function buildPlayerPanel(index, h) {
   const panel = el("section", "panel duel-player");
   panel.dataset.player = String(index);
@@ -157,11 +161,13 @@ function buildTable(h) {
   const root = el("div", "duel-table");
   const refs = { players: [], phases: [], root };
 
-  const players = el("div", "duel-players");
+  // three columns: the board (about 60%), the turn controls (10%), the opponent's life, the log and your life (30%)
+  refs.boardCol = el("div", "duel-col duel-col-board");
+  const sideCol = el("div", "duel-col duel-col-side");
   for (let i = 0; i < 2; i++) {
     const panel = buildPlayerPanel(i, h);
     refs.players.push({ panel, name: panel.querySelector(".duel-player-name"), rename: panel.querySelector(".duel-rename"), lp: panel.querySelector(".duel-lp") });
-    players.appendChild(panel);
+    sideCol.appendChild(panel);
   }
 
   const turn = el("section", "panel duel-turn");
@@ -192,7 +198,12 @@ function buildTable(h) {
   refs.log.setAttribute("aria-live", "polite");
   logPanel.appendChild(refs.log);
 
-  root.append(players, turn, refs.rematch, logPanel);
+  refs.logPanel = logPanel;
+  logPanel.style.order = String(SIDE_ORDER_LOG);
+  sideCol.appendChild(logPanel);
+  const controlsCol = el("div", "duel-col duel-col-controls");
+  controlsCol.append(turn, refs.rematch);
+  root.append(refs.boardCol, controlsCol, sideCol);
   return refs;
 }
 
@@ -201,6 +212,7 @@ function updateTable(refs, model) {
   t.players.forEach((p, i) => {
     const ref = refs.players[i];
     ref.name.textContent = `${p.name}${i === model.you ? " (you)" : ""}`;
+    ref.panel.style.order = i === model.you ? String(SIDE_ORDER_YOU) : String(SIDE_ORDER_OPPONENT); // the opponent above the log, you below it
     ref.panel.classList.toggle("duel-active-player", t.active === i);
     ref.panel.classList.toggle("duel-winner", t.winner === i);
     ref.lp.textContent = String(p.lp);
@@ -281,11 +293,11 @@ function renderRoom(rootEl, model, h) {
   if (screen === "deck") renderDeckChoice(rootEl._refs.deckHost, model.deckChoice, { onChoose: h.onChooseDeck, onNoCards: h.onNoCards });
   if (screen === "table" && model.table) {
     updateTable(rootEl._refs, model);
-    let host = rootEl._refs.root.querySelector(":scope > .duel-board-host");
+    let host = rootEl._refs.boardCol.querySelector(":scope > .duel-board-host");
     if (model.board) {
       if (!host) {
         host = el("div", "duel-board-host");
-        rootEl._refs.root.prepend(host);
+        rootEl._refs.boardCol.prepend(host);
       }
       renderBoard(host, model.board, h.boardHandlers);
     } else if (host) host.remove();

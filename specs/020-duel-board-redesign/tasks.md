@@ -110,6 +110,7 @@
 ## Phase 8: Practice alone (added after the first release)
 
 - [X] T023 Practice alone, a way to test a deck without a friend: a "Practice alone" button on the Duel Room start screen starts the same table with no link, the player as creator and an empty "Practice opponent" side (`startPractice` in `duel/duel-room.js`, `session.intentFor(by, event)` in `duel/duel-session.js`, `practiceReply` in `duel/duel-play.js`: the empty side is ready at once, accepts a rematch and its turn passes by itself); nothing is saved; "Leave practice" returns to the start screen; test in `shared/contract-tests.js` and the browser run
+- [X] T024 Three-column table layout (added after the first release): the board about 60% of the width, a thin column of vertical turn controls (phases, next phase, coin, die, undo, rematch) about 10%, and about 30% for the opponent's life, the log (fixed height, scrolls) and your life, in that order from the top; below 900 px wide the columns stack, and a duel without cards stays stacked (`duel/views/duel-view.js` `buildTable`, `duel/views/duel.css`)
 
 ---
 
