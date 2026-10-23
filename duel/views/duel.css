@@ -145,4 +145,5 @@ body.duel-focus .app-single { padding: 8px; max-width: none; }
   .duel-col-side .duel-log { flex: 1 1 auto; height: auto; min-height: 0; }
 }
 .duel-col-side .duel-player { flex: 0 0 auto; }
-body.duel-focus .duel-messages:empty { display: none; } /* no empty strip above the table */
+.duel-messages-slot:empty, .duel-messages-slot .duel-messages:empty { display: none; }
+.duel-messages-slot .duel-status, .duel-messages-slot .duel-error, .duel-messages-slot .duel-notice { margin: 0 0 6px; font-size: 0.85rem; }

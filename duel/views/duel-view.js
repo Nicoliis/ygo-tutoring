@@ -209,7 +209,8 @@ function buildTable(h) {
   logPanel.style.order = String(SIDE_ORDER_LOG);
   sideCol.appendChild(logPanel);
   const controlsCol = el("div", "duel-col duel-col-controls");
-  controlsCol.append(turn, refs.rematch);
+  refs.messagesSlot = el("div", "duel-messages-slot");
+  controlsCol.append(turn, refs.messagesSlot, refs.rematch);
   root.append(displayCol, refs.boardCol, controlsCol, sideCol);
   return refs;
 }
@@ -287,11 +288,8 @@ function renderRoom(rootEl, model, h) {
     rootEl._refs = null;
   }
   // messages and the banner are redrawn every time; the rest of each screen is built once
-  let messages = rootEl.querySelector(":scope > .duel-messages");
   const fresh = buildMessages(model, h, screen === "table");
   document.body.classList.toggle("duel-focus", screen === "table"); // on the table the game is all there is: no header, no sidebar
-  if (messages) messages.replaceWith(fresh);
-  else rootEl.prepend(fresh);
 
   if (!rootEl._refs) {
     const body = el("div", "duel-body");
@@ -310,6 +308,13 @@ function renderRoom(rootEl, model, h) {
     if (!rootEl._refs) rootEl._refs = { static: true };
     rootEl.appendChild(body);
   }
+  // the messages ("Connected.", errors) are at the top of a screen, and on the table in the turn column by the rematch buttons
+  const top = rootEl.querySelector(":scope > .duel-messages");
+  if (screen === "table" && rootEl._refs.messagesSlot) {
+    if (top) top.remove();
+    rootEl._refs.messagesSlot.replaceChildren(fresh);
+  } else if (top) top.replaceWith(fresh);
+  else rootEl.prepend(fresh);
   if (screen === "deck") renderDeckChoice(rootEl._refs.deckHost, model.deckChoice, { onChoose: h.onChooseDeck, onNoCards: h.onNoCards });
   if (screen === "table" && model.table) {
     updateTable(rootEl._refs, model);
