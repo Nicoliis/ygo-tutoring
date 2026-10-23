@@ -6,12 +6,12 @@
  *   resetBinder()                back to the first view; called when the search, filter or sort changes
  */
 
-/* What a slot does: open the card details, edit the owned quantity, remove it (as the old Backlog row did). */
+/* What a slot does: open the card details, edit the owned quantity, remove a copy (the card goes with its last one). */
 function buildBinderSlot(card) {
   return buildCardSlot(card, {
     onOpen: () => openCardDetailsFromPicture(card),
     stepper: panelAllows("allowQtyEdit") ? buildBacklogQtyStepper(card) : null,
-    onRemove: panelAllows("allowRemove") ? () => removeCard(card.id) : null,
+    onRemove: panelAllows("allowRemove") ? () => removeBacklogCopy(card.id) : null, // one copy; the card goes with its last copy
   });
 }
 

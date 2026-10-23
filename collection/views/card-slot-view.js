@@ -68,7 +68,9 @@ function buildCardSlot(card, options) {
     removeBtn.type = "button";
     removeBtn.className = "btn-remove-item binder-remove";
     removeBtn.textContent = "✕";
-    removeBtn.setAttribute("aria-label", `Remove ${card.name} from backlog`);
+    const lastCopy = card.quantityOwned <= 1;
+    removeBtn.setAttribute("aria-label", lastCopy ? `Remove ${card.name} from the backlog (last copy)` : `Remove one copy of ${card.name}`);
+    removeBtn.title = lastCopy ? "Remove the card (it is the last copy)" : "Remove one copy";
     removeBtn.addEventListener("click", () => options.onRemove());
     slot.appendChild(removeBtn);
   }

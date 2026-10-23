@@ -114,3 +114,20 @@ function buildPrintingsHtml(card, { showSet = false } = {}) {
   if (unknownQuantity > 0) rows.push(`<li>Unknown rarity × ${unknownQuantity}</li>`);
   return `<div class="card-printings"><strong>Printings:</strong><ul>${rows.join("")}</ul></div>`;
 }
+
+/*
+ * Takes one copy out of a card: a copy with no recorded printing first, otherwise a copy of the least rare printing
+ * (the cheapest one on ties), so the best copies stay. Keeps quantityOwned >= the sum of the printings.
+ */
+function removeOneCopy(card) {
+  card.quantityOwned = Math.max(0, (Number(card.quantityOwned) || 0) - 1);
+  if (printingsTotal(card) <= card.quantityOwned) return; // the copy removed had no printing
+  let worst = 0;
+  card.printings.forEach((p, i) => {
+    const w = card.printings[worst];
+    const byRarity = rarityRank(p.rarity) - rarityRank(w.rarity);
+    if (byRarity < 0 || (byRarity === 0 && (Number(p.price) || 0) < (Number(w.price) || 0))) worst = i;
+  });
+  card.printings[worst].quantity -= 1;
+  if (card.printings[worst].quantity <= 0) card.printings.splice(worst, 1);
+}

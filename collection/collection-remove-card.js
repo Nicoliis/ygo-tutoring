@@ -40,3 +40,34 @@ function removeCard(cardId) {
     ],
   });
 }
+
+/*
+ * The Backlog's remove button: takes away ONE copy. The card only leaves the backlog when its last copy goes
+ * (that case is the full removal above, with its confirmation). Taking a copy that an engine or deck still needs
+ * asks first and then reduces those to the copies that are left.
+ */
+function removeBacklogCopy(cardId) {
+  const card = findCard(cardId);
+  if (!card) return;
+  if (card.quantityOwned <= 1) {
+    removeCard(cardId);
+    return;
+  }
+  const affected = allocationsOverLimit(collection, cardId, card.quantityOwned - 1);
+  const apply = () => {
+    removeOneCopy(card);
+    clampAllocationsToOwned(collection);
+    saveCollection();
+    renderAll();
+    showToast(`Removed a copy of "${card.name}" (${card.quantityOwned} left).`, "success");
+  };
+  if (affected.length === 0) {
+    apply();
+    return;
+  }
+  showModal({
+    title: "Remove a copy?",
+    bodyHtml: `${cardImageHtml(card)}<p>${escapeHtml(`"${card.name}" is used in ${affected.join(", ")}. Removing a copy reduces those to the copies you will still own.`)}</p>`,
+    buttons: [{ label: "Cancel" }, { label: "Remove copy", primary: true, onClick: apply }],
+  });
+}
