@@ -1,5 +1,5 @@
 /*
- * The fan menu: round buttons on a semicircle that opens above a card, and further fans from the chosen button.
+ * The fan menu: round buttons on a semicircle that opens above a card, and tight submenus on the chosen button.
  * DOM only: no state and no rules (the tree is in duel-menu.js, the positions in fan-layout.js).
  *
  *   renderFan(rootEl, fan, handlers)
@@ -7,8 +7,9 @@
  *              anchor and bounds are in window coordinates; bounds defaults to the window
  *   handlers = { onChoose(levelIndex, nodeId), onClose() }
  *
- * The first level opens above the anchor; each further level opens above the chosen button of the level before, and
- * only that button stays visible in the levels below it (choosing it again closes the levels above). Arrow keys and Tab move between the buttons of the last level, Enter or Space chooses, Escape or a
+ * The first level opens above the anchor; each further level is a tight block right on the chosen button of the
+ * level before (so the mouse hardly moves), and only that button stays visible in the levels below it (choosing it
+ * again closes the levels above). Arrow keys and Tab move between the buttons of the last level, Enter or Space chooses, Escape or a
  * click outside the buttons closes. Needs duel-view.js (el) and fan-layout.js.
  */
 const FAN_CLOSE_KEY = "Escape";
@@ -20,14 +21,14 @@ function fanBounds(fan) {
 }
 
 /*
- * The centre of every button of every level. Each level is a fan straight above the button chosen in the level
- * before (the first above the anchor); the whole set is then slid, never turned, to fit the window.
+ * The centre of every button of every level: the first level is a fan above the anchor, each further level a block on
+ * the button chosen before; the whole set is then slid, never turned, to fit the window.
  */
 function fanPositions(fan) {
   const all = [];
   let anchor = fan.anchor;
-  fan.levels.forEach((level) => {
-    const points = fanLayout({ anchor, count: level.nodes.length });
+  fan.levels.forEach((level, index) => {
+    const points = index === 0 ? fanLayout({ anchor, count: level.nodes.length }) : fanSubmenu({ anchor, count: level.nodes.length });
     all.push(points);
     const chosen = level.nodes.findIndex((n) => n.id === level.chosenId);
     if (chosen !== -1) anchor = points[chosen];

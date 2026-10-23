@@ -1743,7 +1743,7 @@ function runContractTests() {
     expect(isOldBoard({ players: [] }) === true && isOldBoard(null) === false);
   });
 
-  check("fan layout: always the same shape straight above the anchor, buttons never touch, a submenu stacks above its button, a fan slides to fit and never turns", () => {
+  check("fan layout: always the same shape straight above the anchor, buttons never touch, a submenu is a tight block on its parent button, a fan slides to fit and never turns", () => {
     const at = { x: 180, y: 500 };
     [1, 2, 3, 4, 5, 6].forEach((count) => {
       const points = fanLayout({ anchor: at, count });
@@ -1758,8 +1758,16 @@ function runContractTests() {
     });
     expect(JSON.stringify(fanLayout({ anchor: at, count: 4 })) === JSON.stringify(fanLayout({ anchor: at, count: 4 })), "the same input always gives the same fan");
     const parent = fanLayout({ anchor: at, count: 4 });
-    const child = fanLayout({ anchor: parent[1], count: 5 });
-    expect(child.every((p) => p.y <= parent[1].y + 0.001) && Math.abs(child[2].x - parent[1].x) < 0.001 && child[2].y < parent[1].y, "the next level is above the chosen button, its middle button straight above it");
+    [1, 2, 3, 4, 5, 6].forEach((count) => {
+      const block = fanSubmenu({ anchor: parent[1], count });
+      expect(block.length === count, "one place for every button");
+      for (let i = 0; i < count; i++) {
+        expect(Math.hypot(block[i].x - parent[1].x, block[i].y - parent[1].y) <= 2 * (FAN_BUTTON_PX + FAN_GAP_PX), "a submenu button is within two buttons of the pointer (count " + count + ")");
+        for (let j = i + 1; j < count; j++) expect(Math.hypot(block[i].x - block[j].x, block[i].y - block[j].y) >= FAN_BUTTON_PX, "submenu buttons never touch (count " + count + ")");
+      }
+      expect(Math.abs(block.reduce((n, p) => n + p.x - parent[1].x, 0) / count) < FAN_BUTTON_PX / 2, "centred on the parent");
+    });
+    expect(fanSubmenu({ anchor: parent[1], count: 3 })[1].x === parent[1].x && fanSubmenu({ anchor: parent[1], count: 3 })[1].y === parent[1].y, "the middle of three is exactly on the parent");
     const half = FAN_BUTTON_PX / 2;
     const bounds = { left: 0, top: 0, right: 360, bottom: 640 };
     const top = fanLayout({ anchor: { x: 20, y: 40 }, count: 5 });

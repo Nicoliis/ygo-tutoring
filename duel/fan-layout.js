@@ -2,6 +2,7 @@
  * Where the round buttons of a fan menu go. Pure: numbers in, numbers out; no DOM.
  *
  *   fanLayout({ anchor, count, buttonPx, gap, radius }) -> [{ x, y }]   (centres of the buttons, left to right)
+ *   fanSubmenu({ anchor, count, buttonPx, gap }) -> [{ x, y }]           (a submenu: a tight block right on its parent button)
  *   fanShift(points, bounds, half) -> { dx, dy }                         (how far to slide a whole fan to fit the window)
  *
  * The same shape every time, so the buttons can be found without looking: they sit on an arc of FAN_RADIUS_PX around
@@ -14,6 +15,7 @@ const FAN_BUTTON_PX = 56; // diameter of a fan button
 const FAN_GAP_PX = 4; // space between neighbouring buttons
 const FAN_RADIUS_PX = 80; // distance from the anchor to the button centres
 const FAN_UP_DEG = -90; // straight up, in screen angles (0 = right)
+const FAN_SUBMENU_ONE_ROW_MAX = 4; // a submenu of up to this many buttons is one row; more are two rows
 
 function fanLayout({ anchor, count, buttonPx = FAN_BUTTON_PX, gap = FAN_GAP_PX, radius = FAN_RADIUS_PX }) {
   const chord = buttonPx + gap;
@@ -24,6 +26,21 @@ function fanLayout({ anchor, count, buttonPx = FAN_BUTTON_PX, gap = FAN_GAP_PX, 
     const angle = ((FAN_UP_DEG + (i - (count - 1) / 2) * stepDeg) * Math.PI) / 180;
     return { x: anchor.x + far * Math.cos(angle), y: anchor.y + far * Math.sin(angle) };
   });
+}
+
+/*
+ * A submenu sits right on the button it came from, so choosing needs little or no mouse movement: a row of buttons
+ * (two rows from five buttons up) centred on the parent. They never touch each other but they do cover the parent.
+ */
+function fanSubmenu({ anchor, count, buttonPx = FAN_BUTTON_PX, gap = FAN_GAP_PX }) {
+  const pitch = buttonPx + gap;
+  const rows = count > FAN_SUBMENU_ONE_ROW_MAX ? [Math.ceil(count / 2), Math.floor(count / 2)] : [count];
+  const points = [];
+  rows.forEach((inRow, r) => {
+    const y = anchor.y + (r - (rows.length - 1) / 2) * pitch;
+    for (let i = 0; i < inRow; i++) points.push({ x: anchor.x + (i - (inRow - 1) / 2) * pitch, y });
+  });
+  return points;
 }
 
 /* The slide (in pixels) that brings every point, with `half` of a button around it, inside `bounds` as far as possible. */
