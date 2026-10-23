@@ -115,6 +115,10 @@ function onDuelEvent(event, table) {
     play.priv = applyPrivate(play.priv, event).priv;
     savePrivate();
     drawRoom(); // the board was drawn before the private side followed the event
+  } else if (play.priv && isForeignMoveOfMine(play.priv, event)) {
+    play.priv = { ...applyPrivate(play.priv, event).priv, undo: null }; // the other player sent one of my cards back to my hand, deck or extra deck
+    savePrivate();
+    drawRoom();
   }
 }
 
@@ -237,6 +241,7 @@ function chooseFanNode(levelIndex, id) {
     drawRoom();
     return;
   }
+  if (resolved.action.kind !== "details") closeDuelModal(); // a card chosen from a pile's list: the list is done with
   if (resolved.node.needsZone) {
     startPicking(resolved.action);
     return;
@@ -247,19 +252,20 @@ function chooseFanNode(levelIndex, id) {
   closeDuelMenu();
 }
 
-/* The zones a card can be put in: the player's own 11 playable zones and the shared ones. */
+/* The zones a card can be put in: the player's own 11 playable zones and the shared ones (to give control: the other player's 11). */
 function startPicking(action) {
   const slots = [];
-  for (let slot = 0; slot < FIELD_SLOTS; slot++) slots.push({ zone: "field", slot, side: room.role });
-  for (let slot = 0; slot < SHARED_SLOTS; slot++) slots.push({ zone: "shared", slot });
+  const side = action.kind === "give" ? 1 - room.role : room.role;
+  for (let slot = 0; slot < FIELD_SLOTS; slot++) slots.push({ zone: "field", slot, side });
+  if (action.kind !== "give") for (let slot = 0; slot < SHARED_SLOTS; slot++) slots.push({ zone: "shared", slot });
   play.picking = { slots, action };
   play.fan = null;
   drawRoom();
 }
 
-function pickZone(zone, slot) {
+function pickZone(zone, slot, side) {
   if (!play.picking || !play.selected) return;
-  performAction(play.picking.action, play.selected, play.place, { zone, slot });
+  performAction(play.picking.action, play.selected, play.place, { zone, slot, side });
   closeDuelMenu();
 }
 
@@ -291,6 +297,9 @@ function performAction(action, uid, place, target) {
       if (action.shuffle) send({ kind: "shuffle" });
       return;
     }
+    case "give":
+      send({ kind: "give", uid, from, to: { zone: "field", slot: target.slot, side: target.side }, ...(card ? { card } : {}) });
+      return;
     case "reveal":
       send({ kind: "reveal", uid, card });
       return;
@@ -316,6 +325,11 @@ function openDeckMenu(anchor) {
 function deckAction(action) {
   if (action.kind === "draw") room.session.intent({ kind: "draw" });
   else if (action.kind === "shuffle") room.session.intent({ kind: "shuffle" });
+  else if (action.kind === "mill") {
+    const top = play.priv.deck[0]; // the top card goes to the graveyard, face-up
+    if (top) room.session.intent({ kind: "move", uid: top, from: { zone: "deck" }, to: { zone: "gy" }, faceUp: true, pos: "atk", card: cardAt(play.priv, top) });
+    else setRoom({ error: "Your deck is empty." });
+  }
   else if (action.kind === "lookTop") {
     const top = play.priv.deck[0];
     if (top) showCardDetails(cardAt(play.priv, top));

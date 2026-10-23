@@ -120,21 +120,25 @@ function takeCard(sim, side, from, uid) {
   return { place: { zone: from.zone, slot: from.slot, index }, entry };
 }
 
-/* Puts the card in its new place; returns an error text or null. `index` (used by Undo) restores a position. */
-function putCard(sim, side, to, uid, shown) {
+/*
+ * Puts the card in its new place; returns an error text or null. `index` (used by Undo) restores a position. A card
+ * on the board goes to the field of the mover (`side`) or a shared zone; a card that leaves the board goes to the
+ * piles of its owner, whoever moves it.
+ */
+function putCard(sim, side, owner, to, uid, shown) {
   const { faceUp, pos, card } = shown;
   if (COUNT_PILES.includes(to.zone)) {
-    side[countKey(to.zone)] += 1;
+    owner[countKey(to.zone)] += 1;
     return null;
   }
   if (to.zone === "gy") {
     if (!card) return "A card sent to the graveyard needs its card data.";
-    insertAt(side.gy, { uid, card }, to.index);
+    insertAt(owner.gy, { uid, card }, to.index);
     return null;
   }
   if (to.zone === "banished") {
     if (faceUp && !card) return "A face-up banished card needs its card data.";
-    insertAt(side.banished, { uid, card: faceUp ? card : null }, to.index);
+    insertAt(owner.banished, { uid, card: faceUp ? card : null }, to.index);
     return null;
   }
   const stack = stackOf(sim, side, to);
@@ -160,17 +164,26 @@ function visibleBefore(taken) {
 
 function applyMove(next, event) {
   const side = next.players[event.by];
-  const taken = takeCard(next, side, event.from || {}, event.uid);
+  const owner = next.players[ownerOf(event.uid)];
+  const from = event.from || {};
+  const to = event.to || {};
+  if (!owner) return { error: "That is not a card of this duel." };
+  if (!isZone(from.zone) && ownerOf(event.uid) !== event.by) return { error: "That card is not yours." }; // hand, deck, extra deck and piles are the owner's
+  const taken = takeCard(next, side, from, event.uid);
   if (taken.error) return { error: taken.error };
   const before = visibleBefore(taken);
+  const foreign = ownerOf(event.uid) !== event.by; // a card the mover controls but does not own
+  if (foreign && before.faceUp && !event.faceUp && isZone(to.zone)) return { error: "Only its owner can turn that card face-down." };
   // the card data that is already public stays available for the new place (face-up cards keep their data)
   const card = event.card || before.card;
   const shown = { faceUp: event.faceUp, pos: event.pos, card };
-  const problem = putCard(next, side, event.to || {}, event.uid, shown);
+  if (foreign && !card && (to.zone === "gy" || (to.zone === "banished" && event.faceUp))) return { error: "Only its owner can send that face-down card there." };
+  const problem = putCard(next, side, owner, to, event.uid, shown);
   if (problem) return { error: problem };
   // where the card is now, so Undo can take it from there and put it back where it was
   const nowAt = { ...(event.to || {}) };
   if (isZone(nowAt.zone) || PUBLIC_PILES.includes(nowAt.zone)) delete nowAt.index;
+  if (foreign) return {}; // a card of the other player moved by its controller cannot be undone from this side
   const inverse = {
     kind: "move",
     by: event.by,
@@ -216,10 +229,12 @@ function applyEventToSide(next, event) {
       const entry = stack && stack.find((c) => c.uid === event.uid);
       if (!entry) return { error: "That card is not there any more." };
       const previous = { faceUp: entry.faceUp, card: entry.card };
+      if (!event.faceUp && entry.faceUp && ownerOf(event.uid) !== event.by) return { error: "Only its owner can turn that card face-down." };
       const card = event.faceUp ? event.card || entry.card : null;
       if (event.faceUp && !card) return { error: "A face-up card needs its card data." };
       entry.faceUp = Boolean(event.faceUp);
       entry.card = card;
+      if (ownerOf(event.uid) !== event.by) return {};
       return { inverse: { kind: "flip", by: event.by, uid: event.uid, zone: event.zone, slot: event.slot, faceUp: previous.faceUp, ...(previous.card ? { card: previous.card } : {}) } };
     }
     case "position": {
@@ -229,6 +244,20 @@ function applyEventToSide(next, event) {
       const previous = entry.pos;
       entry.pos = event.pos === "def" ? "def" : DEFAULT_POSITION;
       return { inverse: { kind: "position", by: event.by, uid: event.uid, zone: event.zone, slot: event.slot, pos: previous } };
+    }
+    case "give": {
+      const from = event.from || {};
+      const to = event.to || {};
+      if (!isZone(from.zone)) return { error: "Only a card on the board can be given." };
+      if (to.zone !== "field" || to.side !== 1 - event.by) return { error: "Control can only be given to a zone of the other player." };
+      const target = next.players[to.side].field[to.slot];
+      if (!target) return { error: "That zone does not exist." };
+      const taken = takeCard(next, side, from, event.uid);
+      if (taken.error) return { error: taken.error };
+      const card = event.card || taken.entry.card;
+      if (!card) return { error: "Only a face-up card can be given." };
+      target.push({ uid: event.uid, faceUp: true, pos: taken.entry.pos, card });
+      return {};
     }
     case "reveal":
       if (!event.card || !event.uid) return { error: "A revealed card needs its card data." };

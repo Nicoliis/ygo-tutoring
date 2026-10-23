@@ -1229,42 +1229,54 @@ function runContractTests() {
     expect(!applyEvent(theirs, { kind: "undo", by: 0 }).ok, "not after the opponent moved");
   });
 
-  check("duel board and private state: counts and cards stay consistent over a long random duel", () => {
+  check("duel board and private state: counts and cards stay consistent over a long random duel, with shared zones and give control", () => {
     let { table, priv } = startedDuel(11);
     const random = seededRandom(5);
-    const total = (side) => 6;
+    const total = () => 6;
     const apply = (event) => {
       const result = applyEvent(table, event);
       if (!result.ok) return false;
       table = result.table;
-      priv[event.by] = applyPrivate(priv[event.by], event, seededRandom(1)).priv;
+      [0, 1].forEach((s) => {
+        if (event.by === s) priv[s] = applyPrivate(priv[s], event, seededRandom(1)).priv;
+        else if (isForeignMoveOfMine(priv[s], event)) priv[s] = { ...applyPrivate(priv[s], event).priv, undo: null };
+      });
       return true;
     };
-    for (let i = 0; i < 400; i++) {
+    const stacks = () => table.sim.players.flatMap((pl, s) => pl.field.map((stack, slot) => ({ zone: "field", slot, stack, side: s }))).concat(table.sim.shared.map((stack, slot) => ({ zone: "shared", slot, stack, side: null })));
+    for (let i = 0; i < 600; i++) {
       const by = random() < 0.5 ? 0 : 1;
       const side = table.sim.players[by];
       const p = priv[by];
       const r = random();
-      if (r < 0.2) apply({ kind: "draw", by });
-      else if (r < 0.5 && p.hand.length) {
+      if (r < 0.15) apply({ kind: "draw", by });
+      else if (r < 0.4 && p.hand.length) {
         const uid = p.hand[Math.floor(random() * p.hand.length)];
-        apply({ kind: "move", by, uid, from: { zone: "hand" }, to: { zone: "field", slot: Math.floor(random() * FIELD_SLOTS) }, faceUp: random() < 0.5, pos: "atk", card: cardAt(p, uid) });
-      } else if (r < 0.75) {
-        const zones = side.field.map((stack, slot) => ({ k: "field", slot, stack })).filter((z) => z.stack.length);
-        if (zones.length) {
-          const z = zones[Math.floor(random() * zones.length)];
+        const shared = random() < 0.3;
+        apply({ kind: "move", by, uid, from: { zone: "hand" }, to: shared ? { zone: "shared", slot: Math.floor(random() * SHARED_SLOTS) } : { zone: "field", slot: Math.floor(random() * FIELD_SLOTS) }, faceUp: random() < 0.5, pos: "atk", card: cardAt(p, uid) });
+      } else if (r < 0.7) {
+        // a card this player controls: their own field or a shared zone (their own, or the other player's)
+        const mine = stacks().filter((z) => z.stack.length && (z.zone === "shared" || z.side === by));
+        if (mine.length) {
+          const z = mine[Math.floor(random() * mine.length)];
           const entry = z.stack[Math.floor(random() * z.stack.length)];
-          const dest = random() < 0.4 ? { zone: "hand" } : random() < 0.5 ? { zone: "deck", end: random() < 0.5 ? "top" : "bottom" } : { zone: "gy" };
-          apply({ kind: "move", by, uid: entry.uid, from: { zone: z.k, slot: z.slot }, to: dest, faceUp: dest.zone === "gy", card: cardAt(p, entry.uid) });
+          const from = { zone: z.zone, slot: z.slot };
+          const known = cardAt(p, entry.uid) || entry.card;
+          const pick = random();
+          if (pick < 0.15 && known) apply({ kind: "give", by, uid: entry.uid, from, to: { zone: "field", slot: Math.floor(random() * FIELD_SLOTS), side: 1 - by }, card: known });
+          else {
+            const dest = random() < 0.4 ? { zone: "hand" } : random() < 0.5 ? { zone: "deck", end: random() < 0.5 ? "top" : "bottom" } : random() < 0.5 ? { zone: "gy" } : { zone: "banished" };
+            apply({ kind: "move", by, uid: entry.uid, from, to: dest, faceUp: dest.zone === "gy", ...(dest.zone === "gy" && known ? { card: known } : {}) });
+          }
         }
-      } else if (r < 0.85) apply({ kind: "shuffle", by });
+      } else if (r < 0.8) apply({ kind: "shuffle", by });
       else if (r < 0.95) apply({ kind: "undo", by });
       else apply({ kind: "search", by });
       [0, 1].forEach((s) => {
         const pub = table.sim.players[s];
-        const onField = pub.field.reduce((n, stack) => n + stack.length, 0);
-        expect(pub.handCount + pub.deckCount + pub.extraCount + onField + pub.gy.length + pub.banished.length === total(s), `every card is in exactly one place (step ${i})`);
-        expect(pub.handCount === priv[s].hand.length && pub.deckCount === priv[s].deck.length && pub.extraCount === priv[s].extra.length, `private lists match the public counts (step ${i})`);
+        const owned = stacks().reduce((n, z) => n + z.stack.filter((c) => ownerOf(c.uid) === s).length, 0);
+        expect(pub.handCount + pub.deckCount + pub.extraCount + owned + pub.gy.length + pub.banished.length === total(s), `every card is in exactly one place (step ${i}, side ${s})`);
+        expect(pub.handCount === priv[s].hand.length && pub.deckCount === priv[s].deck.length && pub.extraCount === priv[s].extra.length, `private lists match the public counts (step ${i}, side ${s})`);
       });
     }
   });
@@ -1298,6 +1310,67 @@ function runContractTests() {
     expect(t.sim.shared[1][0].faceUp && t.sim.shared[1][0].pos === "atk" && t.sim.shared[1][0].card.name === "Alpha");
     expect(publicCardName(t.sim, 0, "0-0") === "Alpha" && publicCardName(t.sim, 1, "1-0") === "Other", "a card in a shared zone is found by its name");
     expect(!applyEvent(table, { kind: "move", by: 0, uid: "0-0", from: { zone: "hand" }, to: { zone: "shared", slot: SHARED_SLOTS }, faceUp: false }).ok, "no such shared zone");
+  });
+
+  check("duel board: give control, cards going back to their owner, and what a player cannot do with a card they do not own", () => {
+    const { table } = startedDuel();
+    const card = { name: "Alpha" };
+    const refused = (t, event) => !applyEvent(t, event).ok;
+    let t = duelApply(table, { kind: "move", by: 0, uid: "0-0", from: { zone: "hand" }, to: { zone: "field", slot: 3 }, faceUp: true, pos: "def", card });
+    t = duelApply(t, { kind: "give", by: 0, uid: "0-0", from: { zone: "field", slot: 3 }, to: { zone: "field", slot: 5, side: 1 }, card });
+    const given = t.sim.players[1].field[5][0];
+    expect(t.sim.players[0].field[3].length === 0 && given.uid === "0-0" && given.faceUp && given.pos === "def" && given.card.name === "Alpha", "the opponent controls it now");
+    expect(t.log[t.log.length - 1].text === "Ana gave control of Alpha to Bo", t.log[t.log.length - 1].text);
+    expect(refused(t, { kind: "undo", by: 0 }) && refused(t, { kind: "undo", by: 1 }), "giving control cannot be undone");
+    expect(refused(t, { kind: "move", by: 0, uid: "0-0", from: { zone: "field", slot: 3 }, to: { zone: "gy" }, faceUp: true, card }), "the giver no longer controls it");
+    // the controller sends it away: it lands in the piles of its owner
+    const gy = duelApply(t, { kind: "move", by: 1, uid: "0-0", from: { zone: "field", slot: 5 }, to: { zone: "gy" }, faceUp: true });
+    expect(gy.sim.players[0].gy.length === 1 && gy.sim.players[1].gy.length === 0 && gy.sim.players[1].field[5].length === 0, "to the owner's graveyard");
+    expect(gy.log[gy.log.length - 1].text === "Bo sent Alpha to the graveyard of Ana", gy.log[gy.log.length - 1].text);
+    const hand = duelApply(t, { kind: "move", by: 1, uid: "0-0", from: { zone: "field", slot: 5 }, to: { zone: "hand" }, faceUp: false });
+    expect(hand.sim.players[0].handCount === 5 && hand.sim.players[1].handCount === 5, "back to the owner's hand: the owner's count rises, the controller's does not");
+    const deck = duelApply(t, { kind: "move", by: 1, uid: "0-0", from: { zone: "field", slot: 5 }, to: { zone: "deck", end: "bottom" }, faceUp: false });
+    expect(deck.sim.players[0].deckCount === table.sim.players[0].deckCount + 1 && refused(deck, { kind: "undo", by: 1 }), "a foreign move is not undoable");
+    const down = applyEvent(t, { kind: "move", by: 1, uid: "0-0", from: { zone: "field", slot: 5 }, to: { zone: "field", slot: 6 }, faceUp: false });
+    expect(!down.ok && down.reason.includes("owner") && refused(t, { kind: "flip", by: 1, uid: "0-0", zone: "field", slot: 5, faceUp: false }), "a controller cannot hide a card they do not own");
+    const back = duelApply(t, { kind: "give", by: 1, uid: "0-0", from: { zone: "field", slot: 5 }, to: { zone: "field", slot: 0, side: 0 } });
+    expect(back.sim.players[0].field[0][0].uid === "0-0" && back.sim.players[1].field[5].length === 0, "control can be given back");
+    expect(refused(t, { kind: "give", by: 1, uid: "0-0", from: { zone: "field", slot: 5 }, to: { zone: "field", slot: 1, side: 1 } }), "not to your own side");
+    expect(refused(table, { kind: "give", by: 0, uid: "0-1", from: { zone: "hand" }, to: { zone: "field", slot: 1, side: 1 }, card }), "only a card on the board");
+    const faceDown = duelApply(table, { kind: "move", by: 0, uid: "0-2", from: { zone: "hand" }, to: { zone: "field", slot: 0 }, faceUp: false, pos: "def" });
+    expect(refused(faceDown, { kind: "give", by: 0, uid: "0-2", from: { zone: "field", slot: 0 }, to: { zone: "field", slot: 0, side: 1 } }), "a face-down card needs its data to be given");
+    // a card in a shared zone belongs to the player who brought it
+    let shared = duelApply(table, { kind: "move", by: 0, uid: "0-3", from: { zone: "hand" }, to: { zone: "shared", slot: 0 }, faceUp: false, pos: "def" });
+    const toGy = applyEvent(shared, { kind: "move", by: 1, uid: "0-3", from: { zone: "shared", slot: 0 }, to: { zone: "gy" }, faceUp: true });
+    expect(!toGy.ok && toGy.reason.includes("owner"), "the other player cannot send an unknown card face-up");
+    const toBanished = duelApply(shared, { kind: "move", by: 1, uid: "0-3", from: { zone: "shared", slot: 0 }, to: { zone: "banished" }, faceUp: false });
+    expect(toBanished.sim.players[0].banished.length === 1 && toBanished.sim.players[0].banished[0].card === null, "banished face-down: the owner's zone, still hidden");
+    const toHand = duelApply(shared, { kind: "move", by: 1, uid: "0-3", from: { zone: "shared", slot: 0 }, to: { zone: "hand" }, faceUp: false });
+    expect(toHand.sim.players[0].handCount === 5 && toHand.sim.players[1].handCount === 5, "back to its owner's hand");
+    expect(refused(table, { kind: "move", by: 1, uid: "0-4", from: { zone: "hand" }, to: { zone: "field", slot: 0 }, faceUp: false }), "a hand card of the other player is not yours");
+    // the owner can still undo their own move of their own card in a shared zone
+    expect(JSON.stringify(duelApply(shared, { kind: "undo", by: 0 }).sim) === JSON.stringify(table.sim), "own move in a shared zone is undoable");
+  });
+
+  check("duel private state: the owner follows the other player's move of its card to its hand, deck or extra deck", () => {
+    let { table, priv } = startedDuel();
+    const sendShared = (uid) => (table = duelApply(table, { kind: "move", by: 0, uid, from: { zone: "hand" }, to: { zone: "shared", slot: 0 }, faceUp: false, pos: "def" }));
+    priv[0] = applyPrivate(priv[0], { kind: "move", by: 0, uid: priv[0].hand[0], from: { zone: "hand" }, to: { zone: "shared", slot: 0 } }).priv;
+    const uid = Object.keys(priv[0].cards).find((u) => !priv[0].hand.includes(u) && !priv[0].deck.includes(u) && !priv[0].extra.includes(u));
+    sendShared(uid);
+    const bring = (zone) => {
+      const event = { kind: "move", by: 1, uid, from: { zone: "shared", slot: 0 }, to: { zone, end: "top" }, faceUp: false };
+      expect(isForeignMoveOfMine(priv[0], event) && !isForeignMoveOfMine(priv[1], event), "only the owner follows it");
+      const result = applyEvent(table, event);
+      expect(result.ok);
+      const mine = applyPrivate(priv[0], event).priv;
+      const sim = result.table.sim.players[0];
+      expect(mine.hand.length === sim.handCount && mine.deck.length === sim.deckCount && mine.extra.length === sim.extraCount, "counts match for " + zone);
+      return mine;
+    };
+    expect(bring("hand").hand.includes(uid) && bring("deck").deck[0] === uid && bring("extra").extra.includes(uid));
+    expect(!isForeignMoveOfMine(priv[0], { kind: "move", by: 1, uid, from: { zone: "shared", slot: 0 }, to: { zone: "gy" }, faceUp: true }), "a graveyard move changes nothing private");
+    expect(!isForeignMoveOfMine(priv[0], { kind: "move", by: 0, uid, from: { zone: "shared", slot: 0 }, to: { zone: "hand" } }), "the owner's own moves go the usual way");
   });
 
   /* Two sessions joined by an in-memory link whose delivery order the test controls. */

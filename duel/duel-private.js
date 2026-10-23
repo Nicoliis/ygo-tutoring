@@ -6,7 +6,7 @@
  *   newPrivate(duelId, side, builtDeck, random)   shuffled deck, empty hand (dealHand draws the starting hand)
  *   applyPrivate(priv, event, random)             the owner's side of an event the table confirmed
  *
- * Needs duel-cards.js (shuffled, STARTING_HAND). The public side of the same events is in duel-board.js.
+ * Needs duel-cards.js (shuffled, STARTING_HAND) and duel-board.js (ownerOf). The public side of the same events is in duel-board.js.
  */
 function newPrivate(duelId, side, builtDeck, random = Math.random) {
   const cards = {};
@@ -55,6 +55,14 @@ function putPrivate(priv, place, uid) {
   return priv;
 }
 
+/*
+ * Whether the other player's event sends one of this device's cards to its hand, deck or extra deck (a card of this
+ * player that the other controlled, or took from a shared zone): this device must follow it too.
+ */
+function isForeignMoveOfMine(priv, event) {
+  return event.kind === "move" && event.by !== priv.side && ownerOf(event.uid) === priv.side && ["hand", "deck", "extra"].includes(event.to.zone);
+}
+
 const UNDOABLE = ["draw", "move", "flip", "position", "reveal", "hide"]; // events that have an inverse on the public board
 
 function applyPrivate(priv, event, random = Math.random) {
@@ -67,6 +75,7 @@ function applyPrivate(priv, event, random = Math.random) {
       break;
     }
     case "move": {
+      if (ownerOf(event.uid) !== priv.side) return { priv: { ...priv, undo: null }, ok: true }; // a card of the other player never enters this device's piles
       const taken = takePrivate(priv, event.from.zone, event.uid);
       if (!taken.ok) return { priv, ok: false, reason: "That card is not where it should be." };
       next = putPrivate(taken.priv, event.to, event.uid);

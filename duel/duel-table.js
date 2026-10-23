@@ -124,7 +124,7 @@ function applyPhase(table, event) {
   };
 }
 
-const SIM_KINDS = ["ready", "nocards", "start", "draw", "move", "flip", "position", "reveal", "hide", "search", "shuffle", "rematch", "rematch-accept", "rematch-decline", "reset"];
+const SIM_KINDS = ["ready", "nocards", "start", "draw", "move", "give", "flip", "position", "reveal", "hide", "search", "shuffle", "rematch", "rematch-accept", "rematch-decline", "reset"];
 const ZONE_WORDS = { field: "playable zone", shared: "shared zone", gy: "graveyard", banished: "banished zone", hand: "hand", deck: "deck", extra: "extra deck" };
 
 /* The log line of a board event. It only names a card that is visible to both players. */
@@ -143,12 +143,18 @@ function describeSim(table, event, result) {
     case "move": {
       const known = event.card || publicCardName(table.sim, event.by, event.uid) ? { name: (event.card && event.card.name) || publicCardName(table.sim, event.by, event.uid) } : null;
       const to = event.to.zone;
-      if (to === "gy") return `${who} sent ${named(event.card)} to the graveyard`;
-      if (to === "banished") return event.faceUp ? `${who} banished ${named(event.card)}` : `${who} banished a card face-down`;
-      if (to === "hand") return `${who} returned ${named(known)} to the hand`;
-      if (to === "deck") return `${who} returned ${named(known)} to the ${event.to.end === "bottom" ? "bottom" : "top"} of the deck`;
-      if (to === "extra") return `${who} returned ${named(known)} to the extra deck`;
+      const ownerName = table.players[ownerOf(event.uid)] ? table.players[ownerOf(event.uid)].name : "?";
+      const ofOwner = ownerOf(event.uid) !== event.by ? ` of ${ownerName}` : ""; // a card always goes back to its owner
+      if (to === "gy") return `${who} sent ${named(event.card || known)} to the graveyard${ofOwner}`;
+      if (to === "banished") return event.faceUp ? `${who} banished ${named(event.card || known)}${ofOwner}` : `${who} banished a card face-down${ofOwner}`;
+      if (to === "hand") return `${who} returned ${named(known)} to the hand${ofOwner}`;
+      if (to === "deck") return `${who} returned ${named(known)} to the ${event.to.end === "bottom" ? "bottom" : "top"} of the deck${ofOwner}`;
+      if (to === "extra") return `${who} returned ${named(known)} to the extra deck${ofOwner}`;
       return event.faceUp ? `${who} placed ${named(event.card)} in the ${ZONE_WORDS[to]}` : `${who} set a card in the ${ZONE_WORDS[to]}`;
+    }
+    case "give": {
+      const other = table.players[event.to.side] ? table.players[event.to.side].name : "?";
+      return `${who} gave control of ${named(event.card || (table.sim && { name: publicCardName(table.sim, event.to.side, event.uid) }))} to ${other}`;
     }
     case "flip":
       return event.faceUp ? `${who} flipped ${named(event.card || (table.sim && { name: publicCardName(table.sim, event.by, event.uid) }))} face-up` : `${who} flipped a card face-down`;
