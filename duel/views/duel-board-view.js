@@ -1,22 +1,22 @@
 /*
- * The playing field of a duel: both players' zones, stacks, piles and hands. DOM only, no state and no rules.
+ * The playing board of a duel: one 7 by 5 grid for both players, the hands and the fan menu. DOM only: no state and
+ * no rules.
  *
  *   renderBoard(rootEl, model, handlers)
  *   model    = { sim, you, hand: [uid], cardOf(uid) -> snapshot | null (this player's own cards),
- *                picking: { zones: [{ zone, slot }] } | null, menu: { uid, actions: [{ id, label }] } | null,
- *                selected: uid | null }
- *   handlers = { onSelectCard(uid, place), onAction(id), onPickZone(zone, slot), onOpenPile(side, pile),
- *                onDetails(card), onFaceDown(), onCancel() }
+ *                picking: { slots: [{ zone: "field"|"shared", slot, side? }] } | null, selected: uid | null,
+ *                fan: { anchor, levels } | null }
+ *   handlers = { onSelectCard(uid, place, anchor), onPickZone(zone, slot, side), onOpenPile(side, pile, anchor),
+ *                onDetails(card), onFaceDown(), onCancel(), fan: { onChoose(level, id), onClose() } }
  *
- * The opponent's field is drawn upside down at the top, the player's own at the bottom. A card is its image (a named
- * placeholder when it has none), a face-down card a card back. Each lower card of a stack is drawn offset by
- * STACK_OFFSET_PX so every card of the stack can be selected. Needs duel-board.js (ZONE_KINDS) and duel-view.js (el, button).
+ * The grid follows boardCells(): the viewer's cells at the bottom, the opponent's turned 180 degrees at the top, the
+ * two shared zones in the middle. A card is its image (a named placeholder when it has none), a face-down card a card
+ * back. Each lower card of a stack is drawn offset by STACK_OFFSET_PX so every card can be selected; the opponent's
+ * stacks grow the other way. Needs duel-board.js (boardCells, ownerOf), duel-view.js (el, button) and
+ * duel-fan-view.js (renderFan).
  */
 const STACK_OFFSET_PX = 6; // offset of each lower card of a stack (x and y)
-const PLACEMENT = {
-  // zone name -> [column, row] on the 7 column field grid
-  extra: [1, 1], spell: [2, 1], deck: [7, 1], field: [1, 2], monster: [2, 2], gy: [7, 2], banished: [1, 3], pendulum: [2, 3],
-};
+const PILE_LABELS = { deck: "Deck", extra: "Extra deck", gy: "Graveyard", banished: "Banished" };
 
 function cardFace(card, faceDown, label) {
   const face = el("span", "duel-card-face" + (faceDown ? " duel-card-back" : ""));
@@ -37,59 +37,83 @@ function cardFace(card, faceDown, label) {
   return face;
 }
 
-/* One card as a selectable element; `info` is its data when the viewer may see it, `own` tells if it can be moved. */
-function buildDuelCard(entry, info, own, handlers, place, extraClass = "") {
+/* The middle of an element in window coordinates: where a fan opens from. */
+function anchorOf(node) {
+  const r = node.getBoundingClientRect();
+  return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+}
+
+/*
+ * One card as a selectable element. `info` is its data when the viewer may see it, `usable` tells if the viewer can
+ * open the menu of the card (their own, or one they control).
+ */
+function buildDuelCard(entry, info, usable, handlers, place, extraClass = "") {
   const faceDown = !(entry.faceUp === undefined ? true : entry.faceUp) || (!info && entry.card === null);
   const btn = el("button", `duel-card ${extraClass}${entry.pos === "def" ? " duel-card-def" : ""}${entry.faceUp === false ? " duel-card-facedown" : ""}`);
   btn.type = "button";
   btn.dataset.uid = entry.uid || "";
-  const visible = info && !(entry.faceUp === false && !own);
+  const visible = Boolean(info) && !(entry.faceUp === false && !entry.card && !info);
   btn.appendChild(cardFace(visible ? info : null, !visible));
   const name = visible ? info.name : "Face-down card";
-  btn.setAttribute("aria-label", `${name}${entry.faceUp === false ? ", face-down" : ""}${entry.pos === "def" ? ", defense position" : ""}`);
+  btn.setAttribute("aria-label", `${name}${entry.faceUp === false ? ", face-down" : ""}${entry.pos === "def" ? ", sideways" : ""}`);
   btn.title = name;
   btn.addEventListener("click", () => {
-    if (own) handlers.onSelectCard(entry.uid, place);
+    if (usable) handlers.onSelectCard(entry.uid, place, anchorOf(btn));
     else if (visible) handlers.onDetails(info);
     else if (handlers.onFaceDown) handlers.onFaceDown();
   });
   return btn;
 }
 
-function buildZone(sideIndex, side, zone, slot, model, handlers) {
-  const own = sideIndex === model.you;
-  const stack = side.zones[zone][slot];
-  const wrapper = el("div", `duel-zone duel-zone-${zone}`);
-  wrapper.dataset.zone = zone;
-  wrapper.dataset.slot = String(slot);
+/* The "Here" button of a zone that can receive the card being placed. */
+function addPickButton(wrapper, label, zone, slot, side, handlers) {
+  wrapper.classList.add("duel-zone-pick");
+  const pick = el("button", "duel-zone-pick-btn", "Here");
+  pick.type = "button";
+  pick.setAttribute("aria-label", `Place the card in ${label}`);
+  pick.addEventListener("click", () => handlers.onPickZone(zone, slot, side));
+  wrapper.appendChild(pick);
+}
+
+/*
+ * A playable or shared zone with its stack. `sideIndex` is the player whose field it is (null for a shared zone);
+ * `opp` tells if it is drawn turned for the opponent.
+ */
+function buildStackZone(cell, sideIndex, model, handlers) {
+  const shared = cell.kind === "shared";
+  const stack = shared ? model.sim.shared[cell.slot] : model.sim.players[sideIndex].field[cell.slot];
+  const opp = cell.side === "opp";
+  const owner = shared ? "Shared" : sideIndex === model.you ? "Your" : "Opponent's";
+  const label = `${owner} ${shared ? "zone" : "playable zone"} ${cell.slot + 1}`;
+  const wrapper = el("div", `duel-zone duel-zone-${cell.kind}${opp ? " duel-zone-opp" : ""}`);
+  wrapper.dataset.zone = cell.kind;
+  wrapper.dataset.slot = String(cell.slot);
   wrapper.setAttribute("role", "group");
-  wrapper.setAttribute("aria-label", `${own ? "Your" : "Opponent's"} ${zone} zone ${slot + 1}, ${stack.length} card${stack.length === 1 ? "" : "s"}`);
+  wrapper.setAttribute("aria-label", `${label}, ${stack.length} card${stack.length === 1 ? "" : "s"}`);
+  const usable = shared || sideIndex === model.you; // what a player controls: their field and the shared zones
   stack.forEach((entry, i) => {
     const depth = stack.length - 1 - i; // the top card has depth 0
-    const info = entry.card || (own ? model.cardOf(entry.uid) : null);
-    const card = buildDuelCard(entry, info, own, handlers, { zone, slot }, entry.uid === model.selected ? "duel-card-selected" : "");
-    card.style.transform = `translate(${-depth * STACK_OFFSET_PX}px, ${-depth * STACK_OFFSET_PX}px)`;
+    const mine = ownerOf(entry.uid) === model.you;
+    const info = entry.card || (mine ? model.cardOf(entry.uid) : null);
+    const card = buildDuelCard(entry, info, usable, handlers, { zone: cell.kind, slot: cell.slot }, entry.uid === model.selected ? "duel-card-selected" : "");
+    const shift = (opp ? 1 : -1) * depth * STACK_OFFSET_PX;
+    card.style.translate = `${shift}px ${shift}px`;
     card.style.zIndex = String(i + 1);
     wrapper.appendChild(card);
   });
   if (stack.length > 1) wrapper.appendChild(el("span", "duel-stack-count", String(stack.length)));
-  const picking = own && model.picking && model.picking.zones.some((z) => z.zone === zone && z.slot === slot);
-  if (picking) {
-    wrapper.classList.add("duel-zone-pick");
-    const pick = el("button", "duel-zone-pick-btn", "Here");
-    pick.type = "button";
-    pick.setAttribute("aria-label", `Place the card in ${zone} zone ${slot + 1}`);
-    pick.addEventListener("click", () => handlers.onPickZone(zone, slot));
-    wrapper.appendChild(pick);
-  }
+  const picking = model.picking && model.picking.slots.some((s) => s.zone === cell.kind && s.slot === cell.slot && (shared || s.side === undefined || s.side === sideIndex));
+  if (picking) addPickButton(wrapper, label, cell.kind, cell.slot, shared ? undefined : sideIndex, handlers);
   return wrapper;
 }
 
-function buildPile(sideIndex, side, pile, model, handlers) {
+function buildPile(cell, sideIndex, model, handlers) {
+  const side = model.sim.players[sideIndex];
+  const pile = cell.kind;
   const own = sideIndex === model.you;
   const count = pile === "deck" ? side.deckCount : pile === "extra" ? side.extraCount : side[pile].length;
-  const label = { deck: "Deck", extra: "Extra deck", gy: "Graveyard", banished: "Banished" }[pile];
-  const wrapper = el("div", `duel-zone duel-zone-${pile} duel-pile`);
+  const label = PILE_LABELS[pile];
+  const wrapper = el("div", `duel-zone duel-zone-${pile} duel-pile${cell.side === "opp" ? " duel-zone-opp" : ""}`);
   const btn = el("button", "duel-pile-btn");
   btn.type = "button";
   btn.setAttribute("aria-label", `${own ? "Your" : "Opponent's"} ${label}, ${count} card${count === 1 ? "" : "s"}`);
@@ -97,28 +121,25 @@ function buildPile(sideIndex, side, pile, model, handlers) {
   const info = top && top.card;
   btn.appendChild(info ? cardFace(info, false) : cardFace(null, count > 0 && (pile === "deck" || pile === "extra"), label));
   btn.appendChild(el("span", "duel-pile-label", `${label} ${count}`));
-  btn.addEventListener("click", () => handlers.onOpenPile(sideIndex, pile));
+  btn.addEventListener("click", () => handlers.onOpenPile(sideIndex, pile, anchorOf(btn)));
   wrapper.appendChild(btn);
   return wrapper;
 }
 
-function buildField(sideIndex, model, handlers) {
-  const side = model.sim.players[sideIndex];
-  const grid = el("div", "duel-field");
-  const place = (node, col, row) => {
-    node.style.gridColumn = String(col);
-    node.style.gridRow = String(row);
+function buildGrid(model, handlers) {
+  const grid = el("div", "duel-grid");
+  grid.setAttribute("role", "group");
+  grid.setAttribute("aria-label", "Board");
+  boardCells().forEach((cell) => {
+    const sideIndex = cell.side === "own" ? model.you : cell.side === "opp" ? 1 - model.you : null;
+    let node;
+    if (cell.kind === "empty") node = el("div", "duel-zone duel-zone-empty");
+    else if (cell.kind === "field" || cell.kind === "shared") node = buildStackZone(cell, sideIndex, model, handlers);
+    else node = buildPile(cell, sideIndex, model, handlers);
+    node.style.gridColumn = String(cell.col + 1);
+    node.style.gridRow = String(cell.row + 1);
     grid.appendChild(node);
-  };
-  ["extra", "deck", "gy", "banished"].forEach((pile) => {
-    const [col, row] = PLACEMENT[pile];
-    place(buildPile(sideIndex, side, pile, model, handlers), col, row);
   });
-  for (let i = 0; i < MONSTER_ZONES; i++) place(buildZone(sideIndex, side, "monster", i, model, handlers), 2 + i, 2);
-  for (let i = 0; i < SPELL_ZONES; i++) place(buildZone(sideIndex, side, "spell", i, model, handlers), 2 + i, 1);
-  place(buildZone(sideIndex, side, "field", 0, model, handlers), 1, 2);
-  place(buildZone(sideIndex, side, "pendulum", 0, model, handlers), 2, 3);
-  place(buildZone(sideIndex, side, "pendulum", 1, model, handlers), 6, 3);
   return grid;
 }
 
@@ -146,43 +167,18 @@ function buildHand(sideIndex, model, handlers) {
   return row;
 }
 
-function buildMenu(model, handlers) {
-  const menu = el("div", "duel-menu");
-  menu.setAttribute("role", "menu");
-  menu.appendChild(el("p", "duel-menu-title", model.menu.title || "Card"));
-  model.menu.actions.forEach((action) => {
-    const b = button(action.label, () => handlers.onAction(action.id));
-    b.setAttribute("role", "menuitem");
-    menu.appendChild(b);
-  });
-  menu.appendChild(button("Cancel", handlers.onCancel));
-  menu.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") handlers.onCancel();
-  });
-  return menu;
-}
-
 function renderBoard(rootEl, model, handlers) {
   rootEl.innerHTML = "";
   const board = el("div", "duel-board");
-  const opp = 1 - model.you;
-  const top = el("section", "duel-side duel-side-opponent");
-  top.setAttribute("aria-label", "Opponent's side");
-  top.append(buildField(opp, model, handlers), buildHand(opp, model, handlers));
-  const bottom = el("section", "duel-side duel-side-own");
-  bottom.setAttribute("aria-label", "Your side");
-  bottom.append(buildField(model.you, model, handlers), buildHand(model.you, model, handlers));
-  board.append(top, bottom);
-  rootEl.appendChild(board);
+  board.append(buildHand(1 - model.you, model, handlers), buildGrid(model, handlers), buildHand(model.you, model, handlers));
   if (model.picking) {
-    const note = el("p", "duel-pick-note", "Choose a zone for the card.");
+    const note = el("p", "duel-pick-note", "Choose a zone for the card. ");
     note.setAttribute("role", "status");
-    rootEl.insertBefore(note, board);
+    note.appendChild(button("Cancel", handlers.onCancel));
+    rootEl.appendChild(note);
   }
-  if (model.menu) {
-    const menu = buildMenu(model, handlers);
-    rootEl.appendChild(menu);
-    const first = menu.querySelector("button");
-    if (first) first.focus();
-  }
+  rootEl.appendChild(board);
+  const fanHost = el("div", "duel-fan-host");
+  rootEl.appendChild(fanHost);
+  if (model.fan) renderFan(fanHost, model.fan, handlers.fan);
 }

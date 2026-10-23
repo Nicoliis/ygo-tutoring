@@ -52,20 +52,26 @@
 .duel-deck-chosen .duel-deck-btn { border-color: var(--accent); }
 .duel-deck-counts { color: var(--text-dim); font-size: 0.8rem; }
 
-/* The playing field */
+/* The playing board: one grid of 7 columns by 5 rows (BOARD_LAYOUT in duel-board.js) */
 :root {
-  --duel-card-width: 64px; /* width of a card on the field (images are 59:86) */
+  --duel-card-max-width: 64px; /* the widest a card on the board gets (images are 59:86); narrower windows shrink it */
   --duel-card-ratio: 59 / 86;
-  --duel-stack-pad: 14px; /* room around a zone for the offset of a stack */
+  --duel-stack-pad: 14px; /* column gap: room for a card turned sideways */
+  --duel-board-columns: 7;
+  --duel-board-row-gap: 8px;
 }
-.duel-board { display: flex; flex-direction: column; gap: 10px; }
-.duel-side { display: flex; flex-direction: column; gap: 6px; padding: 8px; background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); }
-.duel-side-opponent { transform: rotate(180deg); } /* the opponent sits on the other side of the table */
-.duel-field { display: grid; grid-template-columns: repeat(7, var(--duel-card-width)); gap: 6px var(--duel-stack-pad); justify-content: center; }
+.duel-board { container-type: inline-size; display: flex; flex-direction: column; gap: 10px; padding: 8px; background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); }
+/* The card width fits 7 columns and their gaps into the board's own width */
+.duel-board > * { --duel-card-width: min(var(--duel-card-max-width), calc((100cqw - 6 * var(--duel-stack-pad)) / var(--duel-board-columns))); }
+.duel-grid { display: grid; grid-template-columns: repeat(var(--duel-board-columns), var(--duel-card-width)); gap: var(--duel-board-row-gap) var(--duel-stack-pad); justify-content: center; padding: var(--duel-stack-pad) 0; }
 .duel-zone { position: relative; width: var(--duel-card-width); aspect-ratio: var(--duel-card-ratio); border: 1px dashed var(--border); border-radius: 4px; }
+.duel-zone-empty { border: 0; }
+.duel-zone-shared { border-color: var(--accent); }
+.duel-zone-opp .duel-card, .duel-zone-opp .duel-pile-btn { rotate: 180deg; } /* the opponent's side is the same board turned around */
+.duel-zone-opp .duel-card-def { rotate: 270deg; }
 .duel-zone-pick { outline: 2px solid var(--accent); }
 .duel-zone-pick-btn { position: absolute; inset: 0; z-index: 99; background: rgba(91, 140, 255, 0.25); color: var(--text); border: 0; cursor: pointer; font-weight: 700; }
-.duel-card { position: absolute; inset: 0; padding: 0; border: 1px solid var(--border); border-radius: 4px; background: var(--panel-alt); cursor: pointer; display: block; overflow: visible; transition: transform 0.12s; }
+.duel-card { position: absolute; inset: 0; padding: 0; border: 1px solid var(--border); border-radius: 4px; background: var(--panel-alt); cursor: pointer; display: block; overflow: visible; }
 .duel-card-face { display: block; width: 100%; height: 100%; border-radius: 3px; overflow: hidden; background: #000; }
 .duel-card-face img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .duel-card-back { background: repeating-linear-gradient(45deg, #5a3a1a, #5a3a1a 6px, #3a2410 6px, #3a2410 12px); }
@@ -79,13 +85,11 @@
 .duel-hand { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; min-height: calc(var(--duel-card-width) * 1.45); }
 .duel-hand .duel-card { position: relative; inset: auto; width: var(--duel-card-width); aspect-ratio: var(--duel-card-ratio); }
 .duel-card-revealed { box-shadow: 0 0 0 2px #facc15; }
-.duel-menu { position: fixed; z-index: 200; left: 50%; bottom: 16px; transform: translateX(-50%); display: flex; flex-wrap: wrap; gap: 6px; max-width: min(520px, 94vw); padding: 10px; background: var(--panel); border: 1px solid var(--accent); border-radius: var(--radius); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5); }
-.duel-menu-title { width: 100%; margin: 0; font-weight: 700; }
-.duel-pick-note { margin: 0 0 6px; color: var(--accent); }
+.duel-pick-note { margin: 0 0 6px; color: var(--accent); display: flex; gap: 8px; align-items: center; }
 
-/* Phone width: smaller cards so both fields fit without sideways scrolling */
+/* Phone width: smaller cards so the whole grid fits without sideways scrolling */
 @media (max-width: 700px) {
-  :root { --duel-card-width: 40px; --duel-stack-pad: 6px; }
+  :root { --duel-stack-pad: 6px; --duel-board-row-gap: 6px; }
   .duel-card-name { font-size: 0.45rem; }
 }
 

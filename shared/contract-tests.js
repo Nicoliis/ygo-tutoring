@@ -1632,7 +1632,7 @@ function runContractTests() {
   check("duel menu: every path ends in an action, extra deck and give control only where they make sense, hand cards cannot signal", () => {
     const ids = (nodes) => nodes.map((n) => n.id);
     const onField = menuFor({ place: { zone: "field", slot: 3 }, isExtraDeckCard: false });
-    expect(ids(onField).join() === "play,move,signal");
+    expect(ids(onField).join() === "play,move,signal,details");
     expect(ids(resolvePath(onField, ["move"]).node.children).join() === "grave,banish,hand,deck,give");
     expect(ids(resolvePath(onField, ["move", "deck"]).node.children).join() === "deck-top,deck-bottom,deck-shuffle");
     expect(ids(resolvePath(onField, ["signal"]).node.children).join() === "activate,target,attack");

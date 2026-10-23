@@ -8,7 +8,7 @@
  *
  * node   = { id, label, children?, action?, needsZone? }
  * action = { kind: "play", faceUp, pos } | { kind: "move", to, faceUp?, end?, shuffle? } | { kind: "give" } |
- *          { kind: "signal", signal } | { kind: "reveal" } | { kind: "hide" } |
+ *          { kind: "signal", signal } | { kind: "reveal" } | { kind: "hide" } | { kind: "details" } |
  *          { kind: "draw" | "mill" | "search" | "lookTop" | "shuffle" }
  * Straight is the attack position ("atk"), sideways the defense position ("def").
  */
@@ -60,6 +60,7 @@ function menuFor(context) {
     ] },
     { id: "move", label: "Move to", children: moveTo },
     { id: "signal", label: "Signal", children: signals },
+    leaf("details", "Details", { kind: "details" }), // the card details window, as in the earlier menu
   ];
 }
 

@@ -4,7 +4,7 @@
  *
  *   renderPileList(containerEl, items, handlers)
  *   items    = [{ uid, card | null, actions: [{ id, label }] }]  (card null: a face-down card of the viewer's opponent)
- *   handlers = { onDetails(card), onAction(actionId, uid) }
+ *   handlers = { onDetails(card), onAction(actionId, uid, anchor) }   (anchor: where a fan menu can open)
  */
 function renderPileList(containerEl, items, handlers) {
   containerEl.innerHTML = "";
@@ -25,7 +25,10 @@ function renderPileList(containerEl, items, handlers) {
     });
     li.appendChild(open);
     li.appendChild(el("span", "duel-pile-name", item.card ? item.card.name : "Face-down card"));
-    (item.actions || []).forEach((action) => li.appendChild(button(action.label, () => handlers.onAction(action.id, item.uid))));
+    (item.actions || []).forEach((action) => {
+      const b = button(action.label, () => handlers.onAction(action.id, item.uid, anchorOf(b)));
+      li.appendChild(b);
+    });
     list.appendChild(li);
   });
   containerEl.appendChild(list);

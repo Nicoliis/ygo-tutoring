@@ -142,9 +142,10 @@ function declineRematch() {
 
 /* ---- the board ---- */
 
-play.selected = null; // the uid of the card whose menu is open
-play.menu = null;
-play.picking = null;
+play.selected = null; // the uid of the card whose fan is open
+play.place = null; // where that card is
+play.fan = null; // { anchor, nodes, path: [node ids] } while a fan menu is open
+play.picking = null; // { slots, action } while the player chooses a zone
 
 function boardModel() {
   const table = room.session ? room.session.getTable() : null;
@@ -155,8 +156,8 @@ function boardModel() {
     hand: play.priv ? play.priv.hand : [],
     cardOf: (uid) => (play.priv ? cardAt(play.priv, uid) : null),
     picking: play.picking,
-    menu: play.menu,
     selected: play.selected,
+    fan: fanModel(),
   };
 }
 
@@ -165,67 +166,42 @@ function showCardDetails(card) {
   openCardDetailModal(card, undefined, "", null, false);
 }
 
-/* ---- moving cards: the card menu and the zone picker ---- */
+/* ---- the fan menu ---- */
 
-const EXTRA_DECK_TYPES = ["Fusion", "Synchro", "Xyz", "Link"]; // cards that return to the extra deck, not the deck
-
-function isExtraDeckCard(card) {
-  return Boolean(card && card.type && EXTRA_DECK_TYPES.some((t) => card.type.includes(t)));
-}
-
-const ACTION_LABELS = {
-  summon: "Normal summon", set: "Set face-down", special: "Special summon", place: "Place face-up (spell/trap/field)",
-  move: "Move to another zone", position: "Change position", flipUp: "Flip face-up", flipDown: "Flip face-down",
-  gy: "Send to graveyard", banish: "Banish", banishDown: "Banish face-down", hand: "Return to hand",
-  deckTop: "Return to top of deck", deckBottom: "Return to bottom of deck", extra: "Return to extra deck",
-  reveal: "Reveal to opponent", hide: "Hide again", details: "View card",
-  draw: "Draw", shuffle: "Shuffle deck", search: "Search deck", lookTop: "Look at the top card",
-};
-const ZONES_FOR = {
-  summon: [["monster"]], special: [["monster"]], set: [["monster", "spell"]], place: [["spell", "field", "pendulum"]], move: [["monster", "spell", "field", "pendulum"]],
-};
-
-function actionList(ids) {
-  return ids.map((id) => ({ id, label: ACTION_LABELS[id] }));
-}
-
-/* The actions that make sense for a card of this player where it is now. */
-function menuFor(place, uid) {
-  const card = cardAt(play.priv, uid);
-  const returns = isExtraDeckCard(card) ? ["extra"] : ["deckTop", "deckBottom"];
-  if (place.zone === "hand") {
-    const revealed = room.session.getTable().sim.players[room.role].revealed[uid];
-    return actionList(["summon", "set", "special", "place", "gy", "banish", "banishDown", revealed ? "hide" : "reveal", "details"]);
+/* The levels of the open fan: the nodes of each level and the button chosen in it. */
+function fanModel() {
+  if (play.fan && play.selected && !selectedCardStillThere()) play.fan = null; // the card moved while the menu was open
+  if (!play.fan) return null;
+  const levels = [];
+  let nodes = play.fan.nodes;
+  for (const id of play.fan.path) {
+    levels.push({ nodes, chosenId: id });
+    const chosen = nodes.find((n) => n.id === id);
+    nodes = chosen && chosen.children;
+    if (!nodes) break;
   }
-  if (place.zone === "gy") return actionList(["special", "hand", ...returns, "banish", "details"]);
-  if (place.zone === "banished") return actionList(["special", "hand", ...returns, "gy", "details"]);
-  if (place.zone === "extra") return actionList(["special", "details"]);
-  const entry = fieldEntry(uid, place);
-  const flip = entry && entry.faceUp ? "flipDown" : "flipUp";
-  return actionList([...(place.zone === "monster" ? ["position"] : []), flip, "move", "gy", "banish", "banishDown", "hand", ...returns, "details"]);
+  if (nodes) levels.push({ nodes, chosenId: null });
+  return { anchor: play.fan.anchor, levels };
 }
 
-/* The card's entry on this player's field (its face and position), or null. */
-function fieldEntry(uid, place) {
-  const sim = room.session.getTable().sim;
-  const stack = sim.players[room.role].zones[place.zone] && sim.players[room.role].zones[place.zone][place.slot];
-  return stack ? stack.find((c) => c.uid === uid) || null : null;
+/* Whether the card of the open fan is still where the fan was opened (the other player's event may have moved it). */
+function selectedCardStillThere() {
+  const { selected: uid, place } = play;
+  if (place.zone === "hand") return play.priv.hand.includes(uid);
+  if (place.zone === "extra") return play.priv.extra.includes(uid);
+  if (place.zone === "gy" || place.zone === "banished") return room.session.getTable().sim.players[room.role][place.zone].some((c) => c.uid === uid);
+  return Boolean(fieldEntry(uid, place));
 }
 
 function closeDuelMenu() {
+  const uid = play.selected;
   play.selected = null;
-  play.menu = null;
+  play.place = null;
+  play.fan = null;
   play.picking = null;
   drawRoom();
-}
-
-function selectCard(uid, place) {
-  if (!play.priv || !cardAt(play.priv, uid)) return;
-  play.selected = uid;
-  play.place = place;
-  play.picking = null;
-  play.menu = { title: cardAt(play.priv, uid).name, actions: menuFor(place, uid) };
-  drawRoom();
+  const card = uid && document.querySelector(`.duel-card[data-uid="${uid}"]`);
+  if (card) card.focus(); // keyboard users land back on the card
 }
 
 function closeDuelModal() {
@@ -233,98 +209,118 @@ function closeDuelModal() {
   if (close) close.click();
 }
 
-/* Starts an action on the selected card: either it needs a zone (picker) or it is sent at once. */
-function chooseAction(id) {
-  const uid = play.selected;
-  if (!uid) return;
-  if (id === "details") {
-    showCardDetails(cardAt(play.priv, uid));
-    return;
-  }
-  const kinds = ZONES_FOR[id];
-  if (kinds) {
-    const zones = [];
-    kinds[0].forEach((kind) => {
-      for (let slot = 0; slot < ZONE_SIZES[kind]; slot++) zones.push({ zone: kind, slot });
-    });
-    play.picking = { actionId: id, zones };
-    play.menu = null;
+/* Opens the fan of one of this player's cards. */
+function selectCard(uid, place, anchor) {
+  if (!play.priv) return;
+  const entry = fieldEntry(uid, place);
+  if (!cardAt(play.priv, uid) && !entry) return; // neither this player's card nor one on the board they control
+  play.selected = uid;
+  play.place = place;
+  play.picking = null;
+  const revealed = Boolean(room.session.getTable().sim.players[room.role].revealed[uid]);
+  play.fan = { anchor, nodes: menuFor({ place, revealed, isExtraDeckCard: isExtraDeckCard(knownCard(uid, entry)), faceUp: entry ? entry.faceUp : undefined }), path: [] };
+  drawRoom();
+}
+
+/* The data of a card this player may see: their own card, or a face-up card on the board. */
+function knownCard(uid, entry) {
+  return cardAt(play.priv, uid) || (entry && entry.card) || null;
+}
+
+/* A button of the fan was chosen: open the next level, ask for a zone, or carry the action out. */
+function chooseFanNode(levelIndex, id) {
+  if (!play.fan) return;
+  play.fan.path = play.fan.path.slice(0, levelIndex).concat(id);
+  const resolved = resolvePath(play.fan.nodes, play.fan.path);
+  if (!resolved) return;
+  if (resolved.node.children) {
     drawRoom();
     return;
   }
-  performAction(id, uid, play.place, null);
+  if (resolved.node.needsZone) {
+    startPicking(resolved.action);
+    return;
+  }
+  const { selected, place } = play;
+  if (selected === null) deckAction(resolved.action);
+  else performAction(resolved.action, selected, place, null);
   closeDuelMenu();
+}
+
+/* The zones a card can be put in: the player's own 11 playable zones and the shared ones. */
+function startPicking(action) {
+  const slots = [];
+  for (let slot = 0; slot < FIELD_SLOTS; slot++) slots.push({ zone: "field", slot, side: room.role });
+  for (let slot = 0; slot < SHARED_SLOTS; slot++) slots.push({ zone: "shared", slot });
+  play.picking = { slots, action };
+  play.fan = null;
+  drawRoom();
 }
 
 function pickZone(zone, slot) {
   if (!play.picking || !play.selected) return;
-  performAction(play.picking.actionId, play.selected, play.place, { zone, slot });
+  performAction(play.picking.action, play.selected, play.place, { zone, slot });
   closeDuelMenu();
 }
 
-/* Builds the public event for an action and sends it; the private side follows when the event is confirmed. */
-function performAction(id, uid, place, target) {
-  const card = cardAt(play.priv, uid);
-  const from = place.slot === undefined ? { zone: place.zone } : { zone: place.zone, slot: place.slot };
-  const move = (to, faceUp, pos, withCard) => room.session.intent({ kind: "move", uid, from, to, faceUp, pos, ...(withCard ? { card } : {}) });
+/* The card's entry on the board (its face and position), or null when it is not on the board. */
+function fieldEntry(uid, place) {
+  if (place.zone !== "field" && place.zone !== "shared") return null;
+  const sim = room.session.getTable().sim;
+  const stack = place.zone === "shared" ? sim.shared[place.slot] : sim.players[room.role].field[place.slot];
+  return stack ? stack.find((c) => c.uid === uid) || null : null;
+}
+
+/* Builds the public events for an action and sends them; the private side follows when each is confirmed. */
+function performAction(action, uid, place, target) {
   const entry = fieldEntry(uid, place);
-  switch (id) {
-    case "summon":
-    case "special":
-      return move(target, true, "atk", true);
-    case "set":
-      return move(target, false, target.zone === "monster" ? "def" : "atk", false);
-    case "place":
-      return move(target, true, "atk", true);
-    case "move":
-      return move(target, entry ? entry.faceUp : true, entry ? entry.pos : "atk", Boolean(entry && entry.faceUp));
-    case "gy":
-      return move({ zone: "gy" }, true, "atk", true);
-    case "banish":
-      return move({ zone: "banished" }, true, "atk", true);
-    case "banishDown":
-      return move({ zone: "banished" }, false, "atk", false);
-    case "hand":
-      return move({ zone: "hand" }, false, "atk", false);
-    case "deckTop":
-      return move({ zone: "deck", end: "top" }, false, "atk", false);
-    case "deckBottom":
-      return move({ zone: "deck", end: "bottom" }, false, "atk", false);
-    case "extra":
-      return move({ zone: "extra" }, false, "atk", false);
-    case "position":
-      return room.session.intent({ kind: "position", uid, zone: place.zone, slot: place.slot, pos: entry && entry.pos === "atk" ? "def" : "atk" });
-    case "flipUp":
-      return room.session.intent({ kind: "flip", uid, zone: place.zone, slot: place.slot, faceUp: true, card });
-    case "flipDown":
-      return room.session.intent({ kind: "flip", uid, zone: place.zone, slot: place.slot, faceUp: false });
+  const card = knownCard(uid, entry) || undefined;
+  const from = place.slot === undefined ? { zone: place.zone } : { zone: place.zone, slot: place.slot };
+  const send = (event) => room.session.intent(event);
+  switch (action.kind) {
+    case "details":
+      showCardDetails(card);
+      return;
+    case "play":
+      playEvent({ uid, from, to: target, faceUp: action.faceUp, pos: action.pos, entry, card }).forEach(send);
+      return;
+    case "move": {
+      const faceUp = action.to === "gy" || (action.to === "banished" && action.faceUp);
+      const to = action.end ? { zone: action.to, end: action.end } : { zone: action.to };
+      send({ kind: "move", uid, from, to, faceUp, pos: "atk", ...(faceUp ? { card } : {}) });
+      if (action.shuffle) send({ kind: "shuffle" });
+      return;
+    }
     case "reveal":
-      return room.session.intent({ kind: "reveal", uid, card });
+      send({ kind: "reveal", uid, card });
+      return;
     case "hide":
-      return room.session.intent({ kind: "hide", uid });
+      send({ kind: "hide", uid });
+      return;
     default:
-      return null;
+      return;
   }
 }
 
 /* ---- the deck pile and the piles' lists ---- */
 
-function openDeckMenu() {
+function openDeckMenu(anchor) {
   if (!play.priv) return;
   play.selected = null;
+  play.place = null;
   play.picking = null;
-  play.menu = { title: `Deck (${play.priv.deck.length})`, actions: actionList(["draw", "shuffle", "search", "lookTop"]) };
+  play.fan = { anchor, nodes: deckMenu(), path: [] };
   drawRoom();
 }
 
-function deckAction(id) {
-  if (id === "draw") room.session.intent({ kind: "draw" });
-  else if (id === "shuffle") room.session.intent({ kind: "shuffle" });
-  else if (id === "lookTop") {
+function deckAction(action) {
+  if (action.kind === "draw") room.session.intent({ kind: "draw" });
+  else if (action.kind === "shuffle") room.session.intent({ kind: "shuffle" });
+  else if (action.kind === "lookTop") {
     const top = play.priv.deck[0];
     if (top) showCardDetails(cardAt(play.priv, top));
     else setRoom({ error: "Your deck is empty." });
-  } else if (id === "search") openDeckSearch();
+  } else if (action.kind === "search") openDeckSearch();
 }
 
 /* Looking through the deck is private; taking a card to the hand logs "searched the deck", moves the card, then shuffles. */
@@ -342,6 +338,8 @@ function openDeckSearch() {
   });
 }
 
+const PILE_MENU_ACTION = [{ id: "menu", label: "Actions" }]; // a card in a pile list opens the same fan as any card
+
 function pileItems(sideIndex, pile) {
   const table = room.session.getTable();
   const side = table.sim.players[sideIndex];
@@ -350,16 +348,16 @@ function pileItems(sideIndex, pile) {
     return side[pile].map((e) => ({
       uid: e.uid,
       card: e.card || (own ? cardAt(play.priv, e.uid) : null),
-      actions: own ? menuFor({ zone: pile }, e.uid).filter((a) => a.id !== "details") : [],
+      actions: own ? PILE_MENU_ACTION : [],
     }));
   }
   if (!own) return [];
-  return play.priv.extra.map((uid) => ({ uid, card: cardAt(play.priv, uid), actions: menuFor({ zone: "extra" }, uid).filter((a) => a.id !== "details") }));
+  return play.priv.extra.map((uid) => ({ uid, card: cardAt(play.priv, uid), actions: PILE_MENU_ACTION }));
 }
 
-function openPile(sideIndex, pile) {
+function openPile(sideIndex, pile, anchor) {
   if (pile === "deck") {
-    if (sideIndex === room.role) openDeckMenu();
+    if (sideIndex === room.role) openDeckMenu(anchor);
     return;
   }
   if (pile === "extra" && sideIndex !== room.role) return; // only the count is known
@@ -367,23 +365,18 @@ function openPile(sideIndex, pile) {
   showModal({ title: `${sideIndex === room.role ? "Your" : "Opponent's"} ${titles[pile]}`, bodyHtml: '<div id="duelPileList"></div>', buttons: [{ label: "Close", primary: true }] });
   renderPileList(document.getElementById("duelPileList"), pileItems(sideIndex, pile), {
     onDetails: showCardDetails,
-    onAction: (id, uid) => {
-      closeDuelModal();
-      play.selected = uid;
-      play.place = { zone: pile };
-      chooseAction(id);
-    },
+    onAction: (_id, uid, itemAnchor) => selectCard(uid, { zone: pile }, itemAnchor),
   });
 }
 
 function boardHandlers() {
   return {
     onSelectCard: selectCard,
-    onAction: (id) => (play.selected === null ? deckAction(id) : chooseAction(id)),
     onPickZone: pickZone,
     onOpenPile: openPile,
     onDetails: showCardDetails,
     onFaceDown: () => showModal({ title: "Face-down card", bodyHtml: "<p>A face-down card: nothing is known about it until its owner flips or reveals it.</p>", buttons: [{ label: "Close", primary: true }] }),
     onCancel: closeDuelMenu,
+    fan: { onChoose: chooseFanNode, onClose: closeDuelMenu },
   };
 }
