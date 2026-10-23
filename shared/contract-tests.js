@@ -1809,27 +1809,30 @@ function runContractTests() {
     expect(free.dx === 0 && free.dy === 0, "a fan that fits does not move");
   });
 
-  check("duel menu: every path ends in an action, extra deck and give control only where they make sense, hand cards cannot signal", () => {
+  check("duel menu: every path ends in an action, Move to is always the same six buttons in the same order and the ones that do not apply are greyed", () => {
     const ids = (nodes) => nodes.map((n) => n.id);
+    const off = (nodes) => nodes.filter((n) => n.disabled).map((n) => n.id).join();
+    const ORDER = "give,grave,banish,extra,hand,deck";
     const onField = menuFor({ place: { zone: "field", slot: 3 }, isExtraDeckCard: false });
-    expect(ids(onField).join() === "play,move,signal,details");
-    expect(ids(resolvePath(onField, ["move"]).node.children).join() === "grave,banish,hand,deck,give");
+    expect(ids(onField).join() === "play,move,signal,details" && off(onField) === "");
+    const move = resolvePath(onField, ["move"]).node.children;
+    expect(ids(move).join() === ORDER && off(move) === "extra", "a monster cannot go to the extra deck: greyed, not missing");
     expect(ids(resolvePath(onField, ["move", "deck"]).node.children).join() === "deck-top,deck-bottom,deck-shuffle");
     expect(ids(resolvePath(onField, ["signal"]).node.children).join() === "activate,target,attack");
     const extra = menuFor({ place: { zone: "field", slot: 0 }, isExtraDeckCard: true });
-    expect(ids(resolvePath(extra, ["move"]).node.children).includes("extra"));
-    const fromDeck = menuFor({ place: { zone: "deck" }, isExtraDeckCard: true });
-    expect(ids(fromDeck).join() === "play,move,details", "a deck card has no signals (the deck is private)");
-    expect(ids(resolvePath(fromDeck, ["move"]).node.children).join() === "grave,banish,hand,deck,extra", "a deck card can go anywhere a hand card can, and back into the deck");
-    expect(ids(resolvePath(fromDeck, ["move", "extra"]).node.children).join() === "extra-down,extra-up", "the extra deck takes a card face down or face up");
-    expect(resolvePath(fromDeck, ["move", "extra", "extra-up"]).action.faceUp === true && resolvePath(fromDeck, ["move", "extra", "extra-down"]).action.faceUp === false);
-    expect(ids(menuFor({ place: { zone: "extra" }, isExtraDeckCard: true })).join() === "play,move,details");
-    const fromGy = menuFor({ place: { zone: "gy" }, isExtraDeckCard: false });
-    expect(ids(resolvePath(fromGy, ["move"]).node.children).join() === "banish,hand,deck" && ids(fromGy).includes("signal"), "a graveyard card can go anywhere but the graveyard");
+    expect(off(resolvePath(extra, ["move"]).node.children) === "", "an extra deck card can go to all six");
     const inHand = menuFor({ place: { zone: "hand" }, isExtraDeckCard: false });
-    expect(ids(resolvePath(inHand, ["move"]).node.children).join() === "grave,banish,deck");
+    expect(ids(resolvePath(inHand, ["move"]).node.children).join() === ORDER && off(resolvePath(inHand, ["move"]).node.children) === "give,extra,hand", "from the hand: give control, the extra deck and the hand itself are greyed");
     expect(ids(resolvePath(inHand, ["signal"]).node.children).join() === "reveal");
     expect(ids(resolvePath(menuFor({ place: { zone: "hand" }, revealed: true }), ["signal"]).node.children).join() === "hide");
+    const fromDeck = menuFor({ place: { zone: "deck" }, isExtraDeckCard: true });
+    expect(ids(fromDeck).join() === "play,move,signal,details" && off(fromDeck) === "signal", "the signal button of a private pile is greyed");
+    expect(ids(resolvePath(fromDeck, ["move"]).node.children).join() === ORDER && off(resolvePath(fromDeck, ["move"]).node.children) === "give");
+    expect(ids(resolvePath(fromDeck, ["move", "extra"]).node.children).join() === "extra-down,extra-up", "the extra deck takes a card face down or face up");
+    expect(resolvePath(fromDeck, ["move", "extra", "extra-up"]).action.faceUp === true && resolvePath(fromDeck, ["move", "extra", "extra-down"]).action.faceUp === false);
+    const fromGy = menuFor({ place: { zone: "gy" }, isExtraDeckCard: false });
+    expect(off(resolvePath(fromGy, ["move"]).node.children) === "give,grave,extra" && off(fromGy) === "", "a graveyard card cannot go to the graveyard");
+    expect(resolvePath(onField, ["move", "extra"]).node.reason.includes("Fusion"), "the greyed button says why");
     const walk = (nodes, path, seen) => nodes.forEach((n) => {
       const here = path.concat(n.id);
       if (n.children) return walk(n.children, here, seen);

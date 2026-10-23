@@ -59,6 +59,10 @@ function renderFan(rootEl, fan, handlers) {
       btn.dataset.id = node.id;
       btn.dataset.level = String(levelIndex);
       btn.setAttribute("aria-label", node.children ? `${node.label}, opens more choices` : node.label);
+      if (node.disabled) {
+        btn.disabled = true; // greyed, in its place, with the reason
+        btn.title = node.reason || "Not available";
+      }
       if (node.children) btn.setAttribute("aria-haspopup", "menu");
       btn.style.left = `${p.x}px`;
       btn.style.top = `${p.y}px`;
@@ -76,12 +80,12 @@ function renderFan(rootEl, fan, handlers) {
     const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
     if (!step) return;
     e.preventDefault();
-    const buttons = [...layer.querySelectorAll(`.duel-fan-btn[data-level="${last}"]`)];
+    const buttons = [...layer.querySelectorAll(`.duel-fan-btn[data-level="${last}"]:not(:disabled)`)];
     const at = buttons.indexOf(document.activeElement);
     const next = buttons[(at + step + buttons.length) % buttons.length];
     if (next) next.focus();
   });
   rootEl.appendChild(layer);
-  const first = layer.querySelector(`.duel-fan-btn[data-level="${last}"]`);
+  const first = layer.querySelector(`.duel-fan-btn[data-level="${last}"]:not(:disabled)`);
   if (first) first.focus();
 }

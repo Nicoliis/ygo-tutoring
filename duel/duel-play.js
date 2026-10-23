@@ -303,7 +303,7 @@ function chooseFanNode(levelIndex, id) {
     return;
   }
   const resolved = resolvePath(play.fan.nodes, play.fan.path);
-  if (!resolved) return;
+  if (!resolved || resolved.node.disabled) return;
   if (resolved.node.children) {
     drawRoom();
     return;

@@ -7,7 +7,7 @@
  *   resolvePath(nodes, ids) -> { node, action } | null      (action is null while the path still has children)
  *   playEvent(...)        -> the events that play a card face-up/down, straight/sideways in a zone
  *
- * node   = { id, label, children?, action?, needsZone? }
+ * node   = { id, label, children?, action?, needsZone?, disabled?, reason? }   (a disabled node is shown greyed)
  * action = { kind: "play", faceUp, pos } | { kind: "move", to, faceUp?, end?, shuffle? } | { kind: "give" } |
  *          { kind: "signal", signal } | { kind: "reveal" } | { kind: "hide" } | { kind: "details" } |
  *          { kind: "draw" | "mill" | "search" | "lookTop" | "shuffle" }
@@ -27,18 +27,30 @@ const orientations = (faceUp) => [
   leaf("sideways", "Sideways", { kind: "play", faceUp, pos: "def" }, { needsZone: true }),
 ];
 
+/* A button that cannot be used here stays in its place, greyed, with the reason. */
+const unless = (ok, reason) => (ok ? {} : { disabled: true, reason });
+
 function menuFor(context) {
   const zone = context.place.zone;
   const onBoard = FIELD_ZONES_OF_MENU.includes(zone);
+  // Move to is always these six buttons in this order (two rows of three); the ones that do not apply are greyed
   const moveTo = [
-    leaf("grave", "Graveyard", { kind: "move", to: "gy" }),
+    leaf("give", "Give control", { kind: "give" }, { needsZone: true, ...unless(onBoard, "Only a card on the board can be given") }),
+    leaf("grave", "Graveyard", { kind: "move", to: "gy" }, unless(zone !== "gy", "It is in the graveyard already")),
     {
       id: "banish", label: "Banish", children: [
         leaf("banish-up", "Face up", { kind: "move", to: "banished", faceUp: true }),
         leaf("banish-down", "Face down", { kind: "move", to: "banished", faceUp: false }),
       ],
     },
-    leaf("hand", "Hand", { kind: "move", to: "hand" }),
+    {
+      // the extra deck is face down; a card can also be placed face up on top of it, where both players see it
+      id: "extra", label: "Extra deck", ...unless(context.isExtraDeckCard, "Only Fusion, Synchro, Xyz and Link cards go to the extra deck"), children: [
+        leaf("extra-down", "Face down", { kind: "move", to: "extra", faceUp: false }),
+        leaf("extra-up", "Face up", { kind: "move", to: "extra", faceUp: true }),
+      ],
+    },
+    leaf("hand", "Hand", { kind: "move", to: "hand" }, unless(zone !== "hand", "It is in the hand already")),
     {
       id: "deck", label: "Deck", children: [
         leaf("deck-top", "On top", { kind: "move", to: "deck", end: "top" }),
@@ -47,26 +59,17 @@ function menuFor(context) {
       ],
     },
   ];
-  if (context.isExtraDeckCard) {
-    // the extra deck is face down; a card can also be placed face up on top of it, where both players see it
-    moveTo.push({ id: "extra", label: "Extra deck", children: [
-      leaf("extra-down", "Face down", { kind: "move", to: "extra", faceUp: false }),
-      leaf("extra-up", "Face up", { kind: "move", to: "extra", faceUp: true }),
-    ] });
-  }
-  if (onBoard) moveTo.push(leaf("give", "Give control", { kind: "give" }, { needsZone: true }));
-  const here = { hand: "hand", gy: "grave" }[zone]; // the place the card is in already is not a destination
-  if (here) moveTo.splice(moveTo.findIndex((n) => n.id === here), 1);
   const signal = ["activate", "target", "attack"].map((s) => leaf(s, { activate: "Activate", target: "Target", attack: "Attacks" }[s], { kind: "signal", signal: s }));
   // a hand card can be revealed, a card on the board or in a public pile can signal; the deck and the extra deck are private
-  const signals = zone === "hand" ? [context.revealed ? leaf("hide", "Hide", { kind: "hide" }) : leaf("reveal", "Reveal", { kind: "reveal" })] : zone === "deck" || zone === "extra" ? [] : signal;
+  const signals = zone === "hand" ? [context.revealed ? leaf("hide", "Hide", { kind: "hide" }) : leaf("reveal", "Reveal", { kind: "reveal" })] : signal;
+  const privatePile = zone === "deck" || zone === "extra";
   return [
     { id: "play", label: "Play", children: [
       { id: "face-up", label: "Face up", children: orientations(true) },
       { id: "face-down", label: "Face down", children: orientations(false) },
     ] },
     { id: "move", label: "Move to", children: moveTo },
-    ...(signals.length ? [{ id: "signal", label: "Signal", children: signals }] : []),
+    { id: "signal", label: "Signal", children: signals, ...unless(!privatePile, "The deck and the extra deck are private") },
     leaf("details", "Details", { kind: "details" }), // the card details window, as in the earlier menu
   ];
 }
