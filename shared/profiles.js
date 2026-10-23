@@ -13,6 +13,7 @@ const PROFILE_NAME_MAX = 40;
 
 const GAME_MODES = {
   progression: { label: "Progression Run", selectable: true },
+  handtest: { label: "Hand Test", selectable: true }, // free cards: search any card and add it to the backlog
   sandbox: { label: "Sandbox", selectable: false },
 };
 

@@ -7,10 +7,13 @@ const AREAS = [
     id: "run",
     label: "Run",
     description: "Open your boxes, pull cards and advance through the boosters.",
+    descriptionByMode: { handtest: "Search any card and add it to your backlog, or edit the backlog freely." },
     pages: [
-      { label: "Progression Run", href: "progression/index.html" },
-      { label: "Current Stage Pull", href: "progression/stage.html" },
-      { label: "Booster Pull", href: "progression/boosters.html" },
+      { label: "Progression Run", href: "progression/index.html", hideInModes: ["handtest"] },
+      { label: "Current Stage Pull", href: "progression/stage.html", hideInModes: ["handtest"] },
+      { label: "Booster Pull", href: "progression/boosters.html", hideInModes: ["handtest"] },
+      { label: "Card Search", href: "handtest/search.html", onlyModes: ["handtest"] },
+      { label: "Backlog Edit", href: "handtest/edit.html", onlyModes: ["handtest"] },
     ],
   },
   {
@@ -28,6 +31,7 @@ const AREAS = [
     id: "store",
     label: "Store",
     description: "Sell cards for money and buy boosters you have reached.",
+    hideInModes: ["handtest"], // no shop when the cards are free
     pages: [
       { label: "Sell", href: "store/sell.html" },
       { label: "Buy", href: "store/buy.html" },
@@ -47,7 +51,7 @@ const AREAS = [
 ];
 
 // Folders that hold pages one level below the app root (also covers the retired collection redirect).
-const AREA_FOLDERS = ["workshop", "store", "progression", "draft", "proxy-builder", "tracker", "collection", "duel"];
+const AREA_FOLDERS = ["workshop", "store", "progression", "draft", "proxy-builder", "tracker", "collection", "duel", "handtest"];
 
 function pageIsInsideAreaFolder() {
   return AREA_FOLDERS.some((folder) => window.location.pathname.includes(`/${folder}/`));
@@ -55,6 +59,32 @@ function pageIsInsideAreaFolder() {
 
 function hrefFromRoot(path) {
   return (pageIsInsideAreaFolder() ? "../" : "") + path;
+}
+
+/*
+ * What a profile's mode may see. A page or area can carry `onlyModes` (shown only in those modes) or `hideInModes`
+ * (hidden in those modes); everything else is shown in every mode.
+ */
+function modeShows(item, mode) {
+  if (item.onlyModes) return item.onlyModes.includes(mode);
+  if (item.hideInModes) return !item.hideInModes.includes(mode);
+  return true;
+}
+
+function visiblePages(area, profile) {
+  const mode = profile ? profile.mode : null;
+  return area.pages.filter((page) => modeShows(page, mode));
+}
+
+/* The areas of the main menu for a profile: shown areas that still have at least one page. */
+function visibleAreas(profile) {
+  const mode = profile ? profile.mode : null;
+  return AREAS.filter((area) => modeShows(area, mode) && visiblePages(area, profile).length > 0);
+}
+
+function areaDescription(area, profile) {
+  const byMode = area.descriptionByMode;
+  return (byMode && profile && byMode[profile.mode]) || area.description;
 }
 
 function pathMatchesHref(href) {

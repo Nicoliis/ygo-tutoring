@@ -15,7 +15,7 @@ function buildSidebarNav(area) {
   nav.setAttribute("aria-label", `${area.label} navigation`);
   const list = document.createElement("ul");
   list.appendChild(buildBackToMenuItem());
-  area.pages.forEach((page) => list.appendChild(buildSidebarItem(page, page === currentPage)));
+  visiblePages(area, getActiveProfile()).forEach((page) => list.appendChild(buildSidebarItem(page, page === currentPage)));
   nav.appendChild(list);
   return nav;
 }
