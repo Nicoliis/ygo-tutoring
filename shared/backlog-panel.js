@@ -2,7 +2,9 @@
  * The Backlog panel: the owned cards you can look through, search, filter by card type, open for details and drag out.
  * One element, mounted by every Workshop screen, so it looks and behaves the same everywhere.
  *
- *   mountBacklogPanel(containerEl, { allowAdd, allowRemove, allowQtyEdit }) -> { refresh }
+ *   mountBacklogPanel(containerEl, { allowAdd, allowRemove, allowQtyEdit, separateSearch }) -> { refresh }
+ * - separateSearch: the card database search gets its own panel NEXT TO the Backlog (left of it) instead of sitting
+ *   on top of the list.
  *
  * - It builds the same markup (and element ids) the collection modules expect, so call it BEFORE
  *   collection-dom-refs.js runs.
@@ -21,7 +23,7 @@ const FILTER_ICON_SVG =
 
 function backlogPanelDefaults() {
   const profile = typeof getActiveProfile === "function" ? getActiveProfile() : null;
-  const free = !profile || profile.mode !== "progression";
+  const free = !profile || (profile.mode !== "progression" && profile.mode !== "handtest");
   return { allowAdd: free, allowRemove: free, allowQtyEdit: free };
 }
 
@@ -49,8 +51,15 @@ function mountBacklogPanel(containerEl, options = {}) {
   heading.textContent = "Backlog";
   section.appendChild(heading);
 
+  let searchSection = null;
   if (backlogPanelOptions.allowAdd) {
-    section.insertAdjacentHTML(
+    const searchTarget = backlogPanelOptions.separateSearch ? (searchSection = document.createElement("section")) : section;
+    if (searchSection) {
+      searchSection.id = "cardSearchSection";
+      searchSection.className = "panel";
+      searchSection.innerHTML = "<h2>Card search</h2>";
+    }
+    searchTarget.insertAdjacentHTML(
       "beforeend",
       `<div class="card-search">
         <input id="cardSearchInput" type="text" class="search-input" placeholder="Search card database to add&hellip;" aria-label="Search card database to add a new card" autocomplete="off">
@@ -77,6 +86,7 @@ function mountBacklogPanel(containerEl, options = {}) {
   );
 
   containerEl.prepend(section);
+  if (searchSection) containerEl.prepend(searchSection); // the search panel sits to the left of the Backlog
 
   const sortSelect = document.getElementById("backlogSortSelect");
   sortSelect.value = appliedBacklogSort;

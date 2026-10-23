@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hand Test · Backlog Edit</title>
+<link rel="stylesheet" href="../shared/theme.css">
+<link rel="stylesheet" href="../shared/modal-dialog.css">
+<link rel="stylesheet" href="../shared/card-tags.css">
+<link rel="stylesheet" href="../shared/rarity.css">
+<link rel="stylesheet" href="../collection/collection-layout.css">
+<link rel="stylesheet" href="../collection/collection-qty-input.css">
+<link rel="stylesheet" href="../collection/collection-qty-steps.css">
+<link rel="stylesheet" href="../collection/collection-panel.css">
+<link rel="stylesheet" href="../collection/collection-form-controls.css">
+<link rel="stylesheet" href="../collection/collection-card-search.css">
+<link rel="stylesheet" href="../collection/collection-search-result-card.css">
+<link rel="stylesheet" href="../collection/collection-backlog-list.css">
+<link rel="stylesheet" href="../collection/collection-bag.css">
+<link rel="stylesheet" href="../collection/collection-bag-body.css">
+<link rel="stylesheet" href="../collection/collection-card-tag-row.css">
+<link rel="stylesheet" href="../collection/collection-deck-sections.css">
+<link rel="stylesheet" href="../collection/collection-card-tag.css">
+<link rel="stylesheet" href="../collection/collection-card-tag-colors.css">
+<link rel="stylesheet" href="../collection/collection-card-tag-hover.css">
+<link rel="stylesheet" href="../collection/collection-card-tag-image.css">
+<link rel="stylesheet" href="../collection/collection-card-effect.css">
+<link rel="stylesheet" href="../collection/collection-toast.css">
+<link rel="stylesheet" href="../collection/collection-responsive.css">
+<link rel="stylesheet" href="../collection/views/binder.css">
+<link rel="stylesheet" href="../shared/areas.css">
+<link rel="stylesheet" href="../shared/nav-layout.css">
+<link rel="stylesheet" href="../shared/nav-links.css">
+<link rel="stylesheet" href="../shared/nav-responsive.css">
+<link rel="stylesheet" href="../shared/backlog-filter.css">
+<link rel="stylesheet" href="../workshop/workshop.css">
+<link rel="stylesheet" href="../shared/views/card-engines.css">
+</head>
+<body>
+<div id="collectionRoot">
+  <header class="app-header">
+    <h1>Hand Test · Backlog Edit</h1>
+  </header>
+
+  <main class="app" id="workshopMain">
+
+  </main>
+
+  <div id="modalRoot" hidden></div>
+</div>
+
+<script src="../shared/dialogs.js"></script>
+<script src="../shared/dom-utils.js"></script>
+<script src="../shared/focus-trap.js"></script>
+<script src="../shared/modal-buttons.js"></script>
+<script src="../shared/modal.js"></script>
+<script src="../shared/card-api.js"></script>
+<script src="../shared/card-tags-builder.js"></script>
+<script src="../shared/sentences.js"></script>
+<script src="../shared/card-effect-builder.js"></script>
+<script src="../shared/rarity.js"></script>
+<script src="../shared/printings.js"></script>
+<script src="../shared/money.js"></script>
+<script src="../shared/pack-pool.js"></script>
+<script src="../shared/backlog-merge.js"></script>
+<script src="../shared/areas.js"></script>
+<script src="../shared/nav-entries.js"></script>
+<script src="../shared/save-utils.js"></script>
+<script src="../shared/profiles.js"></script>
+<script src="../shared/savefile.js"></script>
+<script src="../shared/profile-guard.js"></script>
+<script src="../shared/nav-collapse-state.js"></script>
+<script src="../shared/nav-sidebar-item.js"></script>
+<script src="../shared/nav-sidebar.js"></script>
+<script src="../shared/nav-init.js"></script>
+<script src="../shared/profile-switcher.js"></script>
+<script src="../shared/backlog-synergy.js"></script>
+<script src="../shared/backlog-filter.js"></script>
+<script src="../shared/backlog-filter-modal.js"></script>
+<script src="../shared/backlog-panel.js"></script>
+<script>window.backlogPanel = mountBacklogPanel(document.getElementById("workshopMain"), { allowAdd: false, allowRemove: true, allowQtyEdit: true });</script>
+<script src="../collection/collection-dom-refs.js"></script>
+<script src="../collection/collection-migrate-deck.js"></script>
+<script src="../collection/collection-storage.js"></script>
+<script src="../collection/collection-state.js"></script>
+<script src="../collection/collection-find.js"></script>
+<script src="../collection/collection-parse-helpers.js"></script>
+<script src="../collection/collection-extract-card-data.js"></script>
+<script src="../collection/collection-add-card.js"></script>
+<script src="../collection/collection-backfill.js"></script>
+<script src="../collection/collection-rename-modal.js"></script>
+<script src="../collection/collection-toast.js"></script>
+<script src="../collection/collection-set-quantity.js"></script>
+<script src="../collection/collection-card-image-html.js"></script>
+<script src="../collection/collection-remove-card.js"></script>
+<script src="../collection/collection-allocation.js"></script>
+<script src="../shared/engine-rules.js"></script>
+<script src="../shared/views/card-engines-view.js"></script>
+<script src="../shared/card-engines.js"></script>
+<script src="../shared/card-detail-window.js"></script>
+<script src="../collection/collection-validate-entries.js"></script>
+<script src="../collection/collection-engine-crud.js"></script>
+<script src="../collection/collection-engine-delete.js"></script>
+<script src="../collection/collection-engine-cards.js"></script>
+<script src="../collection/collection-deck-crud.js"></script>
+<script src="../collection/collection-deck-delete.js"></script>
+<script src="../collection/collection-deck-section-add.js"></script>
+<script src="../collection/collection-deck-engine-add.js"></script>
+<script src="../collection/collection-deck-section-remove.js"></script>
+<script src="../collection/collection-deck-move-card.js"></script>
+<script src="../collection/collection-ydk-build.js"></script>
+<script src="../collection/collection-ydk-export.js"></script>
+<script src="../collection/collection-ydk-parse.js"></script>
+<script src="../collection/collection-ydk-import.js"></script>
+<script src="../collection/collection-import-modal.js"></script>
+<script src="../collection/collection-type-color.js"></script>
+<script src="../collection/collection-key-details-html.js"></script>
+<script src="../collection/collection-card-detail-modal.js"></script>
+<script src="../collection/collection-card-tag-element.js"></script>
+<script src="../collection/collection-card-tag-hover.js"></script>
+<script src="../collection/collection-card-tag-expanded.js"></script>
+<script src="../collection/collection-card-tag-click.js"></script>
+<script src="../collection/collection-render-card-tag.js"></script>
+<script src="../collection/collection-drop-zone.js"></script>
+<script src="../collection/collection-render-card-tile.js"></script>
+<script src="../collection/binder-paging.js"></script>
+<script src="../collection/views/card-slot-view.js"></script>
+<script src="../collection/views/binder-view.js"></script>
+<script src="../collection/views/card-grid-view.js"></script>
+<script src="../collection/binder-controller.js"></script>
+<script src="../collection/collection-binder-state.js"></script>
+<script src="../collection/collection-backlog-qty-stepper.js"></script>
+<script src="../collection/collection-render-backlog.js"></script>
+<script src="../collection/collection-engine-form-toggle.js"></script>
+<script src="../collection/collection-engine-card-markup.js"></script>
+<script src="../collection/collection-engine-card-header.js"></script>
+<script src="../collection/collection-engine-card-actions.js"></script>
+<script src="../collection/collection-engine-card-contents.js"></script>
+<script src="../collection/collection-render-engines.js"></script>
+<script src="../collection/collection-render-deck-section-cards.js"></script>
+<script src="../collection/collection-deck-card-markup.js"></script>
+<script src="../collection/collection-deck-card-header.js"></script>
+<script src="../collection/collection-deck-card-actions.js"></script>
+<script src="../collection/collection-deck-card-contents.js"></script>
+<script src="../collection/collection-render-decks.js"></script>
+<script src="../collection/collection-render-search-results.js"></script>
+<script src="../collection/collection-run-search.js"></script>
+<script src="../collection/collection-search-wiring.js"></script>
+<script src="../workshop/workshop-backlog-init.js"></script>
+</body>
+</html>

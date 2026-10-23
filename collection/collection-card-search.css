@@ -17,3 +17,7 @@
   margin-bottom: 8px;
 }
 .card-search-results:empty { margin-bottom: 0; }
+
+/* Card search in its own panel next to the Backlog (Hand Test): the results fill the panel instead of a short strip. */
+#cardSearchSection .card-search { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; margin-bottom: 0; }
+#cardSearchSection .card-search-results { flex: 1 1 auto; min-height: 0; max-height: none; align-content: flex-start; }
