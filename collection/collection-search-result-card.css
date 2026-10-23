@@ -43,3 +43,5 @@
   white-space: nowrap;
   max-width: 100%;
 }
+
+.search-result-set { display: block; color: var(--text-dim); font-size: 0.7rem; line-height: 1.2; }

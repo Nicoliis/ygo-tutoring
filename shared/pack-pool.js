@@ -68,3 +68,21 @@ function fetchSetCardPool(setName) {
       return pool;
     });
 }
+
+/*
+ * A card taken straight from the card data instead of a pack (Hand Test): the FIRST set the card is listed in gives
+ * its set, rarity, set code and price (the set's own price, else the market price). Same shape as a pulled card, so
+ * mergeCardsIntoBacklog stores it with its printing. A card listed in no set simply has no printing.
+ */
+function cardFromFirstSet(apiCard) {
+  const first = Array.isArray(apiCard.card_sets) && apiCard.card_sets.length > 0 ? apiCard.card_sets[0] : null;
+  const setPrice = first ? Number(first.set_price) : NaN;
+  return {
+    name: apiCard.name,
+    set: first && first.set_name ? first.set_name : null,
+    rarity: first && first.set_rarity ? first.set_rarity : null,
+    setCode: first && first.set_code ? first.set_code : null,
+    price: Number.isFinite(setPrice) && setPrice > 0 ? setPrice : parsePrice(apiCard),
+    ...extractCardFields(apiCard),
+  };
+}
