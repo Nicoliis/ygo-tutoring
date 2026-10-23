@@ -1,5 +1,15 @@
 <!--
 Sync Impact Report
+- Version change: 1.1.0 → 1.2.0 (MINOR: guidance materially expanded)
+- Modified: Principle II (Minimal API Footprint) and the Additional Constraints now allow the offline copy
+  (specs/021-installable-offline-app): the browser may fetch and keep the app's own static files and the pictures its
+  pages already show, check the app's own files for a new version with conditional requests at start and when a window
+  regains focus after 30 minutes (never on a timer), and keep card data and pictures in its Cache Storage. Kept card
+  data and pictures lower the calls to the card database; nothing is sent anywhere new and saved data is never touched.
+- Rationale: an installable app that works offline needs a copy of its own files and of the card data already seen.
+- Earlier history: 1.1.0 added the Duel Room link; 1.0.0 was the initial ratification.
+
+Earlier report (1.1.0)
 - Version change: 1.0.0 → 1.1.0 (MINOR: guidance materially expanded)
 - Modified: Principle II (Minimal API Footprint) and the Additional Constraints gain one exception, the Duel Room's
   player-to-player link (names and the duel table only, plus a public STUN lookup to find a path); no new calls to
@@ -46,7 +56,7 @@ printing); any confusion or silent failure directly blocks the user's task.
 Calls to the external card API (YGOPRODeck) MUST be minimized and never redundant. The only other network
 traffic allowed is the Duel Room's direct link between two players' browsers, which carries nothing but the
 players' names and the duel table, and the public STUN lookup browsers use to find a path to each other; it uses
-no server of this project and no polling. User input
+no server of this project and no polling. The browser's offline copy may also fetch and keep the app's own static files and the pictures its pages already show, and may check the app's own files for a new version with conditional requests when the app starts and when a window regains focus after at least 30 minutes, never on a timer; card data and pictures already seen are kept and reused so the card API is called less, not more. User input
 that triggers a network request MUST be debounced (current standard: 400ms) and gated behind a
 minimum query length (current standard: 3 characters). A new request superseding an in-flight
 one MUST abort the stale request via `AbortController` rather than letting both resolve.
@@ -70,7 +80,8 @@ consistency are what keep it safe to change by inspection alone.
 ## Additional Constraints
 
 The app is client-side only: no backend, no build pipeline, and no server-side state. All
-persistence is local to the browser (`localStorage`); nothing is transmitted except the direct,
+persistence is local to the browser (`localStorage`, and the browser's Cache Storage for the offline copy of the
+app's files and the card data and pictures already seen); nothing is transmitted except the direct,
 on-demand calls to the YGOPRODeck API described in Principle II and, in the Duel Room only, the player-to-player
 link and public STUN lookup described there. Card data and imagery remain
 attributed to YGOPRODeck in the UI (see footer) for as long as that API is used.
@@ -99,4 +110,4 @@ Every subsequent change to this repository (code review, feature work, or self-r
 working solo) MUST verify compliance with the Core Principles above; unjustified complexity or
 scope creep MUST be flagged and either justified in writing or removed.
 
-**Version**: 1.1.0 | **Ratified**: 2026-10-06 | **Last Amended**: 2026-10-20
+**Version**: 1.2.0 | **Ratified**: 2026-10-06 | **Last Amended**: 2026-10-23
