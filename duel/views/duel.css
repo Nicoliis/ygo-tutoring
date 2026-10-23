@@ -158,3 +158,10 @@ body.duel-focus .app-single { padding: 8px; max-width: none; }
 .duel-toast { position: fixed; top: 12px; left: 50%; transform: translateX(-50%); z-index: 250; width: min(560px, calc(100vw - 24px)); box-sizing: border-box; display: flex; gap: 12px; align-items: center; padding: 10px 14px; background: var(--panel); color: var(--text); border: 1px solid var(--accent); border-radius: var(--radius); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5); }
 .duel-toast-error { border-color: var(--danger); }
 .duel-toast-text { flex: 1 1 auto; margin: 0; overflow-wrap: anywhere; max-height: 40vh; overflow-y: auto; }
+
+/* The list of a pile (graveyard, banished zone, extra deck, a deck search) in its window */
+.modal-dialog:has(.duel-pile-list) { max-width: min(760px, 96vw); }
+.duel-pile-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 12px; max-height: 60vh; overflow-y: auto; }
+.duel-pile-item { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; }
+.duel-pile-card { position: relative; inset: auto; width: 84px; aspect-ratio: var(--duel-card-ratio); flex: 0 0 auto; }
+.duel-pile-name { font-size: 0.72rem; color: var(--text); text-align: center; overflow-wrap: anywhere; }

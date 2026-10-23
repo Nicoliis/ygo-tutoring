@@ -3,8 +3,11 @@
  * DOM only, no state and no rules.
  *
  *   renderPileList(containerEl, items, handlers)
- *   items    = [{ uid, card | null, actions: [{ id, label }] }]  (card null: a face-down card of the viewer's opponent)
- *   handlers = { onDetails(card), onAction(actionId, uid, anchor) }   (anchor: where a fan menu can open)
+ *   items    = [{ uid, card | null, menu?: true, actions?: [{ id, label }] }]  (card null: a face-down card of the viewer's opponent)
+ *   handlers = { onDetails(card), onMenu(uid, anchor), onAction(actionId, uid) }
+ * A card with `menu` opens the same fan menu as any of the player's cards when it is clicked (`anchor` is where the
+ * fan opens); the others show their details. Pointing at a card shows it in the card display. Needs
+ * duel-card-view.js (showInCardDisplay).
  */
 function renderPileList(containerEl, items, handlers) {
   containerEl.innerHTML = "";
@@ -18,17 +21,16 @@ function renderPileList(containerEl, items, handlers) {
     const open = el("button", "duel-card duel-pile-card");
     open.type = "button";
     open.appendChild(cardFace(item.card, !item.card));
-    open.setAttribute("aria-label", item.card ? `${item.card.name} — view details` : "Face-down card");
+    open.setAttribute("aria-label", item.card ? `${item.card.name} — ${item.menu ? "choose what to do" : "view details"}` : "Face-down card");
     open.title = item.card ? item.card.name : "Face-down card";
+    if (item.card) open.addEventListener("mouseenter", () => showInCardDisplay(item.card));
     open.addEventListener("click", () => {
-      if (item.card) handlers.onDetails(item.card);
+      if (item.menu) handlers.onMenu(item.uid, anchorOf(open));
+      else if (item.card) handlers.onDetails(item.card);
     });
     li.appendChild(open);
     li.appendChild(el("span", "duel-pile-name", item.card ? item.card.name : "Face-down card"));
-    (item.actions || []).forEach((action) => {
-      const b = button(action.label, () => handlers.onAction(action.id, item.uid, anchorOf(b)));
-      li.appendChild(b);
-    });
+    (item.actions || []).forEach((action) => li.appendChild(button(action.label, () => handlers.onAction(action.id, item.uid))));
     list.appendChild(li);
   });
   containerEl.appendChild(list);

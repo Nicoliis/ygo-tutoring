@@ -422,8 +422,6 @@ function openDeckSearch() {
   });
 }
 
-const PILE_MENU_ACTION = [{ id: "menu", label: "Actions" }]; // a card in a pile list opens the same fan as any card
-
 function pileItems(sideIndex, pile) {
   const table = room.session.getTable();
   const side = table.sim.players[sideIndex];
@@ -432,11 +430,11 @@ function pileItems(sideIndex, pile) {
     return side[pile].map((e) => ({
       uid: e.uid,
       card: e.card || (own ? cardAt(play.priv, e.uid) : null),
-      actions: own ? PILE_MENU_ACTION : [],
+      menu: Boolean(own), // the player's own cards open the same fan as everywhere else
     }));
   }
   if (!own) return [];
-  return play.priv.extra.map((uid) => ({ uid, card: cardAt(play.priv, uid), actions: PILE_MENU_ACTION }));
+  return play.priv.extra.map((uid) => ({ uid, card: cardAt(play.priv, uid), menu: true }));
 }
 
 function openPile(sideIndex, pile, anchor) {
@@ -449,7 +447,7 @@ function openPile(sideIndex, pile, anchor) {
   showModal({ title: `${sideIndex === room.role ? "Your" : "Opponent's"} ${titles[pile]}`, bodyHtml: '<div id="duelPileList"></div>', buttons: [{ label: "Close", primary: true }] });
   renderPileList(document.getElementById("duelPileList"), pileItems(sideIndex, pile), {
     onDetails: showCardDetails,
-    onAction: (_id, uid, itemAnchor) => selectCard(uid, { zone: pile }, itemAnchor),
+    onMenu: (uid, itemAnchor) => selectCard(uid, { zone: pile }, itemAnchor),
   });
 }
 
