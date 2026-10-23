@@ -131,7 +131,7 @@ body.duel-focus #appSidebar, body.duel-focus .app-header { display: none; }
 
 /* The card display: always visible on the left, it stays in view while the page scrolls */
 .duel-card-display { position: sticky; top: 8px; max-height: calc(100vh - 16px); overflow-y: auto; }
-.duel-card-display-image { display: block; width: 100%; height: auto; border-radius: 4px; margin-bottom: 8px; }
+.duel-card-display-image { display: block; width: auto; max-width: 100%; height: auto; max-height: 50vh; margin: 0 auto 8px; border-radius: 4px; } /* grows with the column, never taller than half the screen */
 .duel-card-display-name { margin: 0 0 6px; font-size: 1rem; }
 .duel-card-display-text { font-size: 0.82rem; }
 /* The whole screen: the table has no page margins and no width limit */
