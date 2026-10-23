@@ -1178,12 +1178,12 @@ function runContractTests() {
     const base = startedDuel().table;
     const card = { name: "Alpha", apiId: 1, imageSmall: "a.jpg", type: "Normal Monster" };
     const steps = [
-      { name: "normal summon", event: { kind: "move", by: 0, uid: "0-0", from: { zone: "hand" }, to: { zone: "monster", slot: 0 }, faceUp: true, pos: "atk", card }, check: (t) => t.sim.players[0].zones.monster[0][0].card.name === "Alpha" && t.sim.players[0].handCount === 4 },
-      { name: "set", event: { kind: "move", by: 0, uid: "0-1", from: { zone: "hand" }, to: { zone: "spell", slot: 2 }, faceUp: false }, check: (t) => t.sim.players[0].zones.spell[2][0].card === null && !t.log[t.log.length - 1].text.includes("Alpha") },
+      { name: "normal summon", event: { kind: "move", by: 0, uid: "0-0", from: { zone: "hand" }, to: { zone: "field", slot: 0 }, faceUp: true, pos: "atk", card }, check: (t) => t.sim.players[0].field[0][0].card.name === "Alpha" && t.sim.players[0].handCount === 4 },
+      { name: "set", event: { kind: "move", by: 0, uid: "0-1", from: { zone: "hand" }, to: { zone: "field", slot: 2 }, faceUp: false }, check: (t) => t.sim.players[0].field[2][0].card === null && !t.log[t.log.length - 1].text.includes("Alpha") },
       { name: "to graveyard", event: { kind: "move", by: 0, uid: "0-2", from: { zone: "hand" }, to: { zone: "gy" }, faceUp: true, card }, check: (t) => t.sim.players[0].gy.length === 1 && t.sim.players[0].gy[0].card.name === "Alpha" },
       { name: "banish face-down", event: { kind: "move", by: 0, uid: "0-2", from: { zone: "hand" }, to: { zone: "banished" }, faceUp: false }, check: (t) => t.sim.players[0].banished[0].card === null },
       { name: "banish face-up", event: { kind: "move", by: 0, uid: "0-2", from: { zone: "hand" }, to: { zone: "banished" }, faceUp: true, card }, check: (t) => t.sim.players[0].banished[0].card.name === "Alpha" },
-      { name: "special summon from the extra deck", event: { kind: "move", by: 0, uid: "0-5", from: { zone: "extra" }, to: { zone: "monster", slot: 1 }, faceUp: true, pos: "def", card: { name: "Gamma Fusion" } }, check: (t) => t.sim.players[0].extraCount === 0 && t.sim.players[0].zones.monster[1][0].pos === "def" },
+      { name: "special summon from the extra deck", event: { kind: "move", by: 0, uid: "0-5", from: { zone: "extra" }, to: { zone: "field", slot: 1 }, faceUp: true, pos: "def", card: { name: "Gamma Fusion" } }, check: (t) => t.sim.players[0].extraCount === 0 && t.sim.players[0].field[1][0].pos === "def" },
       { name: "to the deck bottom", event: { kind: "move", by: 0, uid: "0-3", from: { zone: "hand" }, to: { zone: "deck", end: "bottom" }, faceUp: false }, check: (t) => t.sim.players[0].deckCount === 1 && t.sim.players[0].handCount === 4 },
       { name: "draw", event: { kind: "draw", by: 0 }, pre: { kind: "move", by: 0, uid: "0-3", from: { zone: "hand" }, to: { zone: "deck", end: "top" }, faceUp: false }, check: (t) => t.sim.players[0].handCount === 5 && t.sim.players[0].deckCount === 0 },
       { name: "reveal", event: { kind: "reveal", by: 0, uid: "0-4", card }, check: (t) => t.sim.players[0].revealed["0-4"].name === "Alpha" && t.sim.players[0].handCount === 5 },
@@ -1198,32 +1198,32 @@ function runContractTests() {
       expect(JSON.stringify(undone.sim) === before, `${step.name} is undone`);
     });
     // flip, position and moves off the field, then undo
-    let t = duelApply(base, { kind: "move", by: 0, uid: "0-0", from: { zone: "hand" }, to: { zone: "monster", slot: 0 }, faceUp: false, pos: "def" });
-    expect(t.sim.players[0].zones.monster[0][0].card === null);
+    let t = duelApply(base, { kind: "move", by: 0, uid: "0-0", from: { zone: "hand" }, to: { zone: "field", slot: 0 }, faceUp: false, pos: "def" });
+    expect(t.sim.players[0].field[0][0].card === null);
     let before = JSON.stringify(t.sim);
-    let f = duelApply(t, { kind: "flip", by: 0, uid: "0-0", zone: "monster", slot: 0, faceUp: true, card });
-    expect(f.sim.players[0].zones.monster[0][0].faceUp && f.sim.players[0].zones.monster[0][0].card.name === "Alpha" && f.log[f.log.length - 1].text.includes("Alpha"), "flipping publishes the card");
+    let f = duelApply(t, { kind: "flip", by: 0, uid: "0-0", zone: "field", slot: 0, faceUp: true, card });
+    expect(f.sim.players[0].field[0][0].faceUp && f.sim.players[0].field[0][0].card.name === "Alpha" && f.log[f.log.length - 1].text.includes("Alpha"), "flipping publishes the card");
     expect(JSON.stringify(duelApply(f, { kind: "undo", by: 0 }).sim) === before, "flip undone");
-    f = duelApply(t, { kind: "position", by: 0, uid: "0-0", zone: "monster", slot: 0, pos: "atk" });
-    expect(f.sim.players[0].zones.monster[0][0].pos === "atk" && JSON.stringify(duelApply(f, { kind: "undo", by: 0 }).sim) === before, "position and its undo");
-    f = duelApply(t, { kind: "move", by: 0, uid: "0-0", from: { zone: "monster", slot: 0 }, to: { zone: "hand" }, faceUp: false });
-    expect(f.sim.players[0].zones.monster[0].length === 0 && f.sim.players[0].handCount === 5 && JSON.stringify(duelApply(f, { kind: "undo", by: 0 }).sim) === before, "back to the hand and its undo");
+    f = duelApply(t, { kind: "position", by: 0, uid: "0-0", zone: "field", slot: 0, pos: "atk" });
+    expect(f.sim.players[0].field[0][0].pos === "atk" && JSON.stringify(duelApply(f, { kind: "undo", by: 0 }).sim) === before, "position and its undo");
+    f = duelApply(t, { kind: "move", by: 0, uid: "0-0", from: { zone: "field", slot: 0 }, to: { zone: "hand" }, faceUp: false });
+    expect(f.sim.players[0].field[0].length === 0 && f.sim.players[0].handCount === 5 && JSON.stringify(duelApply(f, { kind: "undo", by: 0 }).sim) === before, "back to the hand and its undo");
   });
 
   check("duel board: zones hold stacks, a middle card can leave, others cannot move yours", () => {
     let t = startedDuel().table;
-    const put = (uid) => (t = duelApply(t, { kind: "move", by: 0, uid, from: { zone: "hand" }, to: { zone: "monster", slot: 2 }, faceUp: false }));
+    const put = (uid) => (t = duelApply(t, { kind: "move", by: 0, uid, from: { zone: "hand" }, to: { zone: "field", slot: 2 }, faceUp: false }));
     put("0-0");
     put("0-1");
     put("0-2");
-    expect(t.sim.players[0].zones.monster[2].map((c) => c.uid).join() === "0-0,0-1,0-2", "newest on top, in order");
-    t = duelApply(t, { kind: "move", by: 0, uid: "0-1", from: { zone: "monster", slot: 2 }, to: { zone: "gy" }, faceUp: true, card: { name: "Mid" } });
-    expect(t.sim.players[0].zones.monster[2].map((c) => c.uid).join() === "0-0,0-2" && t.sim.players[0].gy.length === 1, "only the middle card left");
+    expect(t.sim.players[0].field[2].map((c) => c.uid).join() === "0-0,0-1,0-2", "newest on top, in order");
+    t = duelApply(t, { kind: "move", by: 0, uid: "0-1", from: { zone: "field", slot: 2 }, to: { zone: "gy" }, faceUp: true, card: { name: "Mid" } });
+    expect(t.sim.players[0].field[2].map((c) => c.uid).join() === "0-0,0-2" && t.sim.players[0].gy.length === 1, "only the middle card left");
     const undone = duelApply(t, { kind: "undo", by: 0 });
-    expect(undone.sim.players[0].zones.monster[2].map((c) => c.uid).join() === "0-0,0-1,0-2", "undo puts it back in the same place of the stack");
-    expect(!applyEvent(t, { kind: "move", by: 0, uid: "9-9", from: { zone: "monster", slot: 2 }, to: { zone: "gy" }, faceUp: true, card: {} }).ok, "a card that is not there");
-    expect(!applyEvent(t, { kind: "move", by: 0, uid: "0-0", from: { zone: "monster", slot: 9 }, to: { zone: "gy" }, faceUp: true, card: {} }).ok, "a zone that does not exist");
-    expect(!applyEvent(t, { kind: "move", by: 0, uid: "0-0", from: { zone: "monster", slot: 2 }, to: { zone: "monster", slot: 0 }, faceUp: true }).ok, "a face-up card needs its data");
+    expect(undone.sim.players[0].field[2].map((c) => c.uid).join() === "0-0,0-1,0-2", "undo puts it back in the same place of the stack");
+    expect(!applyEvent(t, { kind: "move", by: 0, uid: "9-9", from: { zone: "field", slot: 2 }, to: { zone: "gy" }, faceUp: true, card: {} }).ok, "a card that is not there");
+    expect(!applyEvent(t, { kind: "move", by: 0, uid: "0-0", from: { zone: "field", slot: 99 }, to: { zone: "gy" }, faceUp: true, card: {} }).ok, "a zone that does not exist");
+    expect(!applyEvent(t, { kind: "move", by: 0, uid: "0-0", from: { zone: "field", slot: 2 }, to: { zone: "field", slot: 0 }, faceUp: true }).ok, "a face-up card needs its data");
     expect(!applyEvent(t, { kind: "undo", by: 1 }).ok, "the other player cannot undo it");
     const theirs = duelApply(t, { kind: "draw", by: 1 });
     expect(!applyEvent(theirs, { kind: "undo", by: 0 }).ok, "not after the opponent moved");
@@ -1233,8 +1233,6 @@ function runContractTests() {
     let { table, priv } = startedDuel(11);
     const random = seededRandom(5);
     const total = (side) => 6;
-    const place = (n) => ["monster", "spell", "field", "pendulum"][n % 4];
-    const sizes = { monster: 5, spell: 5, field: 1, pendulum: 2 };
     const apply = (event) => {
       const result = applyEvent(table, event);
       if (!result.ok) return false;
@@ -1250,10 +1248,9 @@ function runContractTests() {
       if (r < 0.2) apply({ kind: "draw", by });
       else if (r < 0.5 && p.hand.length) {
         const uid = p.hand[Math.floor(random() * p.hand.length)];
-        const kind = place(Math.floor(random() * 4));
-        apply({ kind: "move", by, uid, from: { zone: "hand" }, to: { zone: kind, slot: Math.floor(random() * sizes[kind]) }, faceUp: random() < 0.5, pos: "atk", card: cardAt(p, uid) });
+        apply({ kind: "move", by, uid, from: { zone: "hand" }, to: { zone: "field", slot: Math.floor(random() * FIELD_SLOTS) }, faceUp: random() < 0.5, pos: "atk", card: cardAt(p, uid) });
       } else if (r < 0.75) {
-        const zones = Object.keys(sizes).flatMap((k) => side.zones[k].map((stack, slot) => ({ k, slot, stack }))).filter((z) => z.stack.length);
+        const zones = side.field.map((stack, slot) => ({ k: "field", slot, stack })).filter((z) => z.stack.length);
         if (zones.length) {
           const z = zones[Math.floor(random() * zones.length)];
           const entry = z.stack[Math.floor(random() * z.stack.length)];
@@ -1265,7 +1262,7 @@ function runContractTests() {
       else apply({ kind: "search", by });
       [0, 1].forEach((s) => {
         const pub = table.sim.players[s];
-        const onField = Object.values(pub.zones).flat().reduce((n, stack) => n + stack.length, 0);
+        const onField = pub.field.reduce((n, stack) => n + stack.length, 0);
         expect(pub.handCount + pub.deckCount + pub.extraCount + onField + pub.gy.length + pub.banished.length === total(s), `every card is in exactly one place (step ${i})`);
         expect(pub.handCount === priv[s].hand.length && pub.deckCount === priv[s].deck.length && pub.extraCount === priv[s].extra.length, `private lists match the public counts (step ${i})`);
       });
@@ -1274,8 +1271,8 @@ function runContractTests() {
 
   check("duel table: the log never names a hidden card; an old table without a board still works", () => {
     const { table } = startedDuel();
-    const t = duelApply(table, { kind: "move", by: 0, uid: "0-0", from: { zone: "hand" }, to: { zone: "spell", slot: 0 }, faceUp: false });
-    expect(t.log[t.log.length - 1].text === "Ana set a card in the spell and trap zone");
+    const t = duelApply(table, { kind: "move", by: 0, uid: "0-0", from: { zone: "hand" }, to: { zone: "field", slot: 0 }, faceUp: false });
+    expect(t.log[t.log.length - 1].text === "Ana set a card in the playable zone");
     const drawn = duelApply(table, { kind: "draw", by: 1 });
     expect(drawn.log[drawn.log.length - 1].text.startsWith("Bo ") && !drawn.log[drawn.log.length - 1].text.includes("Alpha"));
     const old = { ...newTable("old", "A", "B") };
@@ -1287,6 +1284,20 @@ function runContractTests() {
     const fresh = duelApply(reset, { kind: "reset", by: 0 });
     expect(fresh.sim.generation === 1 && !fresh.sim.started && fresh.sim.players[0].deckName === "Test deck" && !fresh.sim.players[0].ready && fresh.players[0].lp === 8000 && fresh.turn === 1 && fresh.log.length > reset.log.length, "a reset clears the board, life points and turn but keeps the log");
     expect(!applyEvent(table, { kind: "rematch-accept", by: 1 }).ok && !applyEvent(duelApply(table, { kind: "rematch", by: 0 }), { kind: "rematch-accept", by: 0 }).ok, "an accept needs another player's proposal");
+  });
+
+  check("duel board: a card can be stacked, flipped and turned in a shared zone, and the new board is marked layout 2", () => {
+    const { table } = startedDuel();
+    expect(table.sim.layout === BOARD_LAYOUT_VERSION && table.sim.shared.length === SHARED_SLOTS && table.sim.players[0].field.length === FIELD_SLOTS && !isOldBoard(table.sim));
+    const card = { name: "Alpha" };
+    let t = duelApply(table, { kind: "move", by: 0, uid: "0-0", from: { zone: "hand" }, to: { zone: "shared", slot: 1 }, faceUp: false, pos: "def" });
+    t = duelApply(t, { kind: "move", by: 1, uid: "1-0", from: { zone: "hand" }, to: { zone: "shared", slot: 1 }, faceUp: true, pos: "atk", card: { name: "Other" } });
+    expect(t.sim.shared[1].map((c) => c.uid).join() === "0-0,1-0" && t.sim.players[0].handCount === 4 && t.sim.players[1].handCount === 4, "both players put cards in the shared zone");
+    t = duelApply(t, { kind: "flip", by: 0, uid: "0-0", zone: "shared", slot: 1, faceUp: true, card });
+    t = duelApply(t, { kind: "position", by: 0, uid: "0-0", zone: "shared", slot: 1, pos: "atk" });
+    expect(t.sim.shared[1][0].faceUp && t.sim.shared[1][0].pos === "atk" && t.sim.shared[1][0].card.name === "Alpha");
+    expect(publicCardName(t.sim, 0, "0-0") === "Alpha" && publicCardName(t.sim, 1, "1-0") === "Other", "a card in a shared zone is found by its name");
+    expect(!applyEvent(table, { kind: "move", by: 0, uid: "0-0", from: { zone: "hand" }, to: { zone: "shared", slot: SHARED_SLOTS }, faceUp: false }).ok, "no such shared zone");
   });
 
   /* Two sessions joined by an in-memory link whose delivery order the test controls. */
@@ -1439,7 +1450,6 @@ function runContractTests() {
     expect(sessions[0].getTable().sim.started && privs[0].hand.length === 5 && privs[1].hand.length === 5, "the duel started");
     const publicNames = new Set();
     const random = seededRandom(77);
-    const sizes = { monster: 5, spell: 5, field: 1, pendulum: 2 };
     for (let i = 0; i < 300; i++) {
       const by = random() < 0.5 ? 0 : 1;
       const table = sessions[0].getTable();
@@ -1450,11 +1460,10 @@ function runContractTests() {
       if (r < 0.15) event = { kind: "draw" };
       else if (r < 0.45 && priv.hand.length) {
         const uid = priv.hand[Math.floor(random() * priv.hand.length)];
-        const zone = ["monster", "spell", "field", "pendulum"][Math.floor(random() * 4)];
         const faceUp = random() < 0.5;
-        event = { kind: "move", uid, from: { zone: "hand" }, to: { zone, slot: Math.floor(random() * sizes[zone]) }, faceUp, pos: "atk", ...(faceUp ? { card: cardAt(priv, uid) } : {}) };
+        event = { kind: "move", uid, from: { zone: "hand" }, to: { zone: "field", slot: Math.floor(random() * FIELD_SLOTS) }, faceUp, pos: "atk", ...(faceUp ? { card: cardAt(priv, uid) } : {}) };
       } else if (r < 0.7) {
-        const zones = Object.keys(sizes).flatMap((k) => side.zones[k].map((stack, slot) => ({ k, slot, stack }))).filter((z) => z.stack.length);
+        const zones = side.field.map((stack, slot) => ({ k: "field", slot, stack })).filter((z) => z.stack.length);
         if (zones.length) {
           const z = zones[Math.floor(random() * zones.length)];
           const entry = z.stack[Math.floor(random() * z.stack.length)];

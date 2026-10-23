@@ -125,7 +125,7 @@ function applyPhase(table, event) {
 }
 
 const SIM_KINDS = ["ready", "nocards", "start", "draw", "move", "flip", "position", "reveal", "hide", "search", "shuffle", "rematch", "rematch-accept", "rematch-decline", "reset"];
-const ZONE_WORDS = { monster: "monster zone", spell: "spell and trap zone", field: "field zone", pendulum: "pendulum zone", gy: "graveyard", banished: "banished zone", hand: "hand", deck: "deck", extra: "extra deck" };
+const ZONE_WORDS = { field: "playable zone", shared: "shared zone", gy: "graveyard", banished: "banished zone", hand: "hand", deck: "deck", extra: "extra deck" };
 
 /* The log line of a board event. It only names a card that is visible to both players. */
 function describeSim(table, event, result) {

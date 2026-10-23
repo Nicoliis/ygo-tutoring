@@ -8,12 +8,7 @@
  * `inverse` is an event that applies after this one and restores the previous board (used by Undo). Events only touch
  * the side of the player named in `event.by`. See data-model.md for the events.
  */
-const MONSTER_ZONES = 5;
-const SPELL_ZONES = 5;
-const FIELD_ZONES = 1;
-const PENDULUM_ZONES = 2;
-const ZONE_SIZES = { monster: MONSTER_ZONES, spell: SPELL_ZONES, field: FIELD_ZONES, pendulum: PENDULUM_ZONES };
-const ZONE_KINDS = Object.keys(ZONE_SIZES); // zones whose slots hold stacks of cards
+const STACK_ZONES = ["field", "shared"]; // places whose slots hold stacks of cards
 const COUNT_PILES = ["hand", "deck", "extra"]; // places known only by how many cards they hold
 const PUBLIC_PILES = ["gy", "banished"]; // places whose cards are listed
 const DEFAULT_POSITION = "atk";
@@ -70,29 +65,36 @@ const ownerOf = (uid) => Number(String(uid).split("-")[0]);
 const isOldBoard = (sim) => Boolean(sim) && sim.layout !== BOARD_LAYOUT_VERSION;
 
 function emptySide() {
-  const zones = {};
-  ZONE_KINDS.forEach((kind) => {
-    zones[kind] = Array.from({ length: ZONE_SIZES[kind] }, () => []);
-  });
-  return { deckName: "", ready: false, handCount: 0, deckCount: 0, extraCount: 0, zones, gy: [], banished: [], revealed: {} };
+  const field = Array.from({ length: FIELD_SLOTS }, () => []);
+  return { deckName: "", ready: false, handCount: 0, deckCount: 0, extraCount: 0, field, gy: [], banished: [], revealed: {} };
 }
 
 function newSim() {
-  return { started: false, nocards: false, generation: 0, rematch: null, players: [emptySide(), emptySide()] };
+  return {
+    layout: BOARD_LAYOUT_VERSION,
+    started: false,
+    nocards: false,
+    generation: 0,
+    rematch: null,
+    players: [emptySide(), emptySide()],
+    shared: Array.from({ length: SHARED_SLOTS }, () => []),
+    signal: null,
+  };
 }
 
 const copyOf = (value) => JSON.parse(JSON.stringify(value));
 const refuseBoard = (sim, reason) => ({ sim, ok: false, reason });
 const countKey = (zone) => `${zone}Count`;
-const isZone = (zone) => ZONE_KINDS.includes(zone);
+const isZone = (zone) => STACK_ZONES.includes(zone);
 
-function stackOf(side, place) {
+/* The stack at a place ({ zone: "field"|"shared", slot }): the player's own field slot or a shared zone. */
+function stackOf(sim, side, place) {
   if (!isZone(place.zone) || !Number.isInteger(place.slot)) return null;
-  return side.zones[place.zone][place.slot] || null;
+  return (place.zone === "shared" ? sim.shared : side.field)[place.slot] || null;
 }
 
 /* Takes the card out of where it was; returns what it was (so it can go back) or an error. */
-function takeCard(side, from, uid) {
+function takeCard(sim, side, from, uid) {
   if (COUNT_PILES.includes(from.zone)) {
     const key = countKey(from.zone);
     if (side[key] <= 0) return { error: `There is no card in the ${from.zone === "hand" ? "hand" : from.zone === "deck" ? "deck" : "extra deck"}.` };
@@ -110,7 +112,7 @@ function takeCard(side, from, uid) {
     const [entry] = side[from.zone].splice(index, 1);
     return { place: { zone: from.zone, index }, entry };
   }
-  const stack = stackOf(side, from);
+  const stack = stackOf(sim, side, from);
   if (!stack) return { error: "That zone does not exist." };
   const index = stack.findIndex((c) => c.uid === uid);
   if (index === -1) return { error: "That card is not there any more." };
@@ -119,7 +121,7 @@ function takeCard(side, from, uid) {
 }
 
 /* Puts the card in its new place; returns an error text or null. `index` (used by Undo) restores a position. */
-function putCard(side, to, uid, shown) {
+function putCard(sim, side, to, uid, shown) {
   const { faceUp, pos, card } = shown;
   if (COUNT_PILES.includes(to.zone)) {
     side[countKey(to.zone)] += 1;
@@ -135,7 +137,7 @@ function putCard(side, to, uid, shown) {
     insertAt(side.banished, { uid, card: faceUp ? card : null }, to.index);
     return null;
   }
-  const stack = stackOf(side, to);
+  const stack = stackOf(sim, side, to);
   if (!stack) return "That zone does not exist.";
   if (faceUp && !card) return "A face-up card needs its card data.";
   insertAt(stack, { uid, faceUp: Boolean(faceUp), pos: pos || DEFAULT_POSITION, card: faceUp ? card : null }, to.index);
@@ -158,13 +160,13 @@ function visibleBefore(taken) {
 
 function applyMove(next, event) {
   const side = next.players[event.by];
-  const taken = takeCard(side, event.from || {}, event.uid);
+  const taken = takeCard(next, side, event.from || {}, event.uid);
   if (taken.error) return { error: taken.error };
   const before = visibleBefore(taken);
   // the card data that is already public stays available for the new place (face-up cards keep their data)
   const card = event.card || before.card;
   const shown = { faceUp: event.faceUp, pos: event.pos, card };
-  const problem = putCard(side, event.to || {}, event.uid, shown);
+  const problem = putCard(next, side, event.to || {}, event.uid, shown);
   if (problem) return { error: problem };
   // where the card is now, so Undo can take it from there and put it back where it was
   const nowAt = { ...(event.to || {}) };
@@ -210,7 +212,7 @@ function applyEventToSide(next, event) {
       return result;
     }
     case "flip": {
-      const stack = stackOf(side, event);
+      const stack = stackOf(next, side, event);
       const entry = stack && stack.find((c) => c.uid === event.uid);
       if (!entry) return { error: "That card is not there any more." };
       const previous = { faceUp: entry.faceUp, card: entry.card };
@@ -221,7 +223,7 @@ function applyEventToSide(next, event) {
       return { inverse: { kind: "flip", by: event.by, uid: event.uid, zone: event.zone, slot: event.slot, faceUp: previous.faceUp, ...(previous.card ? { card: previous.card } : {}) } };
     }
     case "position": {
-      const stack = stackOf(side, event);
+      const stack = stackOf(next, side, event);
       const entry = stack && stack.find((c) => c.uid === event.uid);
       if (!entry) return { error: "That card is not there any more." };
       const previous = entry.pos;
@@ -250,11 +252,9 @@ function publicCardName(sim, side, uid) {
   if (!sim || !uid) return null;
   const s = sim.players[side];
   if (s.revealed[uid]) return s.revealed[uid].name;
-  for (const kind of ZONE_KINDS) {
-    for (const stack of s.zones[kind]) {
-      const entry = stack.find((c) => c.uid === uid);
-      if (entry) return entry.card ? entry.card.name : null;
-    }
+  for (const stack of s.field.concat(sim.shared)) {
+    const entry = stack.find((c) => c.uid === uid);
+    if (entry) return entry.card ? entry.card.name : null;
   }
   for (const pile of PUBLIC_PILES) {
     const entry = s[pile].find((c) => c.uid === uid);
