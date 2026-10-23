@@ -165,7 +165,7 @@ function describeSim(table, event, result) {
     case "hide":
       return `${who} hid a revealed card`;
     case "signal": {
-      const name = table.sim ? publicCardName(table.sim, event.by, event.uid) : null;
+      const name = table.sim ? publicCardName(table.sim, event.by, event.uid) || publicCardName(table.sim, 1 - event.by, event.uid) : null;
       const card = name || "a face-down card";
       return { activate: `${who} activates ${card}`, target: `${who} targets ${card}`, attack: `${who} attacks with ${card}` }[event.signal] || "";
     }

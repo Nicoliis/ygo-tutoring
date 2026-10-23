@@ -7,7 +7,7 @@
  *                picking: { slots: [{ zone: "field"|"shared", slot, side? }] } | null, selected: uid | null,
  *                fan: { anchor, levels } | null, signal: { uid, kind } | null }
  *   handlers = { onSelectCard(uid, place, anchor), onPickZone(zone, slot, side), onOpenPile(side, pile, anchor),
- *                onDetails(card), onFaceDown(), onCancel(), onClearSignal(), fan: { onChoose(level, id), onClose() } }
+ *                onDetails(card), onTargetCard(uid, place, anchor), onCancel(), onClearSignal(), fan: { onChoose(level, id), onClose() } }
  *
  * The grid follows boardCells(): the viewer's cells at the bottom, the opponent's turned 180 degrees at the top, the
  * two shared zones in the middle. A card is its image (a named placeholder when it has none), a face-down card a card
@@ -66,7 +66,7 @@ function buildDuelCard(entry, info, usable, handlers, place, extraClass = "") {
   btn.addEventListener("click", () => {
     if (usable) handlers.onSelectCard(entry.uid, place, anchorOf(btn));
     else if (visible) handlers.onDetails(info);
-    else if (handlers.onFaceDown) handlers.onFaceDown();
+    else if (place.side !== undefined && handlers.onTargetCard) handlers.onTargetCard(entry.uid, place, anchorOf(btn)); // the opponent's face-down card: it can only be targeted
   });
   return btn;
 }
@@ -101,7 +101,7 @@ function buildStackZone(cell, sideIndex, model, handlers) {
     const depth = stack.length - 1 - i; // the top card has depth 0
     const mine = ownerOf(entry.uid) === model.you;
     const info = entry.card || (mine ? model.cardOf(entry.uid) : null);
-    const card = buildDuelCard(entry, info, usable, handlers, { zone: cell.kind, slot: cell.slot }, entry.uid === model.selected ? "duel-card-selected" : "");
+    const card = buildDuelCard(entry, info, usable, handlers, { zone: cell.kind, slot: cell.slot, side: sideIndex === null ? undefined : sideIndex }, entry.uid === model.selected ? "duel-card-selected" : "");
     const shift = (opp ? 1 : -1) * depth * STACK_OFFSET_PX;
     card.style.translate = `${shift}px ${shift}px`;
     card.style.zIndex = String(i + 1);

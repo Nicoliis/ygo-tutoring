@@ -1373,6 +1373,18 @@ function runContractTests() {
     expect(!isForeignMoveOfMine(priv[0], { kind: "move", by: 0, uid, from: { zone: "shared", slot: 0 }, to: { zone: "hand" } }), "the owner's own moves go the usual way");
   });
 
+  check("duel board: any card on the opponent's field can be targeted, face-down ones too, and nothing else may be signalled on it", () => {
+    const { table } = startedDuel();
+    const down = duelApply(table, { kind: "move", by: 0, uid: "0-0", from: { zone: "hand" }, to: { zone: "field", slot: 2 }, faceUp: false, pos: "def" });
+    const targeted = duelApply(down, { kind: "signal", by: 1, uid: "0-0", signal: "target" });
+    expect(targeted.sim.signal.uid === "0-0" && targeted.sim.signal.kind === "target" && targeted.sim.signal.by === 1);
+    expect(targeted.log[targeted.log.length - 1].text === "Bo targets a face-down card", targeted.log[targeted.log.length - 1].text);
+    expect(!applyEvent(down, { kind: "signal", by: 1, uid: "0-0", signal: "activate" }).ok && !applyEvent(down, { kind: "signal", by: 1, uid: "0-0", signal: "attack" }).ok, "only targeting");
+    const inHand = applyEvent(table, { kind: "signal", by: 1, uid: "0-1", signal: "target" });
+    expect(!inHand.ok, "a card in a hand cannot be targeted");
+    expect(!JSON.stringify(targeted.sim.signal).includes("card"), "the signal reveals nothing about the card");
+  });
+
   check("duel board: signals mark a card, count up, are cleared, never name a face-down card and do not block Undo", () => {
     const { table } = startedDuel();
     const card = { name: "Alpha" };

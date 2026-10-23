@@ -262,8 +262,10 @@ function applyEventToSide(next, event) {
     }
     case "signal": {
       if (!SIGNAL_KINDS.includes(event.signal)) return { error: "Unknown signal." };
-      const onBoard = next.shared.concat(side.field).some((stack) => stack.some((c) => c.uid === event.uid)) || PUBLIC_PILES.some((pile) => side[pile].some((c) => c.uid === event.uid));
-      if (!onBoard) return { error: "Only a card on the board can signal." };
+      const onStacks = (stacks) => stacks.some((stack) => stack.some((c) => c.uid === event.uid));
+      const own = onStacks(next.shared.concat(side.field)) || PUBLIC_PILES.some((pile) => side[pile].some((c) => c.uid === event.uid));
+      const targetsOpponent = event.signal === "target" && onStacks(next.players[1 - event.by].field); // any card on the board can be targeted
+      if (!own && !targetsOpponent) return { error: "Only a card on the board can signal." };
       next.signalCount += 1;
       next.signal = { uid: event.uid, kind: event.signal, by: event.by, n: next.signalCount };
       return {};

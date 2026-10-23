@@ -283,6 +283,15 @@ function knownCard(uid, entry) {
   return cardAt(play.priv, uid) || (entry && entry.card) || null;
 }
 
+/* A face-down card of the opponent can only be targeted: its fan has that one button. */
+function targetCard(uid, place, anchor) {
+  play.selected = uid;
+  play.place = place;
+  play.picking = null;
+  play.fan = { anchor, nodes: targetMenu(), path: [] };
+  drawRoom();
+}
+
 /* A button of the fan was chosen: open the next level, ask for a zone, or carry the action out. */
 function chooseFanNode(levelIndex, id) {
   if (!play.fan) return;
@@ -330,7 +339,8 @@ function pickZone(zone, slot, side) {
 function fieldEntry(uid, place) {
   if (place.zone !== "field" && place.zone !== "shared") return null;
   const sim = room.session.getTable().sim;
-  const stack = place.zone === "shared" ? sim.shared[place.slot] : sim.players[room.role].field[place.slot];
+  const side = place.side === undefined ? room.role : place.side; // the opponent's field for a card being targeted
+  const stack = place.zone === "shared" ? sim.shared[place.slot] : sim.players[side].field[place.slot];
   return stack ? stack.find((c) => c.uid === uid) || null : null;
 }
 
@@ -449,7 +459,7 @@ function boardHandlers() {
     onPickZone: pickZone,
     onOpenPile: openPile,
     onDetails: showCardDetails,
-    onFaceDown: () => showModal({ title: "Face-down card", bodyHtml: "<p>A face-down card: nothing is known about it until its owner flips or reveals it.</p>", buttons: [{ label: "Close", primary: true }] }),
+    onTargetCard: targetCard,
     onCancel: closeDuelMenu,
     onClearSignal: () => room.session.intent({ kind: "signal-clear" }),
     fan: { onChoose: chooseFanNode, onClose: closeDuelMenu },

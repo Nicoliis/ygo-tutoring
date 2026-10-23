@@ -3,6 +3,7 @@
  *
  *   menuFor(context)      -> the first-level nodes for a card; context = { place, isExtraDeckCard }
  *   deckMenu()            -> the nodes of the deck pile's fan
+ *   targetMenu()          -> the single button offered on a face-down card of the opponent
  *   resolvePath(nodes, ids) -> { node, action } | null      (action is null while the path still has children)
  *   playEvent(...)        -> the events that play a card face-up/down, straight/sideways in a zone
  *
@@ -62,6 +63,11 @@ function menuFor(context) {
     { id: "signal", label: "Signal", children: signals },
     leaf("details", "Details", { kind: "details" }), // the card details window, as in the earlier menu
   ];
+}
+
+/* The only thing to do with a face-down card of the opponent: target it. */
+function targetMenu() {
+  return [leaf("target", "Target", { kind: "signal", signal: "target" })];
 }
 
 function deckMenu() {
