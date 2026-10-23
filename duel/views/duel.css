@@ -148,5 +148,13 @@ body.duel-focus .app-single { padding: 8px; max-width: none; }
   .duel-col-side .duel-log { flex: 1 1 auto; height: auto; min-height: 0; }
 }
 .duel-col-side .duel-player { flex: 0 0 auto; }
-.duel-messages-slot:empty, .duel-messages-slot .duel-messages:empty { display: none; }
+.duel-messages-slot { min-height: 1.5em; } /* always there, so the buttons below never move */
+.duel-messages-slot .duel-status { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .duel-messages-slot .duel-status, .duel-messages-slot .duel-error, .duel-messages-slot .duel-notice { margin: 0 0 6px; font-size: 0.85rem; }
+
+/* A turn is two single lines, whatever the name or the phase */
+.duel-turn-line { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Errors and notices on the table: a banner over the page, never inside the narrow columns */
+.duel-toast { position: fixed; top: 12px; left: 50%; transform: translateX(-50%); z-index: 250; width: min(560px, calc(100vw - 24px)); box-sizing: border-box; display: flex; gap: 12px; align-items: center; padding: 10px 14px; background: var(--panel); color: var(--text); border: 1px solid var(--accent); border-radius: var(--radius); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5); }
+.duel-toast-error { border-color: var(--danger); }
+.duel-toast-text { flex: 1 1 auto; margin: 0; overflow-wrap: anywhere; max-height: 40vh; overflow-y: auto; }

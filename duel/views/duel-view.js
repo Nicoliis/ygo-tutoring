@@ -58,13 +58,25 @@ function buildMessages(model, h, inGame) {
   const box = el("div", "duel-messages");
   box.setAttribute("aria-live", "polite");
   if (model.status) box.appendChild(el("p", "duel-status", model.status));
-  if (model.error) box.appendChild(el("p", "duel-error", model.error));
-  if (model.notice) box.appendChild(el("p", "duel-notice", model.notice));
+  if (!inGame) {
+    if (model.error) box.appendChild(el("p", "duel-error", model.error));
+    if (model.notice) box.appendChild(el("p", "duel-notice", model.notice));
+  }
   if (model.practice && !inGame) {
     box.appendChild(el("p", "duel-notice", PRACTICE_EXPLANATION));
     box.appendChild(button("Leave practice", h.onLeavePractice)); // on the table it is under the rematch button
   }
   return box;
+}
+
+/* On the table errors and notices are a banner over the page, so a long text never changes the table's layout. */
+function buildToast(model, h) {
+  if (!model.error && !model.notice) return null;
+  const toast = el("div", "duel-toast" + (model.error ? " duel-toast-error" : ""));
+  toast.setAttribute("role", model.error ? "alert" : "status");
+  toast.appendChild(el("p", "duel-toast-text", model.error || model.notice));
+  toast.appendChild(button("Dismiss", h.onDismissMessages));
+  return toast;
 }
 
 function buildStart(model, h) {
@@ -228,7 +240,12 @@ function updateTable(refs, model) {
     ref.rename.hidden = i !== model.you;
     if (i === model.you && document.activeElement !== ref.rename) ref.rename.value = p.name;
   });
-  refs.turn.textContent = `Turn ${t.turn} · ${t.players[t.active].name}'s turn · ${t.phase}`;
+  // two single lines (the phase is in the list below), so the buttons under them never move
+  refs.turn.innerHTML = "";
+  refs.turn.appendChild(el("span", "duel-turn-line", `Turn ${t.turn}`));
+  const whose = el("span", "duel-turn-line", `${t.players[t.active].name}'s turn`);
+  whose.title = whose.textContent;
+  refs.turn.appendChild(whose);
   refs.phases.forEach((li) => li.classList.toggle("duel-phase-current", li.textContent === t.phase));
   // one result under the other: coin, die, and the winner when there is one
   refs.results.innerHTML = "";
@@ -315,6 +332,10 @@ function renderRoom(rootEl, model, h) {
     rootEl._refs.messagesSlot.replaceChildren(fresh);
   } else if (top) top.replaceWith(fresh);
   else rootEl.prepend(fresh);
+  const oldToast = rootEl.querySelector(":scope > .duel-toast");
+  if (oldToast) oldToast.remove();
+  const toast = screen === "table" ? buildToast(model, h) : null;
+  if (toast) rootEl.appendChild(toast);
   if (screen === "deck") renderDeckChoice(rootEl._refs.deckHost, model.deckChoice, { onChoose: h.onChooseDeck, onNoCards: h.onNoCards });
   if (screen === "table" && model.table) {
     updateTable(rootEl._refs, model);

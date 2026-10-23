@@ -87,6 +87,7 @@ function drawRoom() {
       onPractice: startPractice,
       onLeavePractice: startOver,
       onLeaveRoom: leaveRoom,
+      onDismissMessages: () => setRoom({ error: "", notice: "" }),
     }
   );
 }
