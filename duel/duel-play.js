@@ -46,11 +46,19 @@ function deckChoiceModel() {
   return {
     decks: deckOptions(),
     chosen: play.chosenDeckId,
+    suggested: suggestedDeckId(table),
     ready: [Boolean(sim && sim.players[0].ready), Boolean(sim && sim.players[1].ready)],
     names: table.players.map((p) => p.name),
     you: room.role,
     error: play.error,
   };
+}
+
+/* The deck this player used in the duel before a rematch or a restart, found again by its name. */
+function suggestedDeckId(table) {
+  const name = table.sim && table.sim.players[room.role] ? table.sim.players[room.role].deckName : "";
+  const deck = name ? deckOptions().find((d) => d.name === name && d.usable) : null;
+  return deck ? deck.id : null;
 }
 
 function chooseDeck(deckId) {
@@ -154,7 +162,7 @@ play.picking = null; // { slots, action } while the player chooses a zone
 
 function boardModel() {
   const table = room.session ? room.session.getTable() : null;
-  if (!table || !table.sim || !table.sim.started) return null;
+  if (!table || !table.sim || !table.sim.started || isOldBoard(table.sim)) return null;
   return {
     sim: table.sim,
     you: room.role,

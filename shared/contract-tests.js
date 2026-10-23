@@ -1396,6 +1396,24 @@ function runContractTests() {
     expect(!tableSignal.includes("Alpha"), "a signal carries no card data");
   });
 
+  check("duel board: a duel saved with the old board cannot continue, but can be restarted, and an unstarted one just starts", () => {
+    const { table } = startedDuel();
+    const oldSim = JSON.parse(JSON.stringify(table.sim));
+    delete oldSim.layout;
+    delete oldSim.shared;
+    delete oldSim.signal;
+    oldSim.players.forEach((pl) => { pl.zones = { monster: [[], [], [], [], []] }; delete pl.field; });
+    const old = { ...table, sim: oldSim };
+    expect(isOldBoard(old.sim) && !isOldBoard(table.sim));
+    const refused = applyEvent(old, { kind: "draw", by: 0 });
+    expect(!refused.ok && refused.reason.includes("old board"), "no move on the old board");
+    const restarted = duelApply(duelApply(duelApply(old, { kind: "rematch", by: 0 }), { kind: "rematch-accept", by: 1 }), { kind: "reset", by: 0 });
+    expect(!isOldBoard(restarted.sim) && !restarted.sim.started && restarted.sim.players[0].deckName === "Test deck" && restarted.sim.players[0].field.length === FIELD_SLOTS, "a rematch gives a new board");
+    const unstarted = { ...table, sim: { ...oldSim, started: false, nocards: true } };
+    const ready = duelApply(unstarted, { kind: "ready", by: 0, deckName: "X", mainCount: 3, extraCount: 0 });
+    expect(!isOldBoard(ready.sim) && ready.sim.nocards === true && ready.sim.players[0].ready, "an unstarted old duel starts on the new board");
+  });
+
   /* Two sessions joined by an in-memory link whose delivery order the test controls. */
   function duelPair(seedTable) {
     const toCreator = [];

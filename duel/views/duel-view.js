@@ -224,13 +224,14 @@ function updateTable(refs, model) {
 function updateRematch(refs, model) {
   const bar = refs.rematch;
   bar.innerHTML = "";
-  const started = Boolean(model.board);
+  const started = Boolean(model.board) || model.oldBoard;
   bar.hidden = !started;
   if (!started) return;
+  if (model.oldBoard) bar.appendChild(el("p", "duel-error", "This duel used the old board and cannot continue. A rematch starts a new duel on the new board; you will choose your deck again."));
   if (model.privateLost) bar.appendChild(el("p", "duel-error", "The private part of your duel (your hand and deck) was lost on this device. A rematch starts the duel again."));
   const h = model.handlersForRematch;
   if (model.rematch === "proposed-by-them") {
-    bar.appendChild(el("p", null, "Your opponent proposes a rematch with the same decks."));
+    bar.appendChild(el("p", null, "Your opponent proposes a rematch."));
     bar.append(button("Accept rematch", h.onAccept, "btn btn-primary"), button("Decline", h.onDecline));
   } else if (model.rematch === "proposed-by-me") {
     bar.appendChild(el("p", null, "Rematch proposed. Waiting for your opponent…"));

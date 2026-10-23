@@ -3,7 +3,7 @@
  * DOM only, no state and no rules.
  *
  *   renderDeckChoice(rootEl, model, handlers)
- *   model    = { decks: [{ id, name, mainCount, extraCount, usable }], chosen, ready: [bool, bool], names: [string, string],
+ *   model    = { decks: [{ id, name, mainCount, extraCount, usable }], chosen, suggested, ready: [bool, bool], names: [string, string],
  *                you, error }
  *   handlers = { onChoose(deckId), onNoCards() }
  */
@@ -18,13 +18,14 @@ function renderDeckChoice(rootEl, model, handlers) {
   } else {
     const list = el("ul", "duel-decks");
     model.decks.forEach((deck) => {
-      const li = el("li", "duel-deck" + (deck.id === model.chosen ? " duel-deck-chosen" : ""));
+      const suggested = !model.chosen && deck.id === model.suggested; // the deck used before a rematch
+      const li = el("li", "duel-deck" + (deck.id === model.chosen || suggested ? " duel-deck-chosen" : ""));
       const pick = el("button", "duel-deck-btn");
       pick.type = "button";
       pick.disabled = !deck.usable;
       pick.setAttribute("aria-pressed", String(deck.id === model.chosen));
       pick.appendChild(el("strong", null, deck.name));
-      pick.appendChild(el("span", "duel-deck-counts", `${deck.mainCount} main · ${deck.extraCount} extra${deck.usable ? "" : " · no main cards: cannot be used"}`));
+      pick.appendChild(el("span", "duel-deck-counts", `${deck.mainCount} main · ${deck.extraCount} extra${deck.usable ? "" : " · no main cards: cannot be used"}${suggested ? " · your last deck" : ""}`));
       pick.addEventListener("click", () => handlers.onChoose(deck.id));
       li.appendChild(pick);
       list.appendChild(li);

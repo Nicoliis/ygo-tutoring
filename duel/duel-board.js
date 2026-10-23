@@ -304,8 +304,16 @@ function publicCardName(sim, side, uid) {
   return null;
 }
 
+const ONLY_AFTER_OLD_BOARD = ["rematch", "rematch-accept", "rematch-decline", "reset"]; // all an old started duel can still do
+
 function applyBoardEvent(sim, event) {
-  const next = copyOf(sim || newSim());
+  let base = sim;
+  if (isOldBoard(sim)) {
+    // a duel saved with the earlier board: not started it simply starts again on the new board, started it can only be restarted
+    if (!sim.started) base = { ...newSim(), nocards: Boolean(sim.nocards) };
+    else if (!ONLY_AFTER_OLD_BOARD.includes(event.kind)) return refuseBoard(sim, "This duel used the old board and cannot continue.");
+  }
+  const next = copyOf(base || newSim());
   switch (event.kind) {
     case "start": {
       if (next.started) return refuseBoard(sim, "The duel already started.");
