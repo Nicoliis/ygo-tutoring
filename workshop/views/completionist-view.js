@@ -77,7 +77,7 @@ function renderCompletionistShell(rootEl, model, handlers) {
     parts.status.textContent = "No sets are available yet. Reach a booster in the Progression Run to unlock its set here.";
   }
   if (model.status === "error") {
-    parts.status.append(`Couldn't load ${model.chosenSet}. `);
+    parts.status.append(`Couldn't load ${model.chosenSet} — reconnect and try again. `);
     const retry = document.createElement("button");
     retry.type = "button";
     retry.className = "btn btn-secondary";
