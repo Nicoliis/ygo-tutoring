@@ -106,7 +106,7 @@ Choosing one of your cards opens a semicircle of round buttons that fans up abov
 
 ### User Story 5 - Deck menu, and signals (Priority: P2)
 
-Selecting the deck pile opens a fan with **Draw** and **Mill** (Mill sends the top card of the deck to the graveyard, face-up and visible). Selecting a card and choosing **Signal** opens a fan with **Activate**, **Target**, **Attacks** and **Reveal** (show a hand card to the opponent; for a revealed card the same place offers **Hide**). A signal does not move anything: it puts a visible marker on the card (and an entry in the log) so the opponent sees that the card activates, is targeted or attacks; the marker stays for a short time and can be removed.
+Selecting the deck pile opens a fan with **Draw**, **Mill**, **Search**, **Look at top** and **Shuffle** (Mill sends the top card of the deck to the graveyard, face-up and visible). Selecting a card and choosing **Signal** opens a fan with **Activate**, **Target**, **Attacks** and **Reveal** (show a hand card to the opponent; for a revealed card the same place offers **Hide**). A signal does not move anything: it puts a visible marker on the card (and an entry in the log) so the opponent sees that the card activates, is targeted or attacks; the marker stays for a short time and can be removed.
 
 **Why this priority**: Useful and expected, but a duel can be played without it.
 
