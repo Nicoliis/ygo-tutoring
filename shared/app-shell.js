@@ -130,9 +130,16 @@ function registerWorker() {
     });
 }
 
+/* Asks the browser to treat this site's storage as persistent, once per visit, so that saved data is not removed when the
+   disk runs low. No screen, no answer needed: the browser decides. */
+function askForPersistentStorage() {
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+}
+
 function startShell() {
   wireInstallButtons();
   registerWorker();
+  askForPersistentStorage();
 }
 
 if (document.readyState === "loading") {
