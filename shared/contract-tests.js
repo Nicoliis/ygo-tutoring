@@ -1574,5 +1574,92 @@ function runContractTests() {
     expect(stageState(run, "A", LIST) === "opened" && stageState(run, "B", LIST) === "next" && stageState(run, "C", LIST) === "locked");
   });
 
+  /* ---- Duel board and fan menu (spec 020): layout, menu tree and fan geometry ---- */
+
+  check("duel board layout: 35 cells, 11 playable zones per player, 2 shared zones, the opponent's side turned 180 degrees", () => {
+    const cells = boardCells();
+    expect(cells.length === 35 && FIELD_SLOTS === 11 && SHARED_SLOTS === 2);
+    const rows = BOARD_LAYOUT.map((line, row) => cells.filter((c) => c.row === row).map((c) => {
+      const letter = { field: "p", shared: "S", deck: "d", extra: "e", gy: "g", banished: "b", empty: "X" }[c.kind];
+      return c.side === "own" ? letter.toUpperCase() : letter;
+    }).join(""));
+    expect(rows.join("/") === BOARD_LAYOUT.join("/"), rows.join("/"));
+    ["own", "opp"].forEach((side) => {
+      const slots = cells.filter((c) => c.kind === "field" && c.side === side).map((c) => c.slot).sort((a, b) => a - b);
+      expect(slots.join() === "0,1,2,3,4,5,6,7,8,9,10", side + " " + slots.join());
+    });
+    cells.filter((c) => c.kind === "field" && c.side === "own").forEach((own) => {
+      const opp = cells.find((c) => c.kind === "field" && c.side === "opp" && c.slot === own.slot);
+      expect(opp.row === 4 - own.row && opp.col === 6 - own.col, "slot " + own.slot + " is not the same cell turned 180 degrees");
+    });
+    expect(cells.filter((c) => c.kind === "shared").map((c) => c.col).join() === "2,4" && cells.filter((c) => c.kind === "empty").length === 3);
+    expect(ownerOf("1-23") === 1 && ownerOf("0-0") === 0);
+    expect(isOldBoard({ players: [] }) === true && isOldBoard(null) === false);
+  });
+
+  check("fan layout: every button stays inside the window and neighbours do not touch", () => {
+    const bounds = { left: 0, top: 0, right: 360, bottom: 640 };
+    const margin = FAN_BUTTON_PX;
+    [[margin, margin], [360 - margin, margin], [margin, 640 - margin], [360 - margin, 640 - margin], [180, margin], [180, 320], [margin, 320]].forEach(([x, y]) => {
+      [1, 2, 3, 4, 5, 6].forEach((count) => {
+        [[-90, FAN_FIRST_SPAN_DEG], [0, FAN_SUB_SPAN_DEG], [135, FAN_SUB_SPAN_DEG]].forEach(([direction, span]) => {
+          const points = fanLayout({ anchor: { x, y }, count, direction, span, bounds });
+          expect(points.length === count);
+          const half = FAN_BUTTON_PX / 2;
+          points.forEach((p) => expect(p.x >= half - 0.5 && p.x <= 360 - half + 0.5 && p.y >= half - 0.5 && p.y <= 640 - half + 0.5, `outside at ${x},${y} x${count}`));
+          for (let i = 0; i < count; i++) {
+            for (let j = i + 1; j < count; j++) expect(Math.hypot(points[i].x - points[j].x, points[i].y - points[j].y) >= FAN_BUTTON_PX, `touching at ${x},${y} x${count}`);
+          }
+        });
+      });
+    });
+    const up = fanLayout({ anchor: { x: 180, y: 400 }, count: 3, direction: -90, span: FAN_FIRST_SPAN_DEG, bounds });
+    expect(up.every((p) => p.y <= 400.001) && up.some((p) => p.y < 400), "the first fan opens upward when there is room");
+  });
+
+  check("duel menu: every path ends in an action, extra deck and give control only where they make sense, hand cards cannot signal", () => {
+    const ids = (nodes) => nodes.map((n) => n.id);
+    const onField = menuFor({ place: { zone: "field", slot: 3 }, isExtraDeckCard: false });
+    expect(ids(onField).join() === "play,move,signal");
+    expect(ids(resolvePath(onField, ["move"]).node.children).join() === "grave,banish,hand,deck,give");
+    expect(ids(resolvePath(onField, ["move", "deck"]).node.children).join() === "deck-top,deck-bottom,deck-shuffle");
+    expect(ids(resolvePath(onField, ["signal"]).node.children).join() === "activate,target,attack");
+    const extra = menuFor({ place: { zone: "field", slot: 0 }, isExtraDeckCard: true });
+    expect(ids(resolvePath(extra, ["move"]).node.children).includes("extra"));
+    const inHand = menuFor({ place: { zone: "hand" }, isExtraDeckCard: false });
+    expect(ids(resolvePath(inHand, ["move"]).node.children).join() === "grave,banish,deck");
+    expect(ids(resolvePath(inHand, ["signal"]).node.children).join() === "reveal");
+    expect(ids(resolvePath(menuFor({ place: { zone: "hand" }, revealed: true }), ["signal"]).node.children).join() === "hide");
+    const walk = (nodes, path, seen) => nodes.forEach((n) => {
+      const here = path.concat(n.id);
+      if (n.children) return walk(n.children, here, seen);
+      const r = resolvePath(menuFor({ place: { zone: "field", slot: 0 }, isExtraDeckCard: true }), here);
+      expect(r && r.action && r.action.kind, "no action for " + here.join(">"));
+      seen.push(here.join(">"));
+    });
+    const leaves = [];
+    walk(menuFor({ place: { zone: "field", slot: 0 }, isExtraDeckCard: true }), [], leaves);
+    expect(leaves.includes("play>face-up>straight") && leaves.includes("play>face-down>sideways") && leaves.includes("move>banish>banish-down") && leaves.includes("move>give"));
+    expect(resolvePath(onField, ["play", "face-down", "sideways"]).action.pos === "def" && resolvePath(onField, ["play", "face-down", "sideways"]).action.faceUp === false);
+    expect(deckMenu().map((n) => n.id).join() === "draw,mill,search,look,shuffle");
+    expect(resolvePath(onField, ["nope"]) === null);
+  });
+
+  check("duel menu: playing a card is one move from the hand, and a flip, a turn or a move for a card already on the board", () => {
+    const from = { zone: "field", slot: 2 };
+    const card = { name: "Alpha" };
+    const down = { uid: "0-1", faceUp: false, pos: "def", card: null };
+    expect(JSON.stringify(playEvent({ uid: "0-1", from: { zone: "hand" }, to: { zone: "field", slot: 4 }, faceUp: true, pos: "atk", entry: null, card })) ===
+      JSON.stringify([{ kind: "move", uid: "0-1", from: { zone: "hand" }, to: { zone: "field", slot: 4 }, faceUp: true, pos: "atk", card }]));
+    const hidden = playEvent({ uid: "0-1", from: { zone: "hand" }, to: { zone: "shared", slot: 1 }, faceUp: false, pos: "def", entry: null, card });
+    expect(hidden.length === 1 && hidden[0].card === undefined && hidden[0].faceUp === false);
+    const both = playEvent({ uid: "0-1", from, to: from, faceUp: true, pos: "atk", entry: down, card });
+    expect(both.map((e) => e.kind).join() === "flip,position" && both[0].card === card);
+    expect(playEvent({ uid: "0-1", from, to: from, faceUp: false, pos: "atk", entry: down, card }).map((e) => e.kind).join() === "position");
+    expect(playEvent({ uid: "0-1", from, to: from, faceUp: true, pos: "def", entry: down, card }).map((e) => e.kind).join() === "flip");
+    expect(playEvent({ uid: "0-1", from, to: from, faceUp: false, pos: "def", entry: down, card }).length === 0);
+    expect(playEvent({ uid: "0-1", from, to: { zone: "field", slot: 5 }, faceUp: false, pos: "def", entry: down, card })[0].kind === "move");
+  });
+
   return results;
 }

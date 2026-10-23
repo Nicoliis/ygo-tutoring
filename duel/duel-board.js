@@ -19,6 +19,56 @@ const PUBLIC_PILES = ["gy", "banished"]; // places whose cards are listed
 const DEFAULT_POSITION = "atk";
 const STARTING_HAND_SIZE = 5; // cards drawn when the duel starts (the same value as duel-cards.js STARTING_HAND)
 
+/*
+ * The board as drawn for the viewer: uppercase is the viewer's own cells, lowercase the opponent's, S a shared zone,
+ * X a cell with no cards. p/P playable zone, d/D deck, e/E extra deck, g/G graveyard, b/B banished zone.
+ */
+const BOARD_LAYOUT = ["dpppppe", "gpppppp", "bXSXSXB", "PPPPPPG", "EPPPPPD"];
+const BOARD_LAYOUT_VERSION = 2; // stored in sim.layout; an older saved duel lacks it
+const BOARD_PILE_LETTERS = { d: "deck", e: "extra", g: "gy", b: "banished" };
+const SIGNAL_KINDS = ["activate", "target", "attack"];
+const BOARD_ROWS = BOARD_LAYOUT.length;
+const BOARD_COLUMNS = BOARD_LAYOUT[0].length;
+const OWN_FIELD_CELLS = []; // [row, column] of the viewer's playable zones in reading order; the index is the slot
+BOARD_LAYOUT.forEach((line, row) => {
+  [...line].forEach((letter, col) => {
+    if (letter === "P") OWN_FIELD_CELLS.push([row, col]);
+  });
+});
+const FIELD_SLOTS = OWN_FIELD_CELLS.length; // playable zones per player
+const SHARED_SLOTS = BOARD_LAYOUT.join("").split("S").length - 1;
+
+/*
+ * The 35 cells of the board as { row, col, kind, side, slot } (kind: field, shared, deck, extra, gy, banished, empty;
+ * side: "own" | "opp" | null). A player's slot is its index among their playable zones in reading order of their OWN
+ * view, so the opponent's slots follow the layout turned 180 degrees: slot n is the same cell on both players' screens.
+ */
+function boardCells() {
+  const cells = [];
+  let shared = 0;
+  BOARD_LAYOUT.forEach((line, row) => {
+    [...line].forEach((letter, col) => {
+      const lower = letter.toLowerCase();
+      const side = letter === "X" || letter === "S" ? null : letter === lower ? "opp" : "own";
+      if (letter === "X") return cells.push({ row, col, kind: "empty", side, slot: null });
+      if (letter === "S") return cells.push({ row, col, kind: "shared", side, slot: shared++ });
+      if (lower === "p") {
+        const local = side === "own" ? [row, col] : [BOARD_ROWS - 1 - row, BOARD_COLUMNS - 1 - col];
+        const slot = OWN_FIELD_CELLS.findIndex(([r, c]) => r === local[0] && c === local[1]);
+        return cells.push({ row, col, kind: "field", side, slot });
+      }
+      return cells.push({ row, col, kind: BOARD_PILE_LETTERS[lower], side, slot: null });
+    });
+  });
+  return cells;
+}
+
+/* The player a card belongs to: the side prefix of its uid "<side>-<n>". */
+const ownerOf = (uid) => Number(String(uid).split("-")[0]);
+
+/* A saved duel board made before this layout existed. */
+const isOldBoard = (sim) => Boolean(sim) && sim.layout !== BOARD_LAYOUT_VERSION;
+
 function emptySide() {
   const zones = {};
   ZONE_KINDS.forEach((kind) => {

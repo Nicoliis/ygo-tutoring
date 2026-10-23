@@ -32,6 +32,8 @@ const source = [
   read("engine-rules.js"),
   read("../duel/duel-cards.js"),
   read("../duel/duel-board.js"),
+  read("../duel/fan-layout.js"),
+  read("../duel/duel-menu.js"),
   read("../duel/duel-private.js"),
   read("../duel/duel-table.js"),
   read("../duel/duel-code.js"),
