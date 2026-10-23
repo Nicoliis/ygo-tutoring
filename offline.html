@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Not kept for offline use</title>
+<meta name="theme-color" content="#14161c">
+<link rel="icon" href="icons/icon-192.png" sizes="192x192" type="image/png">
+<style>
+  body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #14161c; color: #eef0f4; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 440px; padding: 24px; text-align: center; }
+  h1 { font-size: 1.3rem; margin: 0 0 8px; }
+  p { color: #9aa1b0; line-height: 1.5; }
+  .actions { display: flex; gap: 10px; justify-content: center; margin-top: 18px; }
+  a, button { background: #5b8cff; color: #0b1020; border: 0; border-radius: 8px; padding: 10px 16px; font: inherit; font-weight: 600; text-decoration: none; cursor: pointer; }
+  button { background: #262a34; color: #eef0f4; border: 1px solid #333844; }
+  a:focus-visible, button:focus-visible { outline: 2px solid #5b8cff; outline-offset: 2px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>This screen was not kept for offline use</h1>
+  <p>You are offline and this screen has not been saved on this device yet. Your profiles, cards and decks are safe. Open the main menu, or reconnect and try again. The first visit always needs a connection, because that is when the app is kept.</p>
+  <div class="actions">
+    <a href="menu.html">Main menu</a>
+    <button type="button" onclick="window.location.reload()">Retry</button>
+  </div>
+</main>
+</body>
+</html>
