@@ -1543,6 +1543,7 @@ function runContractTests() {
         onApplied: (event, table) => {
           if (event.kind === "start") privs[role] = dealHand(privs[role]);
           else if (event.by === role && privs[role] && event.kind !== "ready") privs[role] = applyPrivate(privs[role], event, seededRandom(2)).priv;
+          else if (privs[role] && isForeignMoveOfMine(privs[role], event)) privs[role] = { ...applyPrivate(privs[role], event).priv, undo: null };
         },
       });
     const sessions = [make(0), make(1)];
@@ -1575,19 +1576,26 @@ function runContractTests() {
       else if (r < 0.45 && priv.hand.length) {
         const uid = priv.hand[Math.floor(random() * priv.hand.length)];
         const faceUp = random() < 0.5;
-        event = { kind: "move", uid, from: { zone: "hand" }, to: { zone: "field", slot: Math.floor(random() * FIELD_SLOTS) }, faceUp, pos: "atk", ...(faceUp ? { card: cardAt(priv, uid) } : {}) };
+        const to = random() < 0.3 ? { zone: "shared", slot: Math.floor(random() * SHARED_SLOTS) } : { zone: "field", slot: Math.floor(random() * FIELD_SLOTS) };
+        event = { kind: "move", uid, from: { zone: "hand" }, to, faceUp, pos: "atk", ...(faceUp ? { card: cardAt(priv, uid) } : {}) };
       } else if (r < 0.7) {
-        const zones = side.field.map((stack, slot) => ({ k: "field", slot, stack })).filter((z) => z.stack.length);
+        // what this player controls: their own field and the shared zones (cards of either player)
+        const zones = side.field.map((stack, slot) => ({ k: "field", slot, stack })).concat(table.sim.shared.map((stack, slot) => ({ k: "shared", slot, stack }))).filter((z) => z.stack.length);
         if (zones.length) {
           const z = zones[Math.floor(random() * zones.length)];
           const entry = z.stack[Math.floor(random() * z.stack.length)];
+          const known = cardAt(priv, entry.uid) || entry.card;
           const pick = random();
-          if (pick < 0.3) event = { kind: "flip", uid: entry.uid, zone: z.k, slot: z.slot, faceUp: !entry.faceUp, ...(entry.faceUp ? {} : { card: cardAt(priv, entry.uid) }) };
-          else if (pick < 0.55) event = { kind: "move", uid: entry.uid, from: { zone: z.k, slot: z.slot }, to: { zone: "gy" }, faceUp: true, card: cardAt(priv, entry.uid) };
-          else if (pick < 0.75) event = { kind: "move", uid: entry.uid, from: { zone: z.k, slot: z.slot }, to: { zone: "banished" }, faceUp: false };
+          if (pick < 0.2) event = { kind: "flip", uid: entry.uid, zone: z.k, slot: z.slot, faceUp: !entry.faceUp, ...(entry.faceUp ? {} : { card: known }) };
+          else if (pick < 0.35 && known) event = { kind: "move", uid: entry.uid, from: { zone: z.k, slot: z.slot }, to: { zone: "gy" }, faceUp: true, card: known };
+          else if (pick < 0.5) event = { kind: "move", uid: entry.uid, from: { zone: z.k, slot: z.slot }, to: { zone: "banished" }, faceUp: false };
+          else if (pick < 0.65 && known) event = { kind: "give", uid: entry.uid, from: { zone: z.k, slot: z.slot }, to: { zone: "field", slot: Math.floor(random() * FIELD_SLOTS), side: 1 - by }, card: known };
+          else if (pick < 0.8) event = { kind: "signal", uid: entry.uid, signal: ["activate", "target", "attack"][Math.floor(random() * 3)] };
+          else if (pick < 0.9) event = { kind: "move", uid: entry.uid, from: { zone: z.k, slot: z.slot }, to: { zone: "deck", end: "top" }, faceUp: false };
           else event = { kind: "move", uid: entry.uid, from: { zone: z.k, slot: z.slot }, to: { zone: "hand" }, faceUp: false };
         }
-      } else if (r < 0.8) event = { kind: "shuffle" };
+      } else if (r < 0.75 && priv.deck.length) event = { kind: "move", uid: priv.deck[0], from: { zone: "deck" }, to: { zone: "gy" }, faceUp: true, pos: "atk", card: cardAt(priv, priv.deck[0]) }; // mill
+      else if (r < 0.8) event = { kind: "shuffle" };
       else if (r < 0.9 && priv.hand.length) {
         const uid = priv.hand[0];
         event = random() < 0.5 ? { kind: "reveal", uid, card: cardAt(priv, uid) } : { kind: "hide", uid };
@@ -1628,8 +1636,12 @@ function runContractTests() {
       if (m.type === "event" && event && event.kind === "move" && !event.faceUp && event.to && event.to.zone !== "gy") {
         expect(!("card" in event), "a card played face-down or hidden carries no card data");
       }
+      if (m.type === "event" && event && event.kind === "signal") expect(!("card" in event), "a signal carries no card data");
     });
     expect(JSON.stringify(sessions[0].getTable()) === JSON.stringify(sessions[1].getTable()), "both public tables still match");
+    const kinds = new Set(messages.map((t) => { const m = JSON.parse(t); return m.event && m.event.kind; }));
+    ["move", "flip", "give", "signal", "reveal", "search"].forEach((kind) => expect(kinds.has(kind), `the duel used ${kind} events`));
+    expect(sessions[0].getTable().sim.shared.some((stack) => stack.length) || kinds.has("give"), "the shared zones were used");
   });
 
   check("duel code: round trip, tolerant paste and rejection of bad codes", () => {
