@@ -157,6 +157,103 @@ function runContractTests() {
     expect(stored.future === "keep" && stored.current === "B");
   });
 
+  /* ---- Hand Test mode: free cards ---- */
+
+  check("Hand Test: a selectable mode; profiles of it are created like the others", () => {
+    expect(GAME_MODES.handtest && GAME_MODES.handtest.selectable && GAME_MODES.handtest.label === "Hand Test");
+    const p = createProfile("Free", "handtest");
+    expect(p.mode === "handtest" && getActiveProfile().id === p.id);
+    expect(profileKey("ygoCollection") === `ygoCollection_${p.id}`, "its own saved collection, like any profile");
+  });
+
+  check("Hand Test: no shop, no run pages; Card Search and Backlog Edit instead; other modes unchanged", () => {
+    const hand = { mode: "handtest" };
+    const prog = { mode: "progression" };
+    const sand = { mode: "sandbox" };
+    const labels = (area, profile) => visiblePages(area, profile).map((p) => p.label).join();
+    const run = AREAS.find((a) => a.id === "run");
+    expect(labels(run, hand) === "Card Search,Backlog Edit");
+    expect(labels(run, prog) === "Progression Run,Current Stage Pull,Booster Pull");
+    expect(labels(run, sand) === "Progression Run,Current Stage Pull,Booster Pull", "Sandbox keeps what it had");
+    expect(!visibleAreas(hand).some((a) => a.id === "store"), "no Store for Hand Test");
+    expect(visibleAreas(prog).some((a) => a.id === "store") && visibleAreas(sand).some((a) => a.id === "store"));
+    expect(visibleAreas(hand).map((a) => a.id).join() === "run,workshop,tools");
+    expect(areaDescription(run, hand) !== run.description && areaDescription(run, prog) === run.description);
+    expect(labels(AREAS.find((a) => a.id === "workshop"), hand) === labels(AREAS.find((a) => a.id === "workshop"), prog), "Workshop is the same");
+    expect(visibleAreas(null).length > 0, "no profile: nothing breaks");
+  });
+
+  check("Hand Test: a searched card is added with the rarity and set of its FIRST listed set", () => {
+    const apiCard = {
+      id: 46986414,
+      name: "Dark Magician",
+      type: "Normal Monster",
+      race: "Spellcaster",
+      attribute: "DARK",
+      level: 7,
+      atk: 2500,
+      def: 2100,
+      desc: "The ultimate wizard.",
+      card_images: [{ image_url: "full.jpg", image_url_small: "small.jpg" }],
+      card_sets: [
+        { set_name: "Legend of Blue Eyes White Dragon", set_code: "LOB-EN005", set_rarity: "Ultra Rare", set_price: "6.50" },
+        { set_name: "Starter Deck: Yugi", set_code: "SDY-006", set_rarity: "Common", set_price: "1.00" },
+      ],
+      card_prices: [{ tcgplayer_price: "3.20" }],
+    };
+    const card = cardFromFirstSet(apiCard);
+    expect(card.name === "Dark Magician" && card.set === "Legend of Blue Eyes White Dragon" && card.rarity === "Ultra Rare");
+    expect(card.setCode === "LOB-EN005" && card.price === 6.5, "the first set's price");
+    expect(card.apiId === 46986414 && card.race === "Spellcaster" && card.attribute === "DARK" && card.desc === "The ultimate wizard.");
+    const noSetPrice = cardFromFirstSet({ ...apiCard, card_sets: [{ set_name: "S", set_code: "S-1", set_rarity: "Rare", set_price: "0.00" }] });
+    expect(noSetPrice.price === 3.2, "no set price: the market price");
+    const noSets = cardFromFirstSet({ ...apiCard, card_sets: undefined });
+    expect(noSets.set === null && noSets.rarity === null && noSets.setCode === null, "a card in no set has no printing data");
+
+    createProfile("HandAdd", "handtest");
+    const key = profileKey("ygoCollection");
+    saveData({ cards: [], decks: [], futureField: "keep" }, key);
+    expect(mergeCardsIntoBacklog([cardFromFirstSet(apiCard)]) === true);
+    expect(mergeCardsIntoBacklog([cardFromFirstSet(apiCard)]) === true, "adding again adds a copy");
+    const stored = loadData(key);
+    expect(stored.futureField === "keep" && stored.cards.length === 1 && stored.cards[0].quantityOwned === 2);
+    const printing = stored.cards[0].printings[0];
+    expect(stored.cards[0].printings.length === 1 && printing.set === "Legend of Blue Eyes White Dragon" && printing.rarity === "Ultra Rare");
+    expect(printing.quantity === 2 && printing.setCode === "LOB-EN005" && printing.price === 6.5);
+    expect(stored.cards[0].effect === "The ultimate wizard.", "details kept so the card window has everything");
+    mergeCardsIntoBacklog([cardFromFirstSet({ ...apiCard, card_sets: undefined })]);
+    expect(loadData(key).cards[0].quantityOwned === 3 && loadData(key).cards[0].printings[0].quantity === 2, "a card in no set still counts as a copy");
+  });
+
+  check("removeOneCopy: unknown copies first, then the least rare printing; the best copies stay", () => {
+    const card = {
+      quantityOwned: 5,
+      printings: [
+        { set: "A", rarity: "Ultra Rare", price: 5, quantity: 2 },
+        { set: "B", rarity: "Common", price: 0.1, quantity: 1 },
+        { set: "C", rarity: "Rare", price: 1, quantity: 1 },
+      ],
+    };
+    removeOneCopy(card); // 5 owned, 4 in printings: the spare copy had no printing
+    expect(card.quantityOwned === 4 && printingsTotal(card) === 4 && card.printings.length === 3);
+    removeOneCopy(card); // the Common goes first
+    expect(card.quantityOwned === 3 && card.printings.map((p) => p.rarity).join() === "Ultra Rare,Rare");
+    removeOneCopy(card); // then the Rare
+    expect(card.quantityOwned === 2 && card.printings.length === 1 && card.printings[0].quantity === 2);
+    removeOneCopy(card);
+    expect(card.quantityOwned === 1 && card.printings[0].quantity === 1 && card.printings[0].rarity === "Ultra Rare");
+    removeOneCopy(card);
+    expect(card.quantityOwned === 0 && card.printings.length === 0);
+    removeOneCopy(card);
+    expect(card.quantityOwned === 0, "never below zero");
+    const sameRarity = { quantityOwned: 2, printings: [{ set: "A", rarity: "Rare", price: 3, quantity: 1 }, { set: "B", rarity: "Rare", price: 1, quantity: 1 }] };
+    removeOneCopy(sameRarity);
+    expect(sameRarity.printings.length === 1 && sameRarity.printings[0].set === "A", "the cheaper copy of the same rarity goes");
+    const noPrintings = { quantityOwned: 3 };
+    removeOneCopy(noPrintings);
+    expect(noPrintings.quantityOwned === 2 && noPrintings.printings === undefined);
+  });
+
   /* ---- Money, set prices (spec 011) ---- */
 
   check("money: toCents, formatMoney and the escalating booster price", () => {

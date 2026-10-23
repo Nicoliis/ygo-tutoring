@@ -23,6 +23,8 @@ const source = [
   read("backlog-synergy.js"),
   read("backlog-filter.js"),
   read("card-api.js"),
+  read("pack-pool.js"),
+  read("areas.js"),
   read("rarity.js"),
   read("printings.js"),
   read("set-slots.js"),
