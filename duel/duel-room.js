@@ -175,7 +175,15 @@ function onLinkStatus(status, detail) {
 
 /* ---- creating and joining ---- */
 
+/* The link between two players needs a connection: say so and stay where we are (practice and saved duels still work). */
+function refuseWhenOffline() {
+  if (typeof isOffline !== "function" || !isOffline()) return false;
+  setRoom({ error: "The link needs a connection. Reconnect and try again.", status: "" });
+  return true;
+}
+
 async function createRoom(saved) {
+  if (refuseWhenOffline()) return;
   const link = openLink();
   const table = saved ? saved.table : newTable(newDuelId(), myName(), "");
   setRoom({ role: ROLE_CREATOR, session: null, reconnecting: saved, status: "Preparing your invitation…", error: "", notice: "" });
@@ -199,6 +207,7 @@ async function joinRoom(text) {
     setRoom({ error: decoded.reason, status: "" }); // the pasted text stays in the box
     return;
   }
+  if (refuseWhenOffline()) return;
   const link = openLink();
   const saved = room.reconnecting && room.reconnecting.role === ROLE_JOINER ? room.reconnecting : null;
   setRoom({ role: ROLE_JOINER, session: null, status: "Preparing your reply…", error: "", notice: "" });
