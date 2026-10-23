@@ -9,6 +9,12 @@
   #appRoot { display: none; }
   #printArea { display: block; }
 
+  /* The sidebar and modal root belong to the screen, not the sheet. With them in the page, the body stays a flex
+     row beside the sidebar and the sheet is squeezed and cut off. */
+  #appSidebar, #modalRoot, .header-menu-link { display: none !important; }
+  body.has-app-sidebar { display: block !important; }
+  body.has-app-sidebar > #printArea { flex: none; width: 210mm; min-width: 210mm; }
+
   html, body {
     background: #fff;
     margin: 0;
