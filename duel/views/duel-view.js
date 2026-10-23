@@ -166,7 +166,9 @@ function buildTable(h) {
   const root = el("div", "duel-table");
   const refs = { players: [], phases: [], root };
 
-  // three columns: the board (about 60%), the turn controls (10%), the opponent's life, the log and your life (30%)
+  // four columns: the card display, the board, the turn controls, the opponent's life, the log and your life
+  const displayCol = el("div", "duel-col duel-col-display");
+  displayCol.appendChild(buildCardDisplay());
   refs.boardCol = el("div", "duel-col duel-col-board");
   const sideCol = el("div", "duel-col duel-col-side");
   for (let i = 0; i < 2; i++) {
@@ -208,7 +210,7 @@ function buildTable(h) {
   sideCol.appendChild(logPanel);
   const controlsCol = el("div", "duel-col duel-col-controls");
   controlsCol.append(turn, refs.rematch);
-  root.append(refs.boardCol, controlsCol, sideCol);
+  root.append(displayCol, refs.boardCol, controlsCol, sideCol);
   return refs;
 }
 

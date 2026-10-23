@@ -8,7 +8,7 @@
   --duel-signal-target: #ef4444;
   --duel-signal-attack: #f97316;
   --duel-log-height: 240px; /* the log keeps this height and scrolls */
-  --duel-columns: minmax(0, 6fr) minmax(110px, 1fr) minmax(0, 3fr); /* board | turn controls | lives and log */
+  --duel-columns: minmax(200px, 2fr) minmax(0, 6fr) minmax(110px, 1fr) minmax(0, 3fr); /* card display | board | turn controls | lives and log */
 }
 
 #duelRoot { display: flex; flex-direction: column; gap: 14px; }
@@ -46,7 +46,7 @@
 /* The table: three columns, board | turn controls | opponent's life, log, your life */
 .duel-table { display: grid; grid-template-columns: var(--duel-columns); gap: 14px; align-items: start; }
 .duel-table:not(:has(.duel-board-host)) { grid-template-columns: minmax(0, 1fr); } /* a duel without cards: everything stacked */
-.duel-table:not(:has(.duel-board-host)) .duel-col-board { display: none; }
+.duel-table:not(:has(.duel-board-host)) .duel-col-board, .duel-table:not(:has(.duel-board-host)) .duel-col-display { display: none; }
 .duel-col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
 .duel-col-controls .duel-actions { flex-direction: column; align-items: stretch; }
 .duel-col-controls .duel-actions .btn { width: 100%; }
@@ -54,6 +54,7 @@
 /* On a narrow window the columns stack and nothing is cut off. */
 @media (max-width: 900px) {
   .duel-table { grid-template-columns: minmax(0, 1fr); }
+  .duel-col-display { display: none; } /* no pointer on a phone: the Details button of the fan shows a card */
   .duel-col-controls .duel-actions { flex-direction: row; }
   .duel-col-controls .duel-phases { flex-direction: row; }
   .duel-col-controls .duel-actions .btn { width: auto; }
@@ -68,7 +69,8 @@
 
 /* The playing board: one grid of 7 columns by 5 rows (BOARD_LAYOUT in duel-board.js) */
 :root {
-  --duel-card-max-width: 64px; /* the widest a card on the board gets (images are 59:86); narrower windows shrink it */
+  /* the widest a card on the board gets (images are 59:86): never above 110 px, and low enough that the board and both hands fit the window's height */
+  --duel-card-max-width: min(110px, calc((100vh - 170px) / 10.2));
   --duel-card-ratio: 59 / 86;
   --duel-stack-pad: 14px; /* column gap: room for a card turned sideways */
   --duel-board-columns: 7;
@@ -122,7 +124,14 @@
 
 /* On the table the game is the main focus: no page header, no sidebar, the full width */
 body.duel-focus #appSidebar, body.duel-focus .app-header { display: none; }
-body.duel-focus .app-single { padding-top: 12px; }
 .duel-rematch { display: flex; flex-direction: column; gap: 6px; }
 .duel-rematch p { margin: 0; }
 .duel-rematch .btn { width: 100%; }
+
+/* The card display: always visible on the left, it stays in view while the page scrolls */
+.duel-card-display { position: sticky; top: 8px; max-height: calc(100vh - 16px); overflow-y: auto; }
+.duel-card-display-image { display: block; width: 100%; height: auto; border-radius: 4px; margin-bottom: 8px; }
+.duel-card-display-name { margin: 0 0 6px; font-size: 1rem; }
+.duel-card-display-text { font-size: 0.82rem; }
+/* The whole screen: the table has no page margins and no width limit */
+body.duel-focus .app-single { padding: 8px; max-width: none; }

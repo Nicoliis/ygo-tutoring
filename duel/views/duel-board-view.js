@@ -12,8 +12,8 @@
  * The grid follows boardCells(): the viewer's cells at the bottom, the opponent's turned 180 degrees at the top, the
  * two shared zones in the middle. A card is its image (a named placeholder when it has none), a face-down card a card
  * back. Each lower card of a stack is drawn offset by STACK_OFFSET_PX so every card can be selected; the opponent's
- * stacks grow the other way. Needs duel-board.js (boardCells, ownerOf), duel-view.js (el, button) and
- * duel-fan-view.js (renderFan).
+ * stacks grow the other way. Pointing at a card shows it in the card display. Needs duel-board.js (boardCells,
+ * ownerOf), duel-view.js (el, button), duel-fan-view.js (renderFan) and duel-card-view.js (showInCardDisplay).
  */
 const STACK_OFFSET_PX = 6; // offset of each lower card of a stack (x and y)
 const SIGNAL_WORDS = { activate: "Activates", target: "Targeted", attack: "Attacks" };
@@ -58,6 +58,11 @@ function buildDuelCard(entry, info, usable, handlers, place, extraClass = "") {
   const name = visible ? info.name : "Face-down card";
   btn.setAttribute("aria-label", `${name}${entry.faceUp === false ? ", face-down" : ""}${entry.pos === "def" ? ", sideways" : ""}`);
   btn.title = name;
+  if (visible) {
+    const show = () => showInCardDisplay(info);
+    btn.addEventListener("mouseenter", show);
+    btn.addEventListener("focus", show);
+  }
   btn.addEventListener("click", () => {
     if (usable) handlers.onSelectCard(entry.uid, place, anchorOf(btn));
     else if (visible) handlers.onDetails(info);
@@ -130,6 +135,7 @@ function buildPile(cell, sideIndex, model, handlers) {
   const info = top && top.card;
   btn.appendChild(info ? cardFace(info, false) : cardFace(null, count > 0 && (pile === "deck" || pile === "extra"), label));
   btn.appendChild(el("span", "duel-pile-label", `${label} ${count}`));
+  if (info) btn.addEventListener("mouseenter", () => showInCardDisplay(info)); // the top card of a public pile
   btn.addEventListener("click", () => handlers.onOpenPile(sideIndex, pile, anchorOf(btn)));
   wrapper.appendChild(btn);
   return wrapper;
