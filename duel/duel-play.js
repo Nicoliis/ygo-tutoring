@@ -260,7 +260,12 @@ function knownCard(uid, entry) {
 /* A button of the fan was chosen: open the next level, ask for a zone, or carry the action out. */
 function chooseFanNode(levelIndex, id) {
   if (!play.fan) return;
-  play.fan.path = play.fan.path.slice(0, levelIndex).concat(id);
+  const again = play.fan.path[levelIndex] === id && play.fan.path.length > levelIndex + 1; // the chosen button of a lower level closes what opened above it
+  play.fan.path = play.fan.path.slice(0, levelIndex).concat(again ? [] : id);
+  if (again) {
+    drawRoom();
+    return;
+  }
   const resolved = resolvePath(play.fan.nodes, play.fan.path);
   if (!resolved) return;
   if (resolved.node.children) {

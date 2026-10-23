@@ -15,10 +15,11 @@ menuFor(context)                 -> node[]            // context = { place, face
 node = { id, label, children?: node[], action?: { kind, ... } , needsZone?: true }
 resolvePath(nodes, ids)          -> { node, action } | null
 // fan-layout.js
-fanLayout({ anchor, count, direction, span, buttonPx, gap, bounds, avoid }) -> [{ x, y }]   // centres, inside bounds and clear of the `avoid` points
+fanLayout({ anchor, count }) -> [{ x, y }]      // centres on an arc straight above `anchor`, left to right
+fanShift(points, bounds, half) -> { dx, dy }    // slide a whole fan to fit the window
 ```
 
-Guarantees: `boardCells(0)` and `boardCells(1)` describe the same 35 cells with sides swapped and each player's slot `n` at the same physical cell; a card is in exactly one place; a card that leaves the field is in its owner's piles; a face-down card is never put in the public board with its data; applying an event and then its `inverse` restores the board; `fanLayout` returns positions inside `bounds` for any anchor inside it; every leaf of `menuFor` resolves to an action.
+Guarantees: `boardCells(0)` and `boardCells(1)` describe the same 35 cells with sides swapped and each player's slot `n` at the same physical cell; a card is in exactly one place; a card that leaves the field is in its owner's piles; a face-down card is never put in the public board with its data; applying an event and then its `inverse` restores the board; `fanLayout` always gives the same shape above the anchor (a submenu above its button) and `fanShift` fits it to the window without turning it; every leaf of `menuFor` resolves to an action.
 
 ## Behaviour (`duel-play.js`)
 

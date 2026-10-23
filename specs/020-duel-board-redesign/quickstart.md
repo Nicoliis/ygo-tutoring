@@ -13,7 +13,7 @@ node shared/profiles.test.js     # must end with "profiles contract: OK"
 Start a duel. Each window shows one 7 by 5 grid: the player's own deck at the lower right, extra deck at the lower left, graveyard at the right of the row above, banished zone at the left of the middle row, 11 playable zones, two shared zones in the middle; the opponent's cards upside down in the mirrored cells. Empty `X` cells cannot be chosen.
 
 ## 3. The fan menu (User Story 2)
-Select a hand card: round buttons fan up (Play, Move to, Signal, and Details for the card window). Open each; the chosen button stays marked while the next fan opens. Escape or a click outside closes it. Do the same with a card at the top row and at the left edge of the window: the fan stays inside. Use the keyboard only (Tab or arrows, Enter, Escape).
+Select a hand card: round buttons fan up (Play, Move to, Signal, and Details for the card window). Open each: every fan opens straight above the button you chose, always in the same place, and only the chosen button stays visible (choose it again to go back). Escape or a click outside closes it. Do the same with a card at the top row and at the left edge of the window: the fan stays inside. Use the keyboard only (Tab or arrows, Enter, Escape).
 
 ## 4. Play (User Story 3)
 Play > Face up > Straight > a zone; Play > Face down > Sideways > a shared zone. The other page: face-up card visible, face-down a back lying sideways. Choose Play on a placed card with the other facing/orientation in the same zone, then another zone. Cancel while picking a zone.

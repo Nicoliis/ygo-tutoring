@@ -1732,27 +1732,32 @@ function runContractTests() {
     expect(isOldBoard({ players: [] }) === true && isOldBoard(null) === false);
   });
 
-  check("fan layout: every button stays inside the window and neighbours do not touch", () => {
-    const bounds = { left: 0, top: 0, right: 360, bottom: 640 };
-    const margin = FAN_BUTTON_PX;
-    [[margin, margin], [360 - margin, margin], [margin, 640 - margin], [360 - margin, 640 - margin], [180, margin], [180, 320], [margin, 320]].forEach(([x, y]) => {
-      [1, 2, 3, 4, 5, 6].forEach((count) => {
-        [[-90, FAN_FIRST_SPAN_DEG], [0, FAN_SUB_SPAN_DEG], [135, FAN_SUB_SPAN_DEG]].forEach(([direction, span]) => {
-          const points = fanLayout({ anchor: { x, y }, count, direction, span, bounds });
-          expect(points.length === count);
-          const half = FAN_BUTTON_PX / 2;
-          points.forEach((p) => expect(p.x >= half - 0.5 && p.x <= 360 - half + 0.5 && p.y >= half - 0.5 && p.y <= 640 - half + 0.5, `outside at ${x},${y} x${count}`));
-          for (let i = 0; i < count; i++) {
-            for (let j = i + 1; j < count; j++) expect(Math.hypot(points[i].x - points[j].x, points[i].y - points[j].y) >= FAN_BUTTON_PX, `touching at ${x},${y} x${count}`);
-          }
-        });
-      });
+  check("fan layout: always the same shape straight above the anchor, buttons never touch, a submenu stacks above its button, a fan slides to fit and never turns", () => {
+    const at = { x: 180, y: 500 };
+    [1, 2, 3, 4, 5, 6].forEach((count) => {
+      const points = fanLayout({ anchor: at, count });
+      const far = Math.hypot(points[0].x - at.x, points[0].y - at.y);
+      expect(points.length === count && far >= FAN_RADIUS_PX - 0.001 && (count <= 5 ? Math.abs(far - FAN_RADIUS_PX) < 0.001 : true) && points.every((p) => Math.abs(Math.hypot(p.x - at.x, p.y - at.y) - far) < 0.001), "every button the same distance from the anchor, the same radius up to five buttons");
+      expect(points.every((p, i) => i === 0 || p.x > points[i - 1].x), "left to right in the order of the menu");
+      expect(Math.abs(points.reduce((sum, p) => sum + p.x - at.x, 0)) < 0.001, "centred above the anchor");
+      expect(points.every((p) => p.y <= at.y + 0.001), "never below the anchor");
+      for (let i = 0; i < count; i++) {
+        for (let j = i + 1; j < count; j++) expect(Math.hypot(points[i].x - points[j].x, points[i].y - points[j].y) >= FAN_BUTTON_PX, "neighbours touch at count " + count);
+      }
     });
-    const up = fanLayout({ anchor: { x: 180, y: 400 }, count: 3, direction: -90, span: FAN_FIRST_SPAN_DEG, bounds });
-    const parent = fanLayout({ anchor: { x: 180, y: 500 }, count: 3, direction: -90, span: FAN_FIRST_SPAN_DEG, bounds });
-    const child = fanLayout({ anchor: parent[1], count: 5, direction: -90, span: FAN_SUB_SPAN_DEG, bounds, avoid: parent });
-    child.forEach((p) => parent.forEach((q) => expect(Math.hypot(p.x - q.x, p.y - q.y) >= FAN_BUTTON_PX, "a submenu button touches the menu it came from")));
-    expect(up.every((p) => p.y <= 400.001) && up.some((p) => p.y < 400), "the first fan opens upward when there is room");
+    expect(JSON.stringify(fanLayout({ anchor: at, count: 4 })) === JSON.stringify(fanLayout({ anchor: at, count: 4 })), "the same input always gives the same fan");
+    const parent = fanLayout({ anchor: at, count: 4 });
+    const child = fanLayout({ anchor: parent[1], count: 5 });
+    expect(child.every((p) => p.y <= parent[1].y + 0.001) && Math.abs(child[2].x - parent[1].x) < 0.001 && child[2].y < parent[1].y, "the next level is above the chosen button, its middle button straight above it");
+    const half = FAN_BUTTON_PX / 2;
+    const bounds = { left: 0, top: 0, right: 360, bottom: 640 };
+    const top = fanLayout({ anchor: { x: 20, y: 40 }, count: 5 });
+    const { dx, dy } = fanShift(top, bounds, half);
+    const moved = top.map((p) => ({ x: p.x + dx, y: p.y + dy }));
+    expect(moved.every((p) => p.x >= half - 0.001 && p.x <= 360 - half + 0.001 && p.y >= half - 0.001 && p.y <= 640 - half + 0.001), "a fan near a corner slides inside the window");
+    expect(moved.every((p, i) => Math.abs(p.x - top[i].x - dx) < 0.001 && Math.abs(p.y - top[i].y - dy) < 0.001), "sliding keeps the shape");
+    const free = fanShift(fanLayout({ anchor: { x: 180, y: 400 }, count: 4 }), bounds, half);
+    expect(free.dx === 0 && free.dy === 0, "a fan that fits does not move");
   });
 
   check("duel menu: every path ends in an action, extra deck and give control only where they make sense, hand cards cannot signal", () => {

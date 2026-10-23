@@ -7,11 +7,10 @@
  *              anchor and bounds are in window coordinates; bounds defaults to the window
  *   handlers = { onChoose(levelIndex, nodeId), onClose() }
  *
- * The first level opens upward from the anchor; each further level opens outward from the chosen button of the
- * level before. Arrow keys and Tab move between the buttons of the last level, Enter or Space chooses, Escape or a
+ * The first level opens above the anchor; each further level opens above the chosen button of the level before, and
+ * only that button stays visible in the levels below it (choosing it again closes the levels above). Arrow keys and Tab move between the buttons of the last level, Enter or Space chooses, Escape or a
  * click outside the buttons closes. Needs duel-view.js (el) and fan-layout.js.
  */
-const FAN_FIRST_DIRECTION_DEG = -90; // straight up
 const FAN_CLOSE_KEY = "Escape";
 
 function fanBounds(fan) {
@@ -20,25 +19,23 @@ function fanBounds(fan) {
   return { left: 0, top: 0, right: view ? view.width : window.innerWidth, bottom: view ? view.height : window.innerHeight };
 }
 
-/* The centre of every button of every level, computed level after level. */
+/*
+ * The centre of every button of every level. Each level is a fan straight above the button chosen in the level
+ * before (the first above the anchor); the whole set is then slid, never turned, to fit the window.
+ */
 function fanPositions(fan) {
-  const bounds = fanBounds(fan);
   const all = [];
   let anchor = fan.anchor;
-  let direction = FAN_FIRST_DIRECTION_DEG;
-  let span = FAN_FIRST_SPAN_DEG;
-  fan.levels.forEach((level, index) => {
-    const points = fanLayout({ anchor, count: level.nodes.length, direction, span, bounds, avoid: all.flat() });
+  fan.levels.forEach((level) => {
+    const points = fanLayout({ anchor, count: level.nodes.length });
     all.push(points);
     const chosen = level.nodes.findIndex((n) => n.id === level.chosenId);
-    if (chosen !== -1) {
-      const next = points[chosen];
-      direction = Math.atan2(next.y - anchor.y, next.x - anchor.x) * 180 / Math.PI;
-      anchor = next;
-      span = FAN_SUB_SPAN_DEG;
-    }
+    if (chosen !== -1) anchor = points[chosen];
   });
-  return all;
+  // the buttons that are on screen: the chosen one of each level below, and every button of the last level
+  const shown = all.flatMap((points, i) => (i < all.length - 1 ? points.filter((_, k) => fan.levels[i].nodes[k].id === fan.levels[i].chosenId) : points));
+  const { dx, dy } = fanShift(shown, fanBounds(fan), FAN_BUTTON_PX / 2);
+  return all.map((points) => points.map((p) => ({ x: p.x + dx, y: p.y + dy })));
 }
 
 function renderFan(rootEl, fan, handlers) {
@@ -53,6 +50,7 @@ function renderFan(rootEl, fan, handlers) {
   const last = fan.levels.length - 1;
   fan.levels.forEach((level, levelIndex) => {
     level.nodes.forEach((node, i) => {
+      if (levelIndex < last && node.id !== level.chosenId) return; // only the path taken stays on screen
       const p = positions[levelIndex][i];
       const btn = el("button", "duel-fan-btn" + (node.id === level.chosenId ? " duel-fan-chosen" : "") + (levelIndex < last ? " duel-fan-past" : ""));
       btn.type = "button";

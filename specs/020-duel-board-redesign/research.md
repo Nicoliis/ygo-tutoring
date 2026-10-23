@@ -25,9 +25,9 @@
 **Alternatives**: a list of markers with expiry times in the table - needs clocks that agree.
 
 ## 6. The fan: geometry and menu data
-**Decision**: `fan-layout.js` computes, for an anchor point, a number of buttons, a direction and a button size, the centre of each button on an arc: the first fan opens up (direction -90 degrees, 180 degree span), a submenu opens outward from its parent button (direction from the parent anchor to that button, span 120 degrees). The radius is the smallest that keeps neighbouring buttons from touching (`size + gap` over the chord) and never less than a minimum. The result is clamped to the window: if a button falls outside it, the arc is flipped, then shifted. `duel-menu.js` holds the tree as data (`label`, `children` or `action`, `visible(context)`) so tests can walk every path and the view stays dumb.
-**Rationale**: pure and testable (every position inside the window for many anchors); keeps `duel-play.js` free of geometry.
-**Alternatives**: SVG pie menu - harder to make accessible and to hit-test with touch; CSS-only fan - cannot clamp to the window.
+**Decision**: one fixed shape so the buttons can be found without looking (muscle memory). `fan-layout.js` puts the buttons of a fan on an arc of `FAN_RADIUS_PX` (80) straight above its anchor, left to right in menu order, spaced just far enough not to touch (a fan of two or three is a short arc, five nearly a semicircle; a longer one keeps to the semicircle with a wider radius). Every submenu is a fan straight above the button it came from, so each choice opens above the previous one; fans never turn or flip. Only the chosen button of each lower level stays on screen (choosing it again closes the levels above). When the fan would leave the window the whole fan is slid, keeping its shape (`fanShift`). `duel-menu.js` holds the tree as data (`label`, `children` or `action`) so tests can walk every path and the view stays dumb.
+**Rationale**: the same button is always in the same place relative to the card (Play at the upper left, Move to next, then Signal and Details), and the chain Play, Face up, Straight is a short vertical climb; pure and testable.
+**Alternatives**: turning or flipping fans to avoid the edges (the first version) - the buttons move around, so no muscle memory; SVG pie menu - harder to make accessible and to hit-test with touch.
 
 ## 7. Menu tree content
 ```

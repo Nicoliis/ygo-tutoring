@@ -1,70 +1,35 @@
 /*
  * Where the round buttons of a fan menu go. Pure: numbers in, numbers out; no DOM.
  *
- *   fanLayout({ anchor, count, direction, span, buttonPx, gap, bounds, avoid }) -> [{ x, y }]  (centres of the buttons)
+ *   fanLayout({ anchor, count, buttonPx, gap, radius }) -> [{ x, y }]   (centres of the buttons, left to right)
+ *   fanShift(points, bounds, half) -> { dx, dy }                         (how far to slide a whole fan to fit the window)
  *
- * The buttons sit on an arc around `anchor` ({ x, y }), centred on `direction` (degrees, 0 = right, -90 = up) and
- * `span` degrees wide. The radius is the smallest that keeps neighbouring buttons `gap` apart (never below
- * FAN_MIN_RADIUS_PX). When a button would leave `bounds` ({ left, top, right, bottom }) the arc is turned to the
- * nearest direction where all fit and none touches a point of `avoid` (the buttons of the fans already open); if
- * none does, a narrower arc (with a larger radius), then a wider radius, is tried; as a last resort the buttons are
- * moved inside the bounds.
+ * The same shape every time, so the buttons can be found without looking: they sit on an arc of FAN_RADIUS_PX around
+ * `anchor`, centred straight above it, `count` buttons spaced just far enough apart not to touch (a fan of two or
+ * three is a short arc, five nearly a semicircle; a longer one keeps to the semicircle with a wider radius). A submenu is a fan around the button it came from,
+ * so every choice opens above the previous one. Fans never turn or flip: when one would leave the window `fanShift`
+ * slides it as a whole.
  */
 const FAN_BUTTON_PX = 56; // diameter of a fan button
-const FAN_GAP_PX = 8; // space between neighbouring buttons
-const FAN_MIN_RADIUS_PX = 70; // the smallest distance from the anchor to a button centre
-const FAN_FIRST_SPAN_DEG = 180; // the first fan is a semicircle
-const FAN_SUB_SPAN_DEG = 120; // a submenu fans out from its button
-const FAN_TURN_STEP_DEG = 15; // how far the arc is turned each try when it does not fit
-const FAN_TURN_TRIES = 12; // tries on each side (a full turn)
-const FAN_NARROWER_SPANS = [1, 0.75, 0.5]; // fractions of the span tried when no direction fits (the radius grows with them)
-const FAN_RADIUS_SCALES = [1, 1.35, 1.7]; // multiples of the radius tried when buttons would touch an open fan
+const FAN_GAP_PX = 4; // space between neighbouring buttons
+const FAN_RADIUS_PX = 80; // distance from the anchor to the button centres
+const FAN_UP_DEG = -90; // straight up, in screen angles (0 = right)
 
-function fanArc(anchor, count, direction, span, buttonPx, gap, scale = 1) {
-  const step = count > 1 ? span / (count - 1) : 0;
+function fanLayout({ anchor, count, buttonPx = FAN_BUTTON_PX, gap = FAN_GAP_PX, radius = FAN_RADIUS_PX }) {
   const chord = buttonPx + gap;
-  const radius = count > 1 ? Math.max(FAN_MIN_RADIUS_PX, chord / (2 * Math.sin(Math.min(step, 180) * Math.PI / 360))) : FAN_MIN_RADIUS_PX;
-  const far = radius * scale;
+  const touching = (2 * Math.asin(Math.min(1, chord / (2 * radius))) * 180) / Math.PI; // angle between neighbours at this radius
+  const stepDeg = count > 1 ? Math.min(touching, 180 / (count - 1)) : 0; // never wider than a semicircle in total
+  const far = count > 1 && stepDeg < touching ? chord / (2 * Math.sin((stepDeg * Math.PI) / 360)) : radius; // then the radius grows instead
   return Array.from({ length: count }, (_, i) => {
-    const angle = (count > 1 ? direction - span / 2 + step * i : direction) * Math.PI / 180;
+    const angle = ((FAN_UP_DEG + (i - (count - 1) / 2) * stepDeg) * Math.PI) / 180;
     return { x: anchor.x + far * Math.cos(angle), y: anchor.y + far * Math.sin(angle) };
   });
 }
 
-/* How far, in total, the buttons stick out of the bounds (0 when all fit). */
-function fanOverflow(points, bounds, half) {
-  return points.reduce(
-    (sum, p) => sum + Math.max(0, bounds.left + half - p.x) + Math.max(0, p.x - (bounds.right - half)) + Math.max(0, bounds.top + half - p.y) + Math.max(0, p.y - (bounds.bottom - half)),
-    0,
-  );
-}
-
-/* How much the buttons overlap the points of `avoid` (buttons already on screen), in pixels. */
-function fanCrowding(points, avoid, buttonPx) {
-  let sum = 0;
-  points.forEach((p) => avoid.forEach((a) => {
-    sum += Math.max(0, buttonPx - Math.hypot(p.x - a.x, p.y - a.y));
-  }));
-  return sum;
-}
-
-function fanLayout({ anchor, count, direction, span, buttonPx = FAN_BUTTON_PX, gap = FAN_GAP_PX, bounds, avoid = [] }) {
-  const half = buttonPx / 2;
-  const tries = [0];
-  for (let i = 1; i <= FAN_TURN_TRIES; i++) tries.push(i * FAN_TURN_STEP_DEG, -i * FAN_TURN_STEP_DEG);
-  let best = null;
-  for (const scale of FAN_RADIUS_SCALES) {
-    for (const fraction of FAN_NARROWER_SPANS) {
-      for (const turn of tries) {
-        const points = fanArc(anchor, count, direction + turn, span * fraction, buttonPx, gap, scale);
-        const cost = fanOverflow(points, bounds, half) + fanCrowding(points, avoid, buttonPx);
-        if (cost === 0) return points;
-        if (!best || cost < best.cost) best = { points, cost };
-      }
-    }
-  }
-  return best.points.map((p) => ({
-    x: Math.min(Math.max(p.x, bounds.left + half), bounds.right - half),
-    y: Math.min(Math.max(p.y, bounds.top + half), bounds.bottom - half),
-  }));
+/* The slide (in pixels) that brings every point, with `half` of a button around it, inside `bounds` as far as possible. */
+function fanShift(points, bounds, half) {
+  const low = (key) => Math.min(...points.map((p) => p[key])) - half;
+  const high = (key) => Math.max(...points.map((p) => p[key])) + half;
+  const slide = (from, to, min, max) => (to - from > max - min ? min - from : from < min ? min - from : to > max ? max - to : 0);
+  return { dx: slide(low("x"), high("x"), bounds.left, bounds.right), dy: slide(low("y"), high("y"), bounds.top, bounds.bottom) };
 }

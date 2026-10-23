@@ -12,7 +12,7 @@ Changes against [019's data model](../019-duel-simulator/data-model.md); everyth
 | duel-board.js | `SHARED_SLOTS` | 2 (counted from the layout) | Shared zones |
 | duel-board.js | `SIGNAL_KINDS` | `["activate","target","attack"]` | What a signal can say |
 | duel-play.js | `SIGNAL_SECONDS` | 5 | How long a signal marker stays on this device |
-| fan-layout.js | `FAN_BUTTON_PX`, `FAN_GAP_PX`, `FAN_MIN_RADIUS_PX`, `FAN_FIRST_SPAN_DEG`, `FAN_SUB_SPAN_DEG` | 56, 8, 70, 180, 120 | Fan geometry |
+| fan-layout.js | `FAN_BUTTON_PX`, `FAN_GAP_PX`, `FAN_RADIUS_PX`, `FAN_UP_DEG` | 56, 4, 80, -90 | Fan geometry (always straight above the anchor) |
 | removed | `MONSTER_ZONES`, `SPELL_ZONES`, `FIELD_ZONES`, `PENDULUM_ZONES`, `ZONE_SIZES`, `ZONE_KINDS` | | Replaced by the layout |
 
 ## Public board

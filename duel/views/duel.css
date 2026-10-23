@@ -106,5 +106,5 @@
 .duel-fan-btn { position: fixed; width: var(--duel-fan-size); height: var(--duel-fan-size); transform: translate(-50%, -50%); border-radius: 50%; border: 2px solid var(--accent); background: var(--panel); color: var(--text); font: inherit; font-size: 0.6rem; font-weight: 700; line-height: 1.1; padding: 0; display: flex; align-items: center; justify-content: center; text-align: center; cursor: pointer; box-shadow: 0 3px 10px rgba(0, 0, 0, 0.5); }
 .duel-fan-btn:hover, .duel-fan-btn:focus-visible { background: var(--accent); color: #000; outline: none; }
 .duel-fan-chosen { background: var(--accent); color: #000; }
-.duel-fan-past:not(.duel-fan-chosen) { opacity: 0.45; }
+.duel-fan-past { opacity: 0.75; }
 .duel-fan-label { pointer-events: none; }

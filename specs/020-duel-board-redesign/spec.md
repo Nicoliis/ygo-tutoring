@@ -60,9 +60,9 @@ Choosing one of your cards opens a semicircle of round buttons that fans up abov
 **Acceptance Scenarios**:
 
 1. **Given** one of your cards (in your hand, on your side of the board, in a shared zone, in a pile list), **When** you select it, **Then** a semicircle of round buttons opens above it with Play, Move to and Signal, each with a readable label.
-2. **Given** the first fan, **When** you choose a button, **Then** a second fan opens from that button (fanning up from it) and the first fan stays visible with the chosen button marked.
+2. **Given** the first fan, **When** you choose a button, **Then** a second fan opens straight above that button (every choice opens above the previous one, never turning, so the buttons are always in the same place) and the chosen button stays visible, marked; choosing it again closes the levels above.
 3. **Given** an open fan, **When** you press Escape or select something outside the fan, **Then** the whole menu closes and nothing changes.
-4. **Given** the fan near the top or the sides of the window, **When** it would not fit, **Then** it still stays fully on screen (it opens toward the free side) and every button remains reachable.
+4. **Given** the fan near the top or the sides of the window, **When** it would not fit, **Then** it slides as a whole to stay fully on screen, keeping its shape, and every button remains reachable.
 5. **Given** the keyboard, **When** a player moves focus into the fan, **Then** the buttons can be walked with the arrow keys or Tab, chosen with Enter or Space and closed with Escape, and each button has an accessible name.
 6. **Given** a card of the opponent, **When** a player selects it, **Then** no fan opens for moving it (only its details, as before).
 
