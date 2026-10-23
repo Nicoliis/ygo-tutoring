@@ -53,6 +53,80 @@ check("offline use that cannot work is explained in plain words", () => {
   expect(code.includes("isEntryScreen()"), "notices must stay on the profile screen and the main menu");
 });
 
+/* ---- files on disk ---- */
+
+const SKIPPED_DIRS = new Set([".git", "specs", ".specify", ".claude", "node_modules"]);
+
+function listFiles(dir, found = []) {
+  for (const entry of fs.readdirSync(path.join(root, dir), { withFileTypes: true })) {
+    const relative = dir ? dir + "/" + entry.name : entry.name;
+    if (entry.isDirectory()) {
+      if (!SKIPPED_DIRS.has(entry.name)) listFiles(relative, found);
+    } else found.push(relative);
+  }
+  return found;
+}
+
+const allFiles = listFiles("");
+const appPagesText = read("service-worker.js").match(/const APP_PAGES = \[([\s\S]*?)\];/)[1];
+const appPages = [...appPagesText.matchAll(/"([^"]+)"/g)].map((m) => m[1]);
+
+check("every page of the app is listed in the worker and every listed page exists", () => {
+  const pages = allFiles.filter((file) => file.endsWith(".html") && file !== "shared/tests.html");
+  const missingFromList = pages.filter((page) => !appPages.includes(page));
+  expect(missingFromList.length === 0, "pages not in APP_PAGES: " + missingFromList.join(", "));
+  const missingOnDisk = appPages.filter((page) => !fs.existsSync(path.join(root, page)));
+  expect(missingOnDisk.length === 0, "listed pages that do not exist: " + missingOnDisk.join(", "));
+});
+
+check("every app page carries the manifest, theme color, icons and the app shell", () => {
+  for (const page of appPages.filter((p) => p !== "offline.html")) {
+    const html = read(page);
+    const up = "../".repeat(page.split("/").length - 1);
+    for (const needle of ['rel="manifest"', 'name="theme-color"', 'rel="apple-touch-icon"', up + "shared/app-shell.css", up + "shared/app-shell.js"]) {
+      expect(html.includes(needle), page + " lacks " + needle);
+    }
+  }
+});
+
+check("offline.html is self-contained and loads no app script", () => {
+  expect(!/<script[^>]+src=/.test(read("offline.html")), "offline.html loads a script");
+});
+
+check("the manifest is valid and every icon exists with its stated size", () => {
+  const manifest = JSON.parse(read("manifest.webmanifest"));
+  for (const field of ["name", "short_name", "start_url", "scope", "display", "theme_color", "background_color", "icons"]) {
+    expect(manifest[field], "manifest lacks " + field);
+  }
+  expect(manifest.display === "standalone", "display must be standalone");
+  for (const icon of manifest.icons) {
+    const file = path.join(root, icon.src);
+    expect(fs.existsSync(file), "icon missing: " + icon.src);
+    if (icon.type === "image/png") {
+      const header = fs.readFileSync(file);
+      const size = header.readUInt32BE(16) + "x" + header.readUInt32BE(20); // PNG: width and height follow the signature and IHDR tag
+      expect(size === icon.sizes, icon.src + " is " + size + ", the manifest says " + icon.sizes);
+    }
+  }
+});
+
+check("every picture, sound or data file named inside the scripts exists", () => {
+  const extraText = (read("service-worker.js").match(/const EXTRA_FILES = \[([\s\S]*?)\];/) || [, ""])[1];
+  const extra = [...extraText.matchAll(/"([^"]+)"/g)].map((m) => m[1]);
+  const scripts = allFiles.filter((file) => file.endsWith(".js") && !file.endsWith(".test.js") && file !== "shared/contract-tests.js" && !file.startsWith("icons/") && file !== "service-worker.js");
+  const names = new Set(allFiles.map((file) => file.split("/").pop()));
+  const lost = [];
+  for (const script of scripts) {
+    const code = withoutComments(read(script));
+    for (const m of code.matchAll(/["'`]([^"'`\s{}$:?#]+\.(?:png|jpg|jpeg|svg|webp|gif|mp3|ogg|json))["'`]/g)) {
+      const name = m[1];
+      if (/^(https?:|data:)/.test(name) || name.includes("*")) continue;
+      if (!names.has(name.split("/").pop()) && !extra.includes(name)) lost.push(script + " -> " + name);
+    }
+  }
+  expect(lost.length === 0, "files named in scripts that are not on disk: " + lost.join("; "));
+});
+
 let failed = 0;
 results.forEach((r) => {
   console.log(`${r.ok ? "PASS" : "FAIL"}  ${r.name}${r.ok ? "" : " -> " + r.error}`);
