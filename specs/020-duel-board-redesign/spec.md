@@ -14,6 +14,7 @@
 
 - Q: Where does Banish go in the new menus? → A: In Move to, and a card can be banished face up or face down.
 - Q: Do search the deck, look at the top card, shuffle the deck and reveal a hand card stay? → A: Yes, all features stay, moved into the fitting menu or submenu: the deck fan has Draw, Mill, Search, Look at top and Shuffle; Reveal and Hide (for a card shown to the opponent) go under Signal.
+- Q: Do Attacks and Target also pick the attacked or targeted card? → A: No. A signal only marks the signalling card and adds a log line.
 
 ## User Scenarios & Testing *(mandatory)*
 
