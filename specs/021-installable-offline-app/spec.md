@@ -8,6 +8,14 @@
 
 **Input**: User description: "Make the app installable and usable offline. The browser should offer 'Install app' (own window, app icon, name, theme colors) and, once installed or after the first visit, every screen of the app (profiles, menu, run, workshop, store, tools, duel room's own screens) must open without a connection using cached app files. Card data and card pictures from the card database still need the network the first time and are then cached for later use. The app must update itself: when a new version of the files exists, the user is told and can reload to get it, and never gets stuck on an old version. Saved data (profiles, collections, runs, save files) must never be touched or lost by installing, updating or clearing the app files cache. The duel room link (connection codes between two players) needs a connection and must say so clearly when offline instead of failing silently. Static site: no build step."
 
+## Clarifications
+
+### Session 2026-10-23
+
+- Q: How much space may the app keep for card data and card pictures it has seen? → A: 150 MB; when it is full the oldest are dropped first.
+- Q: Where does the app's own "Install app" button appear? → A: On the profile screen and the main menu only, while installing is possible; it is not shown inside the work screens.
+- Q: What does the card database search do while offline? → A: It searches the card data kept from earlier visits and shows those matches labelled "offline results", and says plainly that the full database needs a connection.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Install the app (Priority: P1)
@@ -20,7 +28,7 @@ A user who opens the app in a supporting browser is offered an "Install app" opt
 
 **Acceptance Scenarios**:
 
-1. **Given** a supporting browser and a first or repeat visit, **When** the app is open, **Then** the browser can offer to install it, and the app also shows its own "Install app" button while installation is available.
+1. **Given** a supporting browser and a first or repeat visit, **When** the app is open, **Then** the browser can offer to install it, and the profile screen and the main menu also show the app's own "Install app" button while installation is available.
 2. **Given** the user installs the app, **When** they start it from the system, **Then** it opens in its own window showing the app's name and icon, with the theme colors in the window frame.
 3. **Given** the app is already installed, **When** the user opens it, **Then** the "Install app" button is not shown.
 4. **Given** a browser that cannot install apps, **When** the user opens the app, **Then** the app works exactly as before and shows no install button.
@@ -40,7 +48,7 @@ After the first visit (or once installed), every screen of the app opens with no
 
 1. **Given** the app was visited online once, **When** the user goes offline and opens any screen, **Then** the screen opens with the same look and behavior as online.
 2. **Given** a card or its picture was shown before, **When** the user is offline, **Then** it is shown again from what was kept.
-3. **Given** the user is offline and searches the card database for something never loaded, **When** the search runs, **Then** the app says the search needs a connection instead of showing an empty or broken result.
+3. **Given** the user is offline and searches the card database, **When** the search runs, **Then** the app shows the matches among the cards kept from earlier visits, labelled "offline results", and says the full database needs a connection; with no match it says so instead of showing an empty or broken result.
 4. **Given** the user is offline, **When** they try to open a pack from a set whose cards were never loaded, **Then** the app says that set needs a connection first and changes nothing in the run.
 5. **Given** a first visit with no connection at all, **When** the app is opened, **Then** the user sees a clear message that the first visit needs a connection.
 
@@ -112,9 +120,10 @@ The user always knows whether a connection is needed. The app shows when it is o
 ### Functional Requirements
 
 - **FR-001**: The app MUST be installable from supporting browsers, with an app name, icon (several sizes including one for rounded system icons), start screen, display in its own window, and theme and background colors matching the app.
-- **FR-002**: The app MUST show its own "Install app" button while installation is available and hide it once the app is installed or when the browser cannot install.
+- **FR-002**: The app MUST show its own "Install app" button on the profile screen and the main menu while installation is available, and hide it once the app is installed or when the browser cannot install; the work screens do not show it.
 - **FR-003**: After the first visit, every screen of the app (profile selection, main menu, all Run, Workshop, Store and Tools screens, and the Duel Room's own screens) MUST open without a connection.
-- **FR-004**: Card data and card pictures from the card database MUST be kept after they are first loaded and reused offline, within a size limit, removing the oldest first.
+- **FR-004**: Card data and card pictures from the card database MUST be kept after they are first loaded and reused offline, within a limit of 150 MB, removing the oldest first.
+- **FR-004a**: While offline, the card database search MUST search the kept card data and show the matches labelled "offline results", and MUST say that the full database needs a connection.
 - **FR-005**: The app MUST explain when something needs a connection (first visit, unseen card search, unseen set or pack, duel link) and MUST NOT change saved data when that action cannot run.
 - **FR-006**: The app MUST show a visible offline indicator while there is no connection.
 - **FR-007**: The app MUST detect that a newer version exists, tell the user, and offer a Reload action; it MUST NOT reload by itself while the user may be in the middle of a duel, a pack or an edit.
@@ -151,7 +160,7 @@ The user always knows whether a connection is needed. The app shows when it is o
 - The app is served from a secure web address (or from the local development address); opening it as a file from disk cannot be installed.
 - Not every browser can install apps; the app works as an ordinary site there.
 - The first visit always needs a connection, because the files are stored during it.
-- The offline limit for card data and pictures is a fixed bounded size chosen in planning; saved data is never part of that limit.
+- The offline limit for card data and pictures is 150 MB; saved data is never part of that limit.
 - Packs can be opened offline only for sets whose card data was loaded before.
 - The Duel Room's link keeps needing a connection; only its own screens, practice alone and viewing saved duels work offline.
 - The app name, icons and colors follow the app's existing identity.
