@@ -347,6 +347,30 @@ function keepCardData(request, response) {
   });
 }
 
+/*
+ * A card search (cardinfo.php?fname=...) that cannot reach the network is answered from the card data kept so far:
+ * the cards whose name contains the text, with the header x-ygo-offline so the screens can label them
+ * "offline results". Anything else that is not a card search has no offline answer.
+ */
+async function offlineSearchAnswer(request) {
+  const url = new URL(request.url);
+  if (!url.pathname.endsWith("/cardinfo.php") || !url.searchParams.has("fname")) return null;
+  const cache = await caches.open(API_CACHE);
+  const answers = [];
+  for (const key of await cache.keys()) {
+    const kept = await cache.match(key);
+    try {
+      answers.push(await kept.json());
+    } catch (err) {
+      /* a kept answer that is not card data is skipped */
+    }
+  }
+  const data = searchKeptCards(answers, url.searchParams.get("fname"));
+  return new Response(JSON.stringify({ data }), {
+    headers: { "content-type": "application/json", "x-ygo-offline": "1" },
+  });
+}
+
 async function answerCardData(request) {
   try {
     const response = await fetch(request);
@@ -355,6 +379,8 @@ async function answerCardData(request) {
   } catch (err) {
     const kept = await (await caches.open(API_CACHE)).match(request.url);
     if (kept) return kept;
+    const offlineResults = await offlineSearchAnswer(request);
+    if (offlineResults) return offlineResults;
     throw err;
   }
 }
