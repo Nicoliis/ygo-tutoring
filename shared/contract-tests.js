@@ -1414,6 +1414,17 @@ function runContractTests() {
     expect(!isOldBoard(ready.sim) && ready.sim.nocards === true && ready.sim.players[0].ready, "an unstarted old duel starts on the new board");
   });
 
+  check("duel session: practice alone, the creator can play the other side and a joiner cannot", () => {
+    const sent = [];
+    const creator = createDuelSession({ role: 0, table: newTable("solo", "Ana", "Practice opponent"), send: (m) => (sent.push(m), false) });
+    expect(creator.intentFor(1, { kind: "ready", deckName: "Nothing", mainCount: 0, extraCount: 0 }).ok);
+    const sim = creator.getTable().sim;
+    expect(sim.players[1].ready && sim.players[1].deckCount === 0 && !sim.players[0].ready, "the other side is ready with no cards");
+    expect(creator.intentFor(1, { kind: "lp", target: 1, mode: "add", amount: -500 }).ok && creator.getTable().players[1].lp === 7500);
+    const joiner = createDuelSession({ role: 1, table: newTable("solo", "Ana", "Bo"), send: () => true });
+    expect(joiner.intentFor(0, { kind: "lp", target: 0, mode: "add", amount: -500 }).ok === false, "only the creator");
+  });
+
   /* Two sessions joined by an in-memory link whose delivery order the test controls. */
   function duelPair(seedTable) {
     const toCreator = [];

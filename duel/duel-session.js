@@ -8,6 +8,7 @@
  *   session.intent(event)      ask for a change (creator: applies it; joiner: sends it to the creator)
  *   session.receive(message)   feed a message from the other side
  *   session.hello(name)        joiner: introduce itself when the link opens
+ *   session.intentFor(by, event)  creator, practice alone only: an event of the other side
  *   session.getTable()
  *
  * onApplied(event, table) is called on BOTH devices right after an event is applied (own or the other player's), in the
@@ -90,6 +91,10 @@ function createDuelSession({ role, table, send, random = Math.random, onChange =
     setTable,
     hello(name) {
       send({ type: "hello", duelId: current ? current.duelId : null, name });
+    },
+    /* Practice alone only: the creator plays the other side too (an event as if the other player had sent it). */
+    intentFor(by, event) {
+      return role === ROLE_CREATOR ? applyAsAuthority(resolve(event, by)) : { ok: false };
     },
     intent(event) {
       if (role === ROLE_CREATOR) return applyAsAuthority(resolve(event, 0));

@@ -107,6 +107,12 @@
 
 ---
 
+## Phase 8: Practice alone (added after the first release)
+
+- [X] T023 Practice alone, a way to test a deck without a friend: a "Practice alone" button on the Duel Room start screen starts the same table with no link, the player as creator and an empty "Practice opponent" side (`startPractice` in `duel/duel-room.js`, `session.intentFor(by, event)` in `duel/duel-session.js`, `practiceReply` in `duel/duel-play.js`: the empty side is ready at once, accepts a rematch and its turn passes by itself); nothing is saved; "Leave practice" returns to the start screen; test in `shared/contract-tests.js` and the browser run
+
+---
+
 ## Dependencies & Execution Order
 
 - **Phase 1** (T001 to T005) has no dependencies; T001, T002, T003 and T005 can run in parallel, T004 follows T001 to T003.

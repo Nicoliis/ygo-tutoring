@@ -98,6 +98,7 @@ function restorePrivate(table) {
 function onDuelEvent(event, table) {
   const sim = table.sim;
   if (!sim) return;
+  if (room.practice && practiceReply(event, table)) return;
   if (event.kind === "ready" && room.role === ROLE_CREATOR && !sim.started && sim.players[0].ready && sim.players[1].ready) {
     room.session.intent({ kind: "start" }); // both are ready: the creator starts the duel
     return;
@@ -129,6 +130,31 @@ function onDuelEvent(event, table) {
     savePrivate();
     drawRoom();
   }
+}
+
+/* ---- practice alone: the other side answers for itself ---- */
+
+const PRACTICE_DECK_NAME = "Nothing"; // the empty side's deck
+const PRACTICE_SKIPPED_TURNS = 1; // turns of the empty side that pass by themselves
+
+/* Practice duels have no opponent: it is ready at once, accepts a rematch and its turn passes. True when it replied. */
+function practiceReply(event, table) {
+  const sim = table.sim;
+  if (event.kind === "ready" && event.by === 0 && !sim.players[1].ready) {
+    room.session.intentFor(1, { kind: "ready", deckName: PRACTICE_DECK_NAME, mainCount: 0, extraCount: 0 });
+    return true;
+  }
+  if (event.kind === "rematch" && event.by === 0) {
+    room.session.intentFor(1, { kind: "rematch-accept" });
+    return true;
+  }
+  if (event.kind === "phase" && table.active === 1 && sim.started && !play.skippingTurn) {
+    play.skippingTurn = true; // the phases that follow must not start the same skip again
+    for (let i = 0; i < PRACTICE_SKIPPED_TURNS * DUEL_PHASES.length && room.session.getTable().active === 1; i++) room.session.intent({ kind: "phase" });
+    play.skippingTurn = false;
+    return true;
+  }
+  return false;
 }
 
 /* ---- rematch ---- */

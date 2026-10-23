@@ -7,6 +7,8 @@ const SAVED_DUEL_KEY = "ygoDuelRoom"; // the last duel of this browser: { duelId
 const CODE_EXPIRY_MS = 600000; // after this the page suggests a new invitation (10 minutes)
 const COPIED_MESSAGE = "Code copied. Send it to your friend.";
 const DEFAULT_PLAYER_NAME = "Player";
+const PRACTICE_OPPONENT_NAME = "Practice opponent"; // the empty side of a practice duel
+const PRACTICE_NOTICE = "Practice: you play alone. The other side is empty; use the life point controls for it. Nothing is shared and nothing is saved."
 
 const duelRootEl = document.getElementById("duelRoot");
 let room = {
@@ -20,6 +22,7 @@ let room = {
   session: null,
   expiryTimer: null,
   reconnecting: null, // the saved duel being resumed, when there is one
+  practice: false, // playing alone against an empty side (no link)
 };
 
 /* ---- the saved duel ---- */
@@ -30,6 +33,7 @@ function readSavedDuel() {
 }
 
 function saveDuel() {
+  if (room.practice) return; // a practice duel is never saved
   if (!room.session || !room.session.getTable()) return;
   saveData({ duelId: room.session.getTable().duelId, role: room.role, table: room.session.getTable() }, SAVED_DUEL_KEY);
 }
@@ -55,6 +59,7 @@ function drawRoom() {
       deckChoice: room.phase === "connected" ? deckChoiceModel() : null,
       board: room.session && room.session.getTable() ? boardModel() : null,
       rematch: rematchState(),
+      practice: room.practice,
       oldBoard: Boolean(room.session && room.session.getTable() && room.session.getTable().sim && room.session.getTable().sim.started && isOldBoard(room.session.getTable().sim)),
       privateLost: Boolean(room.session && room.session.getTable() && room.session.getTable().sim && room.session.getTable().sim.started && !isOldBoard(room.session.getTable().sim) && !play.priv),
       you: room.role === null ? 0 : room.role,
@@ -80,6 +85,8 @@ function drawRoom() {
       onDeclineRematch: declineRematch,
       onChooseDeck: chooseDeck,
       onNoCards: playWithoutCards,
+      onPractice: startPractice,
+      onLeavePractice: startOver,
     }
   );
 }
@@ -233,7 +240,21 @@ function intent(event) {
 function startOver() {
   if (room.link) room.link.close();
   clearTimeout(room.expiryTimer);
-  setRoom({ phase: "start", status: "", error: "", notice: "", code: "", role: null, link: null, session: null, reconnecting: null });
+  play.priv = null; // a practice duel's cards go with it
+  setRoom({ phase: "start", status: "", error: "", notice: "", code: "", role: null, link: null, session: null, reconnecting: null, practice: false });
+}
+
+/* Practice alone: the same table with no link; the other side is an empty player (see onDuelEvent in duel-play.js). */
+function startPractice() {
+  if (room.link) room.link.close();
+  clearTimeout(room.expiryTimer);
+  play.priv = null;
+  play.built = null;
+  play.chosenDeckId = null;
+  const table = newTable(newDuelId(), myName(), PRACTICE_OPPONENT_NAME);
+  setRoom({ role: ROLE_CREATOR, link: null, session: null, reconnecting: null, practice: true, status: "", error: "", notice: PRACTICE_NOTICE });
+  room.session = makeSession(table);
+  setRoom({ phase: "connected" });
 }
 
 function reconnect() {

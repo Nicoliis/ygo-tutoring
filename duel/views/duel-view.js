@@ -52,12 +52,13 @@ function codeBox(labelText, code, onCopy) {
   return wrap;
 }
 
-function buildMessages(model) {
+function buildMessages(model, h) {
   const box = el("div", "duel-messages");
   box.setAttribute("aria-live", "polite");
   if (model.status) box.appendChild(el("p", "duel-status", model.status));
   if (model.error) box.appendChild(el("p", "duel-error", model.error));
   if (model.notice) box.appendChild(el("p", "duel-notice", model.notice));
+  if (model.practice) box.appendChild(button("Leave practice", h.onLeavePractice));
   return box;
 }
 
@@ -78,6 +79,11 @@ function buildStart(model, h) {
     saved.appendChild(actions);
     frag.appendChild(saved);
   }
+  const practice = el("section", "panel");
+  practice.appendChild(el("h2", null, "Practice alone"));
+  practice.appendChild(el("p", "duel-explain", "Test a deck by yourself: pick a deck, draw your hand and play it on the board against an empty side. Nothing is shared with anyone and nothing is saved."));
+  practice.appendChild(button("Practice alone", h.onPractice, "btn btn-primary"));
+  frag.appendChild(practice);
   const create = el("section", "panel");
   create.appendChild(el("h2", null, "Create a room"));
   create.appendChild(el("p", null, "You get an invitation code to send to your friend."));
@@ -251,7 +257,7 @@ function renderRoom(rootEl, model, h) {
   }
   // messages and the banner are redrawn every time; the rest of each screen is built once
   let messages = rootEl.querySelector(":scope > .duel-messages");
-  const fresh = buildMessages(model);
+  const fresh = buildMessages(model, h);
   if (messages) messages.replaceWith(fresh);
   else rootEl.prepend(fresh);
 
