@@ -15,6 +15,7 @@
 - Q: Where does Banish go in the new menus? → A: In Move to, and a card can be banished face up or face down.
 - Q: Do search the deck, look at the top card, shuffle the deck and reveal a hand card stay? → A: Yes, all features stay, moved into the fitting menu or submenu: the deck fan has Draw, Mill, Search, Look at top and Shuffle; Reveal and Hide (for a card shown to the opponent) go under Signal.
 - Q: Do Attacks and Target also pick the attacked or targeted card? → A: No. A signal only marks the signalling card and adds a log line.
+- Q: Who controls and who gets a card in a shared zone? → A: A card always goes back to its original owner when it leaves the field; a new action Give control lets the opponent control a card while it is on the field; shared zones keep the same rule and both players can place cards in them.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -87,7 +88,7 @@ Choosing one of your cards opens a semicircle of round buttons that fans up abov
 
 ### User Story 4 - Move a card to the graveyard, hand, deck or extra deck (Priority: P1)
 
-**Move to** opens a fan with **Graveyard**, **Banish**, **Hand**, **Deck** and **Extra deck**. Graveyard, Hand and Extra deck act at once. **Banish** opens one more fan with **Face up** and **Face down** (a face-down banished card is a card back for the opponent). **Deck** opens one more fan with **On top**, **On bottom** and **Shuffle** (the card goes into the deck and the deck is shuffled). The extra deck choice is offered for the cards that belong there.
+**Move to** opens a fan with **Graveyard**, **Banish**, **Hand**, **Deck**, **Extra deck** and **Give control**. Graveyard, Hand and Extra deck act at once. **Give control** asks for a playable zone of the opponent's side and puts the card there, face up or face down as it was; the opponent then controls it while it is on the field. **Banish** opens one more fan with **Face up** and **Face down** (a face-down banished card is a card back for the opponent). **Deck** opens one more fan with **On top**, **On bottom** and **Shuffle** (the card goes into the deck and the deck is shuffled). The extra deck choice is offered for the cards that belong there.
 
 **Why this priority**: Without it cards cannot leave the board, so a duel cannot be played.
 
@@ -101,7 +102,9 @@ Choosing one of your cards opens a semicircle of round buttons that fans up abov
 4. **Given** a card, **When** you choose Move to, Deck, Shuffle, **Then** it goes into the deck and the deck is shuffled; the opponent sees only the count and a log line.
 5. **Given** a card, **When** you choose Move to, Banish, Face up (or Face down), **Then** it goes to your banished zone, visible to both players if face up, a card back for the opponent if face down, and the log names it only when face up.
 6. **Given** a card that does not belong to the extra deck, **When** the Move to fan opens, **Then** Extra deck is shown as unavailable (or not shown); for a card that belongs there it moves to the extra deck.
-7. **Given** a card in a shared zone that you put there, **When** it is moved to a hand, deck or extra deck, **Then** it goes to the owner's pile; **When** the other player moves it, **Then** it goes to its owner's pile and the owner is notified in the log.
+7. **Given** a card on the field that its owner gave control of, **When** the controller moves it to a graveyard, banished zone, hand, deck or extra deck, **Then** it goes to its original owner's pile and the log says so.
+8. **Given** a card on your field, **When** you choose Move to, Give control and a zone of the opponent's side, **Then** the opponent controls it (they can open the fan on it, you cannot) until it leaves the field, and then it returns to you.
+9. **Given** a card in a shared zone, **When** either player moves it off the field, **Then** it goes to its original owner's pile (the player who first had it in their deck).
 
 ---
 
@@ -148,7 +151,7 @@ Private information, undo, reconnecting a duel, rematch, deck choice, the log an
 - The fan opens above a card at the top edge of the board (the opponent's side): it opens downward if there is no room above, keeping the round-button arrangement.
 - A hand card near the left or right edge: the fan shifts so all buttons stay on screen.
 - Two players use the shared zones at the same time: both pages end identical on everything public.
-- A card is moved from a shared zone by the player who did not put it there: it returns to its owner's pile and the log says so.
+- A card the opponent controls (given or in a shared zone) leaves the field: it goes to its original owner's pile and the log says so.
 - The player chooses Play but every playable zone is full of stacks: stacking is always possible, so a zone is always available.
 - A very small phone: round buttons stay at least large enough to touch (not smaller than a comfortable touch target) and the fan never overlaps outside the window.
 - The extra deck is empty or the card is not an extra deck card: the Extra deck choice does not appear or is unavailable with a reason.
@@ -162,7 +165,7 @@ Private information, undo, reconnecting a duel, rematch, deck choice, the log an
 - **FR-001**: The duel table MUST show one board of 7 columns by 5 rows laid out, top to bottom, as `d p p p p p e`, `g p p p p p p`, `b X S X S X B`, `P P P P P P G`, `E P P P P P D`, where lowercase is the opponent's and uppercase is the player's own, with the opponent's side being the player's layout turned 180 degrees.
 - **FR-002**: Each player MUST have 11 playable zones, a deck, a graveyard, an extra deck and a banished zone at the positions of FR-001; there MUST be 2 shared zones in the middle row; cells marked `X` MUST hold no cards and MUST NOT be selectable.
 - **FR-003**: A playable zone MUST accept any card, with no restriction by card type, and MUST hold a stack of cards (newest on top, lower cards offset so each can be selected), as before.
-- **FR-004**: A shared zone MUST be visible to both players, usable by both players to place and move cards, and keep each card tied to the player who put it there for returns to a hand, deck or extra deck.
+- **FR-004**: A shared zone MUST be visible to both players, usable by both players to place and move cards, and keep each card tied to its original owner: whenever a card leaves the field it goes to its original owner's pile (graveyard, banished zone, hand, deck or extra deck).
 - **FR-005**: The opponent's cards MUST be shown turned 180 degrees, with pile counts as before; the board MUST fit a narrow window without sideways scrolling.
 - **FR-006**: Selecting one of the player's own cards MUST open a fan menu: a semicircle of round buttons opening above the card, with a readable label on each button.
 - **FR-007**: The first fan MUST have Play, Move to and Signal; choosing a button MUST open a further fan from that button, and the chosen path MUST stay visible while the next fan is open.
@@ -176,6 +179,7 @@ Private information, undo, reconnecting a duel, rematch, deck choice, the log an
 - **FR-015**: The old list menu (normal summon, set, special summon, change position, flip, send to graveyard, banish and so on) MUST be replaced by the fan menu; every result that menu allowed MUST remain reachable.
 - **FR-016**: Cards in piles that can be opened (graveyard, banished zone, extra deck) MUST open the same fan menu when selected from their list.
 - **FR-017**: Private information, undo, reconnecting, rematch, the log, deck choice and the card details window MUST work as before on the new board; a duel saved with the old board MUST be reported as unusable with an offer of a rematch.
+- **FR-019**: Give control MUST put a card on a chosen playable zone of the opponent's side so the opponent controls it while it is on the field; control MUST end when the card leaves the field, and every card leaving the field MUST go to its original owner's pile.
 - **FR-018**: All of this MUST remain free of rule enforcement: any move or signal of the player's own cards is allowed.
 
 ### Key Entities
@@ -205,7 +209,8 @@ Private information, undo, reconnecting a duel, rematch, deck choice, the log an
 - This redesign changes the board and the menu of the Duel Simulator (specs 018 and 019); decks, hands, the private/public split, undo, reconnect, rematch and card details keep their behaviour.
 - The board is drawn from each player's own point of view: the player's side is always at the bottom, so the two pages show the same duel from opposite sides.
 - Cards on the opponent's side are shown turned 180 degrees, as the opponent's side was before.
-- Both players can use the two shared zones; a card in a shared zone belongs to whoever put it there and goes back to that player's hand, deck or extra deck.
+- Both players can use the two shared zones; a card always belongs to its original owner (the player whose deck it came from), whoever controls or placed it, and goes to that owner's piles when it leaves the field.
+- Give control is in the Move to fan; the giver chooses the opponent's zone; a card given to the opponent can be given back the same way.
 - Flipping or turning a card already on the board is done with Play (choosing the same zone), since the new menu has no separate flip or position actions.
 - Search the deck, look at the top card, shuffle the deck and reveal a hand card from the earlier menu all remain, placed in the deck fan and under Signal.
 - A signal is only informative (a marker and a log line); it moves nothing and checks no rule; Attacks does not choose a target in this version.
