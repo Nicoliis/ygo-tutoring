@@ -37,12 +37,19 @@ const APP_PAGES = [
 // finds any such file name in the scripts and fails until it is listed here.
 const EXTRA_FILES = [];
 
+// The card database and the picture host. Their answers are kept for offline use (see "Card data" below).
+const API_HOST = "db.ygoprodeck.com";
+const IMAGE_HOST = "images.ygoprodeck.com";
+const KEPT_AT_HEADER = "x-ygo-kept-at"; // when an answer was kept (ms)
+const SIZE_HEADER = "x-ygo-size"; // its exact size in bytes
+
 const OFFLINE_PAGE = "offline.html";
 const APP_CACHE_PREFIX = "ygo-app-"; // one complete copy of the app's files per version
 const API_CACHE = "ygo-api"; // card data answers kept from earlier visits
 const IMAGE_CACHE = "ygo-images"; // card and set pictures kept from earlier visits
 const META_CACHE = "ygo-meta"; // the state and budget records
 const STATE_KEY = "__state__";
+const BUDGET_KEY = "__budget__";
 const FETCH_PARALLEL = 8; // files fetched at the same time when building a copy
 
 const ROOT = self.registration.scope; // the app's folder, with a trailing slash
@@ -75,6 +82,10 @@ async function writeRecord(key, value) {
 // current: the version that serves the app; staged: a newer version fully stored and waiting; checkedAt: last check (ms)
 const readState = () => readRecord(STATE_KEY, { current: null, staged: null, checkedAt: 0 });
 const writeState = (state) => writeRecord(STATE_KEY, state);
+
+// apiBytes: exact size of the kept card data answers; imageEstimate: estimated size of the kept pictures
+const readBudget = () => readRecord(BUDGET_KEY, { apiBytes: 0, imageEstimate: 0 });
+const writeBudget = (budget) => writeRecord(BUDGET_KEY, budget);
 
 /* ---- Building a complete copy ---- */
 
@@ -222,8 +233,48 @@ async function answerFromCopy(request) {
   }
 }
 
+/* ---- Card data (the card database): network first; a good answer is kept and used when the network fails ---- */
+
+// Keeping is queued one at a time so the size records never race each other.
+let keepQueue = Promise.resolve();
+function queueKeep(task) {
+  keepQueue = keepQueue.then(task).catch((err) => console.warn("Could not keep an answer:", err));
+  return keepQueue;
+}
+
+/* Keeps a copy of a good card data answer with its time and exact size, and adds its size to the budget. */
+function keepCardData(request, response) {
+  return queueKeep(async () => {
+    const body = await response.blob();
+    const headers = new Headers(response.headers);
+    headers.set(KEPT_AT_HEADER, String(Date.now()));
+    headers.set(SIZE_HEADER, String(body.size));
+    const cache = await caches.open(API_CACHE);
+    const before = await cache.match(request.url);
+    const beforeSize = before ? Number(before.headers.get(SIZE_HEADER)) || 0 : 0;
+    await cache.put(request.url, new Response(body, { status: 200, headers }));
+    const budget = await readBudget();
+    budget.apiBytes = Math.max(0, budget.apiBytes - beforeSize + body.size);
+    await writeBudget(budget);
+  });
+}
+
+async function answerCardData(request) {
+  try {
+    const response = await fetch(request);
+    if (response.ok) keepCardData(request, response.clone());
+    return response;
+  } catch (err) {
+    const kept = await (await caches.open(API_CACHE)).match(request.url);
+    if (kept) return kept;
+    throw err;
+  }
+}
+
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   if (request.method !== "GET") return;
-  if (new URL(request.url).origin === self.location.origin) event.respondWith(answerFromCopy(request));
+  const url = new URL(request.url);
+  if (url.origin === self.location.origin) event.respondWith(answerFromCopy(request));
+  else if (url.hostname === API_HOST) event.respondWith(answerCardData(request));
 });
