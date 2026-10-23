@@ -1,0 +1,22 @@
+/* Notices and controls added by shared/app-shell.js. */
+
+.app-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px var(--page-gutter, 24px);
+  background: var(--panel-alt, #262a34);
+  border-bottom: 1px solid var(--border, #333844);
+  color: var(--text-dim, #9aa1b0);
+  font-size: 0.8rem;
+}
+.app-notice-close {
+  background: none;
+  border: 0;
+  color: var(--text-dim, #9aa1b0);
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 2px 6px;
+}
+.app-notice-close:hover, .app-notice-close:focus-visible { color: var(--text, #eef0f4); outline: none; }
