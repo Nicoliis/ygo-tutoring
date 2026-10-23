@@ -31,4 +31,4 @@
 
 ## Notes
 
-- Left as assumptions for `/speckit-clarify`: where banish, search/look at the top/shuffle, and reveal live in the new menus; whether a signal choosing a target is needed; ownership rules for the shared zones.
+- Clarified 2026-10-23: banish, deck search and reveal, signals, ownership, give control, old saved duels. No open questions remain.
