@@ -25,7 +25,8 @@ sim = { layout: 2, started, nocards, generation, rematch,
   signalCount }                          // signals made so far, so a cleared marker is never confused with a new signal
 side = { deckName, ready, handCount, deckCount, extraCount,
   field: [ stack x 11 ],                 // replaces zones { monster, spell, field, pendulum }
-  gy: [{ uid, card }], banished: [{ uid, card | null }], revealed: { uid: card } }
+  gy: [{ uid, card }], banished: [{ uid, card | null }], extraUp: [{ uid, card }],   // the cards placed face-up on the extra deck (public, counted in extraCount)
+  revealed: { uid: card } }
 stack = [ { uid, faceUp, pos: "atk" | "def", card | null } ]   // bottom to top, as before
 ```
 

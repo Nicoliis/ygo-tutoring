@@ -131,7 +131,8 @@ function buildPile(cell, sideIndex, model, handlers) {
   const btn = el("button", "duel-pile-btn");
   btn.type = "button";
   btn.setAttribute("aria-label", `${own ? "Your" : "Opponent's"} ${label}, ${count} card${count === 1 ? "" : "s"}`);
-  const top = pile === "gy" || pile === "banished" ? side[pile][side[pile].length - 1] : null;
+  const list = pile === "gy" || pile === "banished" ? side[pile] : pile === "extra" ? side.extraUp || [] : [];
+  const top = list[list.length - 1]; // the top card of a public pile, or the last card placed face-up on the extra deck
   const info = top && top.card;
   btn.appendChild(info ? cardFace(info, false) : cardFace(null, count > 0 && (pile === "deck" || pile === "extra"), label));
   btn.appendChild(el("span", "duel-pile-label", `${label} ${count}`));

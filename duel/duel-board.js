@@ -66,7 +66,7 @@ const isOldBoard = (sim) => Boolean(sim) && sim.layout !== BOARD_LAYOUT_VERSION;
 
 function emptySide() {
   const field = Array.from({ length: FIELD_SLOTS }, () => []);
-  return { deckName: "", ready: false, handCount: 0, deckCount: 0, extraCount: 0, field, gy: [], banished: [], revealed: {} };
+  return { deckName: "", ready: false, handCount: 0, deckCount: 0, extraCount: 0, field, gy: [], banished: [], extraUp: [], revealed: {} }; // extraUp: the cards placed face-up on the extra deck (public)
 }
 
 function newSim() {
@@ -100,6 +100,13 @@ function takeCard(sim, side, from, uid) {
     const key = countKey(from.zone);
     if (side[key] <= 0) return { error: `There is no card in the ${from.zone === "hand" ? "hand" : from.zone === "deck" ? "deck" : "extra deck"}.` };
     side[key] -= 1;
+    if (from.zone === "extra") {
+      const up = (side.extraUp || []).findIndex((c) => c.uid === uid); // a face-up card of the extra deck leaves its public list too
+      if (up !== -1) {
+        const [entry] = side.extraUp.splice(up, 1);
+        return { place: { zone: "extra", index: up }, entry };
+      }
+    }
     let revealed;
     if (from.zone === "hand" && uid && side.revealed[uid]) {
       revealed = side.revealed[uid];
@@ -129,6 +136,11 @@ function takeCard(sim, side, from, uid) {
 function putCard(sim, side, owner, to, uid, shown) {
   const { faceUp, pos, card } = shown;
   if (COUNT_PILES.includes(to.zone)) {
+    if (to.zone === "extra" && faceUp) {
+      if (!card) return "A card placed face-up on the extra deck needs its card data.";
+      owner.extraUp = owner.extraUp || [];
+      insertAt(owner.extraUp, { uid, card }, to.index); // the end of the list is the top of the pile
+    }
     owner[countKey(to.zone)] += 1;
     return null;
   }
@@ -158,6 +170,7 @@ function insertAt(list, entry, index) {
 function visibleBefore(taken) {
   const entry = taken.entry;
   if (!entry) return { faceUp: false, pos: DEFAULT_POSITION, card: undefined };
+  if (taken.place.zone === "extra") return { faceUp: true, pos: DEFAULT_POSITION, card: entry.card };
   if (taken.place.zone === "gy") return { faceUp: true, pos: DEFAULT_POSITION, card: entry.card };
   if (taken.place.zone === "banished") return { faceUp: entry.card !== null, pos: DEFAULT_POSITION, card: entry.card || undefined };
   return { faceUp: entry.faceUp, pos: entry.pos, card: entry.card || undefined };
@@ -208,6 +221,7 @@ function applyEventToSide(next, event) {
       side.deckName = String(event.deckName || "");
       side.deckCount = Math.max(0, event.mainCount | 0);
       side.extraCount = Math.max(0, event.extraCount | 0);
+      side.extraUp = [];
       side.handCount = 0;
       return {};
     case "draw":
@@ -303,6 +317,8 @@ function publicCardName(sim, side, uid) {
     const entry = s[pile].find((c) => c.uid === uid);
     if (entry) return entry.card ? entry.card.name : null;
   }
+  const up = (s.extraUp || []).find((c) => c.uid === uid);
+  if (up) return up.card.name;
   return null;
 }
 

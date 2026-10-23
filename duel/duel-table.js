@@ -149,7 +149,7 @@ function describeSim(table, event, result) {
       if (to === "banished") return event.faceUp ? `${who} banished ${named(event.card || known)}${ofOwner}` : `${who} banished a card face-down${ofOwner}`;
       if (to === "hand") return `${who} returned ${named(known)} to the hand${ofOwner}`;
       if (to === "deck") return `${who} returned ${named(known)} to the ${event.to.end === "bottom" ? "bottom" : "top"} of the deck${ofOwner}`;
-      if (to === "extra") return `${who} returned ${named(known)} to the extra deck${ofOwner}`;
+      if (to === "extra") return event.faceUp ? `${who} placed ${named(event.card || known)} face-up on the extra deck${ofOwner}` : `${who} returned ${named(known)} to the extra deck${ofOwner}`;
       return event.faceUp ? `${who} placed ${named(event.card)} in the ${ZONE_WORDS[to]}` : `${who} set a card in the ${ZONE_WORDS[to]}`;
     }
     case "give": {

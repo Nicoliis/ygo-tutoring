@@ -47,20 +47,26 @@ function menuFor(context) {
       ],
     },
   ];
-  if (context.isExtraDeckCard) moveTo.push(leaf("extra", "Extra deck", { kind: "move", to: "extra" }));
-  if (onBoard) moveTo.push(leaf("give", "Give control", { kind: "give" }, { needsZone: true }));
-  if (zone === "hand") {
-    moveTo.splice(moveTo.findIndex((n) => n.id === "hand"), 1); // it is in the hand already
+  if (context.isExtraDeckCard) {
+    // the extra deck is face down; a card can also be placed face up on top of it, where both players see it
+    moveTo.push({ id: "extra", label: "Extra deck", children: [
+      leaf("extra-down", "Face down", { kind: "move", to: "extra", faceUp: false }),
+      leaf("extra-up", "Face up", { kind: "move", to: "extra", faceUp: true }),
+    ] });
   }
+  if (onBoard) moveTo.push(leaf("give", "Give control", { kind: "give" }, { needsZone: true }));
+  const here = { hand: "hand", gy: "grave" }[zone]; // the place the card is in already is not a destination
+  if (here) moveTo.splice(moveTo.findIndex((n) => n.id === here), 1);
   const signal = ["activate", "target", "attack"].map((s) => leaf(s, { activate: "Activate", target: "Target", attack: "Attacks" }[s], { kind: "signal", signal: s }));
-  const signals = zone === "hand" ? [context.revealed ? leaf("hide", "Hide", { kind: "hide" }) : leaf("reveal", "Reveal", { kind: "reveal" })] : signal;
+  // a hand card can be revealed, a card on the board or in a public pile can signal; the deck and the extra deck are private
+  const signals = zone === "hand" ? [context.revealed ? leaf("hide", "Hide", { kind: "hide" }) : leaf("reveal", "Reveal", { kind: "reveal" })] : zone === "deck" || zone === "extra" ? [] : signal;
   return [
     { id: "play", label: "Play", children: [
       { id: "face-up", label: "Face up", children: orientations(true) },
       { id: "face-down", label: "Face down", children: orientations(false) },
     ] },
     { id: "move", label: "Move to", children: moveTo },
-    { id: "signal", label: "Signal", children: signals },
+    ...(signals.length ? [{ id: "signal", label: "Signal", children: signals }] : []),
     leaf("details", "Details", { kind: "details" }), // the card details window, as in the earlier menu
   ];
 }

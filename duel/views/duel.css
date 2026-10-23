@@ -165,3 +165,4 @@ body.duel-focus .app-single { padding: 8px; max-width: none; }
 .duel-pile-item { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; }
 .duel-pile-card { position: relative; inset: auto; width: 84px; aspect-ratio: var(--duel-card-ratio); flex: 0 0 auto; }
 .duel-pile-name { font-size: 0.72rem; color: var(--text); text-align: center; overflow-wrap: anywhere; }
+.duel-pile-note { font-size: 0.65rem; color: var(--accent); }

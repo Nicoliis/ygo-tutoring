@@ -245,6 +245,7 @@ function selectedCardStillThere() {
   const { selected: uid, place } = play;
   if (place.zone === "hand") return play.priv.hand.includes(uid);
   if (place.zone === "extra") return play.priv.extra.includes(uid);
+  if (place.zone === "deck") return play.priv.deck.includes(uid);
   if (place.zone === "gy" || place.zone === "banished") return room.session.getTable().sim.players[room.role][place.zone].some((c) => c.uid === uid);
   return Boolean(fieldEntry(uid, place));
 }
@@ -344,8 +345,18 @@ function fieldEntry(uid, place) {
   return stack ? stack.find((c) => c.uid === uid) || null : null;
 }
 
-/* Builds the public events for an action and sends them; the private side follows when each is confirmed. */
+/*
+ * Builds the public events for an action and sends them; the private side follows when each is confirmed. A card
+ * taken from the deck is a search: it is logged, and the deck is shuffled afterwards unless the card goes back in.
+ */
 function performAction(action, uid, place, target) {
+  const fromDeck = place.zone === "deck" && action.kind !== "details";
+  if (fromDeck) room.session.intent({ kind: "search" });
+  performCardAction(action, uid, place, target);
+  if (fromDeck && !(action.kind === "move" && action.to === "deck")) room.session.intent({ kind: "shuffle" });
+}
+
+function performCardAction(action, uid, place, target) {
   const entry = fieldEntry(uid, place);
   const card = knownCard(uid, entry) || undefined;
   const from = place.slot === undefined ? { zone: place.zone } : { zone: place.zone, slot: place.slot };
@@ -358,7 +369,7 @@ function performAction(action, uid, place, target) {
       playEvent({ uid, from, to: target, faceUp: action.faceUp, pos: action.pos, entry, card }).forEach(send);
       return;
     case "move": {
-      const faceUp = action.to === "gy" || (action.to === "banished" && action.faceUp);
+      const faceUp = action.to === "gy" || ((action.to === "banished" || action.to === "extra") && action.faceUp);
       const to = action.end ? { zone: action.to, end: action.end } : { zone: action.to };
       send({ kind: "move", uid, from, to, faceUp, pos: "atk", ...(faceUp ? { card } : {}) });
       if (action.shuffle) send({ kind: "shuffle" });
@@ -407,18 +418,13 @@ function deckAction(action) {
   } else if (action.kind === "search") openDeckSearch();
 }
 
-/* Looking through the deck is private; taking a card to the hand logs "searched the deck", moves the card, then shuffles. */
+/* Looking through the deck is private. Its cards open the same fan as the cards of a hand (see performAction). */
 function openDeckSearch() {
-  const items = play.priv.deck.map((uid) => ({ uid, card: cardAt(play.priv, uid), actions: [{ id: "take", label: "Add to hand" }] }));
+  const items = play.priv.deck.map((uid) => ({ uid, card: cardAt(play.priv, uid), menu: true }));
   showModal({ title: "Search your deck", bodyHtml: '<div id="duelPileList"></div>', buttons: [{ label: "Close", primary: true }] });
   renderPileList(document.getElementById("duelPileList"), items, {
     onDetails: showCardDetails,
-    onAction: (_id, uid) => {
-      closeDuelModal();
-      room.session.intent({ kind: "search" });
-      room.session.intent({ kind: "move", uid, from: { zone: "deck" }, to: { zone: "hand" }, faceUp: false });
-      room.session.intent({ kind: "shuffle" });
-    },
+    onMenu: (uid, anchor) => selectCard(uid, { zone: "deck" }, anchor),
   });
 }
 
@@ -433,8 +439,9 @@ function pileItems(sideIndex, pile) {
       menu: Boolean(own), // the player's own cards open the same fan as everywhere else
     }));
   }
-  if (!own) return [];
-  return play.priv.extra.map((uid) => ({ uid, card: cardAt(play.priv, uid), menu: true }));
+  const up = side.extraUp || [];
+  if (!own) return up.map((e) => ({ uid: e.uid, card: e.card, note: "face up" })); // only the cards placed face-up are known
+  return play.priv.extra.map((uid) => ({ uid, card: cardAt(play.priv, uid), menu: true, note: up.some((e) => e.uid === uid) ? "face up" : "" }));
 }
 
 function openPile(sideIndex, pile, anchor) {
@@ -442,7 +449,6 @@ function openPile(sideIndex, pile, anchor) {
     if (sideIndex === room.role) openDeckMenu(anchor);
     return;
   }
-  if (pile === "extra" && sideIndex !== room.role) return; // only the count is known
   const titles = { gy: "Graveyard", banished: "Banished", extra: "Extra deck" };
   showModal({ title: `${sideIndex === room.role ? "Your" : "Opponent's"} ${titles[pile]}`, bodyHtml: '<div id="duelPileList"></div>', buttons: [{ label: "Close", primary: true }] });
   renderPileList(document.getElementById("duelPileList"), pileItems(sideIndex, pile), {

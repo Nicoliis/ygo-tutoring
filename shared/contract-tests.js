@@ -1385,6 +1385,24 @@ function runContractTests() {
     expect(!JSON.stringify(targeted.sim.signal).includes("card"), "the signal reveals nothing about the card");
   });
 
+  check("duel board: a card can be placed face-up or face-down on the extra deck, and leaves it again like any card", () => {
+    const { table } = startedDuel();
+    const gamma = { name: "Gamma Fusion" };
+    let t = duelApply(table, { kind: "move", by: 0, uid: "0-5", from: { zone: "extra" }, to: { zone: "field", slot: 0 }, faceUp: true, pos: "atk", card: gamma });
+    expect(t.sim.players[0].extraCount === 0 && t.sim.players[0].extraUp.length === 0);
+    const up = duelApply(t, { kind: "move", by: 0, uid: "0-5", from: { zone: "field", slot: 0 }, to: { zone: "extra" }, faceUp: true, pos: "atk", card: gamma });
+    expect(up.sim.players[0].extraCount === 1 && up.sim.players[0].extraUp.map((c) => c.card.name).join() === "Gamma Fusion", "face-up on the extra deck is public");
+    expect(up.log[up.log.length - 1].text === "Ana placed Gamma Fusion face-up on the extra deck", up.log[up.log.length - 1].text);
+    expect(JSON.stringify(duelApply(up, { kind: "undo", by: 0 }).sim) === JSON.stringify(t.sim), "undo takes it off the extra deck again");
+    expect(publicCardName(up.sim, 0, "0-5") === "Gamma Fusion");
+    const down = duelApply(t, { kind: "move", by: 0, uid: "0-5", from: { zone: "field", slot: 0 }, to: { zone: "extra" }, faceUp: false });
+    expect(down.sim.players[0].extraCount === 1 && down.sim.players[0].extraUp.length === 0, "face-down stays a count");
+    const out = duelApply(up, { kind: "move", by: 0, uid: "0-5", from: { zone: "extra" }, to: { zone: "gy" }, faceUp: true, card: gamma });
+    expect(out.sim.players[0].extraCount === 0 && out.sim.players[0].extraUp.length === 0 && out.sim.players[0].gy.length === 1, "it leaves the public list with the card");
+    expect(JSON.stringify(duelApply(out, { kind: "undo", by: 0 }).sim) === JSON.stringify(up.sim), "and undo puts it back face-up");
+    expect(applyEvent(t, { kind: "move", by: 0, uid: "0-5", from: { zone: "field", slot: 0 }, to: { zone: "extra" }, faceUp: true, pos: "atk" }).ok, "the card is known from the board");
+  });
+
   check("duel board: signals mark a card, count up, are cleared, never name a face-down card and do not block Undo", () => {
     const { table } = startedDuel();
     const card = { name: "Alpha" };
@@ -1800,6 +1818,14 @@ function runContractTests() {
     expect(ids(resolvePath(onField, ["signal"]).node.children).join() === "activate,target,attack");
     const extra = menuFor({ place: { zone: "field", slot: 0 }, isExtraDeckCard: true });
     expect(ids(resolvePath(extra, ["move"]).node.children).includes("extra"));
+    const fromDeck = menuFor({ place: { zone: "deck" }, isExtraDeckCard: true });
+    expect(ids(fromDeck).join() === "play,move,details", "a deck card has no signals (the deck is private)");
+    expect(ids(resolvePath(fromDeck, ["move"]).node.children).join() === "grave,banish,hand,deck,extra", "a deck card can go anywhere a hand card can, and back into the deck");
+    expect(ids(resolvePath(fromDeck, ["move", "extra"]).node.children).join() === "extra-down,extra-up", "the extra deck takes a card face down or face up");
+    expect(resolvePath(fromDeck, ["move", "extra", "extra-up"]).action.faceUp === true && resolvePath(fromDeck, ["move", "extra", "extra-down"]).action.faceUp === false);
+    expect(ids(menuFor({ place: { zone: "extra" }, isExtraDeckCard: true })).join() === "play,move,details");
+    const fromGy = menuFor({ place: { zone: "gy" }, isExtraDeckCard: false });
+    expect(ids(resolvePath(fromGy, ["move"]).node.children).join() === "banish,hand,deck" && ids(fromGy).includes("signal"), "a graveyard card can go anywhere but the graveyard");
     const inHand = menuFor({ place: { zone: "hand" }, isExtraDeckCard: false });
     expect(ids(resolvePath(inHand, ["move"]).node.children).join() === "grave,banish,deck");
     expect(ids(resolvePath(inHand, ["signal"]).node.children).join() === "reveal");
