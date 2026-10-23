@@ -89,7 +89,7 @@ Choosing one of your cards opens a semicircle of round buttons that fans up abov
 
 ### User Story 4 - Move a card to the graveyard, hand, deck or extra deck (Priority: P1)
 
-**Move to** opens a fan with **Graveyard**, **Banish**, **Hand**, **Deck**, **Extra deck** and **Give control**. Graveyard, Hand and Extra deck act at once. **Give control** asks for a playable zone of the opponent's side and puts the card there, face up or face down as it was; the opponent then controls it while it is on the field. **Banish** opens one more fan with **Face up** and **Face down** (a face-down banished card is a card back for the opponent). **Deck** opens one more fan with **On top**, **On bottom** and **Shuffle** (the card goes into the deck and the deck is shuffled). The extra deck choice is offered for the cards that belong there.
+**Move to** opens a fan with **Graveyard**, **Banish**, **Hand**, **Deck**, **Extra deck** and **Give control**. Graveyard, Hand and Extra deck act at once. **Give control** asks for a playable zone of the opponent's side and puts the card there face up (a face-down card is shown when control is given, so the controller always knows what it holds); the opponent then controls it while it is on the field. **Banish** opens one more fan with **Face up** and **Face down** (a face-down banished card is a card back for the opponent). **Deck** opens one more fan with **On top**, **On bottom** and **Shuffle** (the card goes into the deck and the deck is shuffled). The extra deck choice is offered for the cards that belong there.
 
 **Why this priority**: Without it cards cannot leave the board, so a duel cannot be played.
 
@@ -211,6 +211,7 @@ Private information, undo, reconnecting a duel, rematch, deck choice, the log an
 - The board is drawn from each player's own point of view: the player's side is always at the bottom, so the two pages show the same duel from opposite sides.
 - Cards on the opponent's side are shown turned 180 degrees, as the opponent's side was before.
 - Both players can use the two shared zones; a card always belongs to its original owner (the player whose deck it came from), whoever controls or placed it, and goes to that owner's piles when it leaves the field.
+- A player who does not own a face-down card cannot send it to a face-up pile (graveyard, face-up banish), because they do not know it; they can still move it to the owner's hand, deck, extra deck or banish it face-down.
 - Give control is in the Move to fan; the giver chooses the opponent's zone; a card given to the opponent can be given back the same way.
 - Flipping or turning a card already on the board is done with Play (choosing the same zone), since the new menu has no separate flip or position actions.
 - Search the deck, look at the top card, shuffle the deck and reveal a hand card from the earlier menu all remain, placed in the deck fan and under Signal.
