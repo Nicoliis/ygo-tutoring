@@ -52,13 +52,18 @@ function codeBox(labelText, code, onCopy) {
   return wrap;
 }
 
-function buildMessages(model, h) {
+const PRACTICE_EXPLANATION = "Practice: you play alone. The other side is empty; use the life point controls for it. Nothing is shared and nothing is saved.";
+
+function buildMessages(model, h, inGame) {
   const box = el("div", "duel-messages");
   box.setAttribute("aria-live", "polite");
   if (model.status) box.appendChild(el("p", "duel-status", model.status));
   if (model.error) box.appendChild(el("p", "duel-error", model.error));
   if (model.notice) box.appendChild(el("p", "duel-notice", model.notice));
-  if (model.practice) box.appendChild(button("Leave practice", h.onLeavePractice));
+  if (model.practice && !inGame) {
+    box.appendChild(el("p", "duel-notice", PRACTICE_EXPLANATION));
+    box.appendChild(button("Leave practice", h.onLeavePractice)); // on the table it is under the rematch button
+  }
   return box;
 }
 
@@ -243,8 +248,11 @@ function updateRematch(refs, model) {
   const bar = refs.rematch;
   bar.innerHTML = "";
   const started = Boolean(model.board) || model.oldBoard;
-  bar.hidden = !started;
-  if (!started) return;
+  bar.hidden = false;
+  if (!started) {
+    bar.appendChild(leaveButton(model));
+    return;
+  }
   if (model.oldBoard) bar.appendChild(el("p", "duel-error", "This duel used the old board and cannot continue. A rematch starts a new duel on the new board; you will choose your deck again."));
   if (model.privateLost) bar.appendChild(el("p", "duel-error", "The private part of your duel (your hand and deck) was lost on this device. A rematch starts the duel again."));
   const h = model.handlersForRematch;
@@ -256,10 +264,17 @@ function updateRematch(refs, model) {
   } else {
     bar.appendChild(button("Propose a rematch", h.onPropose));
   }
+  bar.appendChild(leaveButton(model));
+}
+
+/* The way out of the table, under the rematch buttons. */
+function leaveButton(model) {
+  const h = model.handlersForRematch;
+  return model.practice ? button("Leave practice", h.onLeavePractice) : button("Leave room", h.onLeaveRoom);
 }
 
 function renderRoom(rootEl, model, h) {
-  model = { ...model, handlersForRematch: { onPropose: h.onRematch, onAccept: h.onAcceptRematch, onDecline: h.onDeclineRematch } };
+  model = { ...model, handlersForRematch: { onPropose: h.onRematch, onAccept: h.onAcceptRematch, onDecline: h.onDeclineRematch, onLeavePractice: h.onLeavePractice, onLeaveRoom: h.onLeaveRoom } };
   const showsTable = model.phase === "connected" || (model.phase === "disconnected" && model.table);
   const screen = model.phase === "connected" && model.deckChoice ? "deck" : showsTable ? "table" : model.phase;
   if (rootEl.dataset.screen !== screen) {
@@ -269,7 +284,8 @@ function renderRoom(rootEl, model, h) {
   }
   // messages and the banner are redrawn every time; the rest of each screen is built once
   let messages = rootEl.querySelector(":scope > .duel-messages");
-  const fresh = buildMessages(model, h);
+  const fresh = buildMessages(model, h, screen === "table");
+  document.body.classList.toggle("duel-focus", screen === "table"); // on the table the game is all there is: no header, no sidebar
   if (messages) messages.replaceWith(fresh);
   else rootEl.prepend(fresh);
 

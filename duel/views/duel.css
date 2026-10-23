@@ -119,3 +119,10 @@
 .duel-fan-chosen { background: var(--accent); color: #000; }
 .duel-fan-past { opacity: 0.75; }
 .duel-fan-label { pointer-events: none; }
+
+/* On the table the game is the main focus: no page header, no sidebar, the full width */
+body.duel-focus #appSidebar, body.duel-focus .app-header { display: none; }
+body.duel-focus .app-single { padding-top: 12px; }
+.duel-rematch { display: flex; flex-direction: column; gap: 6px; }
+.duel-rematch p { margin: 0; }
+.duel-rematch .btn { width: 100%; }

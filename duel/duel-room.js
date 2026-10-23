@@ -8,7 +8,6 @@ const CODE_EXPIRY_MS = 600000; // after this the page suggests a new invitation 
 const COPIED_MESSAGE = "Code copied. Send it to your friend.";
 const DEFAULT_PLAYER_NAME = "Player";
 const PRACTICE_OPPONENT_NAME = "Practice opponent"; // the empty side of a practice duel
-const PRACTICE_NOTICE = "Practice: you play alone. The other side is empty; use the life point controls for it. Nothing is shared and nothing is saved."
 
 const duelRootEl = document.getElementById("duelRoot");
 let room = {
@@ -87,6 +86,7 @@ function drawRoom() {
       onNoCards: playWithoutCards,
       onPractice: startPractice,
       onLeavePractice: startOver,
+      onLeaveRoom: leaveRoom,
     }
   );
 }
@@ -244,6 +244,12 @@ function startOver() {
   setRoom({ phase: "start", status: "", error: "", notice: "", code: "", role: null, link: null, session: null, reconnecting: null, practice: false });
 }
 
+/* Leaving a live duel closes the link; the duel stays saved so it can be resumed with Reconnect. */
+async function leaveRoom() {
+  const ok = await confirmDialog("Leave the room? Your opponent will be disconnected. You can reconnect to this duel later from the start screen.", { title: "Leave room", confirmLabel: "Leave" });
+  if (ok) startOver();
+}
+
 /* Practice alone: the same table with no link; the other side is an empty player (see onDuelEvent in duel-play.js). */
 function startPractice() {
   if (room.link) room.link.close();
@@ -252,7 +258,7 @@ function startPractice() {
   play.built = null;
   play.chosenDeckId = null;
   const table = newTable(newDuelId(), myName(), PRACTICE_OPPONENT_NAME);
-  setRoom({ role: ROLE_CREATOR, link: null, session: null, reconnecting: null, practice: true, status: "", error: "", notice: PRACTICE_NOTICE });
+  setRoom({ role: ROLE_CREATOR, link: null, session: null, reconnecting: null, practice: true, status: "", error: "", notice: "" });
   room.session = makeSession(table);
   setRoom({ phase: "connected" });
 }
