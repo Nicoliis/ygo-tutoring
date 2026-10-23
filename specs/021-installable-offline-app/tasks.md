@@ -67,7 +67,7 @@
 - [X] T031 [US4] Report when offline use cannot work (FR-012): cover the cases of T005 in a test of the message text in `shared/offline.test.js`, and check by hand in a private window that the notice appears and the app still works online.
 - [X] T018 [US4] In `shared/app-shell.js` ask the browser to make the site's storage persistent once per visit (`navigator.storage.persist()` when available, result ignored, no UI) so saved data is not evicted under storage pressure.
 - [X] T019 [US4] Create `shared/offline.test.js` (Node, VS Code runtime; T027 extends it with the page, manifest and file checks) starting with a check that reads `service-worker.js` and `shared/app-shell.js` and fails if either mentions `localStorage`, `sessionStorage`, `indexedDB`, `ygoCollection`, `ygoRun`, `ygoProfiles` or `ygoDuelRoom`, and fails if `service-worker.js` deletes a cache whose name is not matched by the prefixes `ygo-app-`, `ygo-api`, `ygo-images`, `ygo-meta`.
-- [ ] T020 [US4] Verify by hand or with headless Chrome that deleting every `ygo-app-*` cache and reloading fetches the files again and leaves `localStorage` byte-identical (record the check in `quickstart.md` if a step differs).
+- [X] T020 [US4] Verify by hand or with headless Chrome that deleting every `ygo-app-*` cache and reloading fetches the files again and leaves `localStorage` byte-identical (record the check in `quickstart.md` if a step differs).
 
 ---
 
@@ -98,8 +98,8 @@
 ## Phase 8: Polish & Cross-Cutting
 
 - [X] T027 Create `shared/offline.test.js` (Node, run with the VS Code runtime): every `.html` page under the repo (excluding `specs/`, `.git/` and `shared/tests.html`) is listed in `APP_PAGES` of `service-worker.js` and every listed page exists; each such page contains the manifest link, the theme color meta, the icon links and loads `shared/app-shell.js`; `manifest.webmanifest` is valid JSON with the fields of the contract and every icon file exists with the stated pixel size (read the PNG header); `offline.html` links no app script; every quoted local file name ending in `.png`, `.jpg`, `.jpeg`, `.svg`, `.webp`, `.gif`, `.mp3`, `.ogg` or `.json` found in the app's scripts exists on disk and is reachable from a page, a stylesheet or `EXTRA_FILES` (the check mirrors `discoverFiles`, fetching nothing); plus the checks of T019. This task finishes `shared/offline.test.js` created in T019.
-- [ ] T028 Add an automated headless-Chrome smoke script outside the repo's runtime (in the session scratchpad, not committed) that serves the repo, opens `index.html`, waits for the worker to finish installing, goes offline with the DevTools protocol or by stopping the server, loads every page of `APP_PAGES` and confirms each loads its title without errors; record the result in the final report.
-- [ ] T030 Run every scenario in `specs/021-installable-offline-app/quickstart.md` in Chrome and fix what fails, then run `shared/profiles.test.js`, `shared/offline.test.js`, `shared/save-utils.test.js`, the syntax and missing-reference scan, and the duplicate-declaration scan, and grep that no direct `localStorage` use exists outside `shared/save-utils.js`.
+- [X] T028 Add an automated headless-Chrome smoke script outside the repo's runtime (in the session scratchpad, not committed) that serves the repo, opens `index.html`, waits for the worker to finish installing, goes offline with the DevTools protocol or by stopping the server, loads every page of `APP_PAGES` and confirms each loads its title without errors; record the result in the final report.
+- [X] T030 Run every scenario in `specs/021-installable-offline-app/quickstart.md` in Chrome and fix what fails, then run `shared/profiles.test.js`, `shared/offline.test.js`, `shared/save-utils.test.js`, the syntax and missing-reference scan, and the duplicate-declaration scan, and grep that no direct `localStorage` use exists outside `shared/save-utils.js`.
 
 ---
 

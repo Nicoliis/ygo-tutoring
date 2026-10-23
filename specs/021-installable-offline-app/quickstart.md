@@ -33,3 +33,7 @@ Serve the repo root from `http://localhost:8000` (the dev server never caches, w
 ## Automated checks
 - `shared/offline.test.js` (Node): every HTML page is in the worker's page list and has the manifest, theme color, icons and `app-shell.js`; the manifest is valid and its icon files exist with the right sizes.
 - The contract tests include the pure rules in `offline-rules.js`.
+
+## Verification record
+
+Checked in headless Chrome (scratch scripts, not committed): install and offline pages, installability, kept card data and pictures, offline card search, budget eviction, staged update with Reload and with a single-window navigation, and clearing every app copy (files fetched again, saved data byte-identical).
