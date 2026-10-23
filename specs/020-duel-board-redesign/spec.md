@@ -13,6 +13,7 @@
 ### Session 2026-10-23
 
 - Q: Where does Banish go in the new menus? → A: In Move to, and a card can be banished face up or face down.
+- Q: Do search the deck, look at the top card, shuffle the deck and reveal a hand card stay? → A: Yes, all features stay, moved into the fitting menu or submenu: the deck fan has Draw, Mill, Search, Look at top and Shuffle; Reveal and Hide (for a card shown to the opponent) go under Signal.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -105,7 +106,7 @@ Choosing one of your cards opens a semicircle of round buttons that fans up abov
 
 ### User Story 5 - Deck menu, and signals (Priority: P2)
 
-Selecting the deck pile opens a fan with **Draw** and **Mill** (Mill sends the top card of the deck to the graveyard, face-up and visible). Selecting a card and choosing **Signal** opens a fan with **Activate**, **Target** and **Attacks**. A signal does not move anything: it puts a visible marker on the card (and an entry in the log) so the opponent sees that the card activates, is targeted or attacks; the marker stays for a short time and can be removed.
+Selecting the deck pile opens a fan with **Draw** and **Mill** (Mill sends the top card of the deck to the graveyard, face-up and visible). Selecting a card and choosing **Signal** opens a fan with **Activate**, **Target**, **Attacks** and **Reveal** (show a hand card to the opponent; for a revealed card the same place offers **Hide**). A signal does not move anything: it puts a visible marker on the card (and an entry in the log) so the opponent sees that the card activates, is targeted or attacks; the marker stays for a short time and can be removed.
 
 **Why this priority**: Useful and expected, but a duel can be played without it.
 
@@ -113,7 +114,7 @@ Selecting the deck pile opens a fan with **Draw** and **Mill** (Mill sends the t
 
 **Acceptance Scenarios**:
 
-1. **Given** your deck pile, **When** you select it, **Then** a fan opens with Draw and Mill; Draw moves the top card to your hand (private), Mill sends the top card to your graveyard face-up.
+1. **Given** your deck pile, **When** you select it, **Then** a fan opens with Draw, Mill, Search, Look at top and Shuffle; Draw moves the top card to your hand (private), Mill sends the top card to your graveyard face-up, Search lets you pick any card of the deck into your hand, Look at top shows you the top card privately and Shuffle shuffles the deck (the opponent sees only a log line).
 2. **Given** an empty deck, **When** you choose Draw or Mill, **Then** nothing moves and the page says the deck is empty (drawing from an empty deck is logged as before).
 3. **Given** a card, **When** you choose Signal then Activate, **Then** a marker "activates" appears on the card on both pages and a log line says which card (only if the card is visible) activated.
 4. **Given** a card, **When** you choose Signal then Target, **Then** a "targeted" marker appears on that card; **When** you choose Signal then Attacks, **Then** an "attacks" marker appears on it, on both pages.
@@ -168,8 +169,8 @@ Private information, undo, reconnecting a duel, rematch, deck choice, the log an
 - **FR-009**: A face-up play MUST make the card visible to both players at that moment; a face-down play MUST show the opponent a card back and MUST NOT send the card's identity.
 - **FR-010**: Play MUST also be available for a card already on the board, so it can be flipped or turned in place (choosing its own zone) or moved to another zone.
 - **FR-011**: Move to MUST offer Graveyard, Banish, Hand, Deck and Extra deck; Graveyard, Hand and Extra deck MUST act at once; Banish MUST open Face up / Face down and a face-down banished card MUST NOT have its identity sent; Deck MUST open On top, On bottom and Shuffle; Extra deck MUST be offered only for cards that belong to the extra deck.
-- **FR-012**: The deck pile MUST open a fan with Draw and Mill: Draw takes the top card to the hand privately; Mill sends the top card to the graveyard face-up and visible; both MUST report an empty deck without moving anything.
-- **FR-013**: Signal MUST offer Activate, Target and Attacks; a signal MUST NOT move the card, MUST show a visible marker on it on both pages (and a log line naming the card only when it is visible), and the marker MUST go away after a short time or when a player removes it.
+- **FR-012**: The deck pile MUST open a fan with Draw, Mill, Search, Look at top and Shuffle (Search, Look at top and Shuffle keep the behaviour of the earlier menu): Draw takes the top card to the hand privately; Mill sends the top card to the graveyard face-up and visible; both MUST report an empty deck without moving anything.
+- **FR-013**: Signal MUST offer Activate, Target, Attacks and Reveal (Reveal shows a hand card to the opponent; Hide takes it back, as before); a signal MUST NOT move the card, MUST show a visible marker on it on both pages (and a log line naming the card only when it is visible), and the marker MUST go away after a short time or when a player removes it.
 - **FR-014**: The fan menus MUST be operable by mouse, touch and keyboard (arrow keys or Tab to move, Enter or Space to choose, Escape to close), MUST close when the player chooses elsewhere, MUST stay fully on screen (opening toward free space) and MUST have accessible names.
 - **FR-015**: The old list menu (normal summon, set, special summon, change position, flip, send to graveyard, banish and so on) MUST be replaced by the fan menu; every result that menu allowed MUST remain reachable.
 - **FR-016**: Cards in piles that can be opened (graveyard, banished zone, extra deck) MUST open the same fan menu when selected from their list.
@@ -205,8 +206,7 @@ Private information, undo, reconnecting a duel, rematch, deck choice, the log an
 - Cards on the opponent's side are shown turned 180 degrees, as the opponent's side was before.
 - Both players can use the two shared zones; a card in a shared zone belongs to whoever put it there and goes back to that player's hand, deck or extra deck.
 - Flipping or turning a card already on the board is done with Play (choosing the same zone), since the new menu has no separate flip or position actions.
-- The deck's other actions of the earlier menu (search the deck, look at the top card, shuffle the deck) are not part of the described deck fan; whether they remain is a decision for the next step.
-- Revealing a hand card to the opponent was part of the earlier menu; where it lives in the new menu is a decision for the next step.
+- Search the deck, look at the top card, shuffle the deck and reveal a hand card from the earlier menu all remain, placed in the deck fan and under Signal.
 - A signal is only informative (a marker and a log line); it moves nothing and checks no rule; Attacks does not choose a target in this version.
 - Markers of a signal disappear by themselves after a few seconds and can also be removed by hand.
 - Duels saved with the old board cannot be resumed on the new board; they are offered a rematch with the same decks.
