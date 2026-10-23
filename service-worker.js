@@ -200,6 +200,70 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+/* ---- Updates: a new version is stored in full first, and only then made current ---- */
+
+async function tellWindows(message) {
+  const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+  windows.forEach((client) => client.postMessage(message));
+}
+
+let checking = null;
+
+/*
+ * Reads the whole app again and compares its version with the current one. A different version is stored completely in
+ * its own cache and only then recorded as "staged"; a failed or interrupted download changes nothing, so the version in
+ * use stays complete and a half-stored copy is never used.
+ */
+function checkForUpdate() {
+  if (checking) return checking;
+  checking = (async () => {
+    let copy;
+    try {
+      copy = await collectFiles();
+    } catch (err) {
+      return; // offline, or a page could not be read: keep what is in use and try again at the next check
+    }
+    const state = await readState();
+    if (copy.version === state.current) {
+      await writeState({ ...state, checkedAt: Date.now() });
+      return;
+    }
+    if (copy.version !== state.staged || !(await caches.has(APP_CACHE_PREFIX + copy.version))) {
+      await storeCopy(copy);
+    }
+    const fresh = await readState();
+    await writeState({ ...fresh, staged: copy.version, checkedAt: Date.now() });
+    await dropUnreferencedCopies(); // an older staged copy goes now
+    await tellWindows({ type: "update-ready", version: copy.version });
+  })()
+    .catch((err) => console.warn("Update check failed:", err))
+    .finally(() => {
+      checking = null;
+    });
+  return checking;
+}
+
+/* Makes the staged version the current one and removes the old copy. Returns the new version, or null when none waits. */
+async function applyStaged({ announce }) {
+  const state = await readState();
+  if (!state.staged || !(await caches.has(APP_CACHE_PREFIX + state.staged))) return null;
+  await writeState({ ...state, current: state.staged, staged: null });
+  await dropUnreferencedCopies();
+  if (announce) await tellWindows({ type: "applied", version: state.staged });
+  return state.staged;
+}
+
+self.addEventListener("message", (event) => {
+  const message = event.data || {};
+  if (message.type === "check") {
+    event.waitUntil(checkForUpdate());
+  } else if (message.type === "apply") {
+    event.waitUntil(applyStaged({ announce: true }));
+  } else if (message.type === "status") {
+    event.waitUntil(readState().then((state) => event.source && event.source.postMessage({ type: "status", ...state })));
+  }
+});
+
 /* ---- Answering requests ---- */
 
 /* The key of a page or file in the copy: no query, no hash, and a folder address means its index page. */
@@ -215,6 +279,10 @@ function copyKey(url) {
 async function answerFromCopy(request) {
   const url = new URL(request.url);
   if (url.pathname.endsWith("/service-worker.js")) return fetch(request); // the worker itself is never served from the copy
+  if (request.mode === "navigate") {
+    const windows = await self.clients.matchAll({ type: "window" });
+    if (windows.length <= 1) await applyStaged({ announce: false }); // with several windows open the user decides (Reload)
+  }
   const state = await readState();
   if (state.current) {
     const cache = await caches.open(APP_CACHE_PREFIX + state.current);
