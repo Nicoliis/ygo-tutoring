@@ -6,6 +6,7 @@
  */
 const PRIVATE_KEY_BASE = "ygoDuelPrivate"; // where this device keeps its private part of the duel (one key per side)
 const privateKey = (side) => `${PRIVATE_KEY_BASE}_${side}`;
+const SIGNAL_SECONDS = 5; // how long a signal marker stays on this device
 const COLLECTION_KEY_BASE = "ygoCollection"; // the saved collection holding the Workshop decks (read only)
 
 let play = {
@@ -162,7 +163,24 @@ function boardModel() {
     picking: play.picking,
     selected: play.selected,
     fan: fanModel(),
+    signal: visibleSignal(table.sim),
   };
+}
+
+/* The marker of the last signal while it is still shown on this device; each device hides it on its own timer. */
+function visibleSignal(sim) {
+  const signal = sim.signal;
+  if (!signal) return null;
+  if (play.signalSeen !== signal.n) {
+    play.signalSeen = signal.n;
+    play.signalHidden = false;
+    clearTimeout(play.signalTimer);
+    play.signalTimer = setTimeout(() => {
+      play.signalHidden = true;
+      drawRoom();
+    }, SIGNAL_SECONDS * 1000);
+  }
+  return play.signalHidden ? null : signal;
 }
 
 /* The details window during a duel: the card alone, nothing that could change the player's collection. */
@@ -300,6 +318,9 @@ function performAction(action, uid, place, target) {
     case "give":
       send({ kind: "give", uid, from, to: { zone: "field", slot: target.slot, side: target.side }, ...(card ? { card } : {}) });
       return;
+    case "signal":
+      send({ kind: "signal", uid, signal: action.signal });
+      return;
     case "reveal":
       send({ kind: "reveal", uid, card });
       return;
@@ -391,6 +412,7 @@ function boardHandlers() {
     onDetails: showCardDetails,
     onFaceDown: () => showModal({ title: "Face-down card", bodyHtml: "<p>A face-down card: nothing is known about it until its owner flips or reveals it.</p>", buttons: [{ label: "Close", primary: true }] }),
     onCancel: closeDuelMenu,
+    onClearSignal: () => room.session.intent({ kind: "signal-clear" }),
     fan: { onChoose: chooseFanNode, onClose: closeDuelMenu },
   };
 }

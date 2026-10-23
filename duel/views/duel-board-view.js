@@ -5,9 +5,9 @@
  *   renderBoard(rootEl, model, handlers)
  *   model    = { sim, you, hand: [uid], cardOf(uid) -> snapshot | null (this player's own cards),
  *                picking: { slots: [{ zone: "field"|"shared", slot, side? }] } | null, selected: uid | null,
- *                fan: { anchor, levels } | null }
+ *                fan: { anchor, levels } | null, signal: { uid, kind } | null }
  *   handlers = { onSelectCard(uid, place, anchor), onPickZone(zone, slot, side), onOpenPile(side, pile, anchor),
- *                onDetails(card), onFaceDown(), onCancel(), fan: { onChoose(level, id), onClose() } }
+ *                onDetails(card), onFaceDown(), onCancel(), onClearSignal(), fan: { onChoose(level, id), onClose() } }
  *
  * The grid follows boardCells(): the viewer's cells at the bottom, the opponent's turned 180 degrees at the top, the
  * two shared zones in the middle. A card is its image (a named placeholder when it has none), a face-down card a card
@@ -16,6 +16,7 @@
  * duel-fan-view.js (renderFan).
  */
 const STACK_OFFSET_PX = 6; // offset of each lower card of a stack (x and y)
+const SIGNAL_WORDS = { activate: "Activates", target: "Targeted", attack: "Attacks" };
 const PILE_LABELS = { deck: "Deck", extra: "Extra deck", gy: "Graveyard", banished: "Banished" };
 
 function cardFace(card, faceDown, label) {
@@ -101,6 +102,14 @@ function buildStackZone(cell, sideIndex, model, handlers) {
     card.style.zIndex = String(i + 1);
     wrapper.appendChild(card);
   });
+  const marked = model.signal && stack.some((c) => c.uid === model.signal.uid);
+  if (marked) {
+    const marker = el("button", `duel-signal duel-signal-${model.signal.kind}`, SIGNAL_WORDS[model.signal.kind]);
+    marker.type = "button";
+    marker.setAttribute("aria-label", `${SIGNAL_WORDS[model.signal.kind]}: remove the marker`);
+    marker.addEventListener("click", handlers.onClearSignal);
+    wrapper.appendChild(marker);
+  }
   if (stack.length > 1) wrapper.appendChild(el("span", "duel-stack-count", String(stack.length)));
   const picking = model.picking && model.picking.slots.some((s) => s.zone === cell.kind && s.slot === cell.slot && (shared || s.side === undefined || s.side === sideIndex));
   if (picking) addPickButton(wrapper, label, cell.kind, cell.slot, shared ? undefined : sideIndex, handlers);

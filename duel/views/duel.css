@@ -4,6 +4,9 @@
   --duel-code-height: 6rem;
   --duel-fan-size: 56px; /* diameter of a fan button (the same value as FAN_BUTTON_PX in fan-layout.js) */
   --duel-fan-layer: 300;
+  --duel-signal-activate: #22c55e;
+  --duel-signal-target: #ef4444;
+  --duel-signal-attack: #f97316;
   --duel-log-max-height: 260px;
 }
 
@@ -86,6 +89,11 @@
 .duel-hand .duel-card { position: relative; inset: auto; width: var(--duel-card-width); aspect-ratio: var(--duel-card-ratio); }
 .duel-card-revealed { box-shadow: 0 0 0 2px #facc15; }
 .duel-pick-note { margin: 0 0 6px; color: var(--accent); display: flex; gap: 8px; align-items: center; }
+
+.duel-signal { position: absolute; left: 50%; top: -9px; transform: translateX(-50%); z-index: 70; padding: 0 6px; border: 0; border-radius: 999px; color: #000; font: inherit; font-size: 0.6rem; font-weight: 800; white-space: nowrap; cursor: pointer; }
+.duel-signal-activate { background: var(--duel-signal-activate); }
+.duel-signal-target { background: var(--duel-signal-target); }
+.duel-signal-attack { background: var(--duel-signal-attack); }
 
 /* Phone width: smaller cards so the whole grid fits without sideways scrolling */
 @media (max-width: 700px) {
