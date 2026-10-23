@@ -1,10 +1,10 @@
 /* Completionist binder layout. Rendering only. The binder pages themselves use ../collection/views/binder.css. */
 :root {
   --completionist-missing-opacity: 0.45; /* how faint a card you do not own looks */
-  --completionist-panel-max: 640px;
+  --completionist-panel-max: 540px;
 }
 
-.completionist-panel { max-width: var(--completionist-panel-max); flex: 1 1 520px; }
+.completionist-panel { max-width: var(--completionist-panel-max); flex: 1 1 440px; }
 .completionist-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-bottom: 8px; }
 .completionist-chooser { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--text-dim); }
 .completionist-select {

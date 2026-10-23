@@ -1,7 +1,7 @@
 /* Binder, card slot and card grid layout. Rendering only. */
 
 /* The Backlog needs room for two facing 3x3 pages (the old text list was 310px wide). */
-#backlogSection { max-width: 640px; flex: 1 1 520px; }
+#backlogSection { max-width: 540px; flex: 1 1 440px; }
 
 .card-face {
   display: block;
