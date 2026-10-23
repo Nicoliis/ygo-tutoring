@@ -157,6 +157,68 @@ function runContractTests() {
     expect(stored.future === "keep" && stored.current === "B");
   });
 
+  /* ---- Offline copy rules (spec 021) ---- */
+
+  check("offline: picture size estimates by kind and the 150 MB budget", () => {
+    expect(OFFLINE_BUDGET_BYTES === 150 * 1024 * 1024);
+    expect(estimateImageSize("https://images.ygoprodeck.com/images/cards_small/46986414.jpg") === 30 * 1024);
+    expect(estimateImageSize("https://images.ygoprodeck.com/images/cards/46986414.jpg") === 150 * 1024);
+    expect(estimateImageSize("https://images.ygoprodeck.com/images/sets/YS15.jpg") === 50 * 1024);
+    expect(estimateImageSize("https://example.com/other.png") === 50 * 1024);
+  });
+
+  check("offline: pickEvictions removes the oldest first and stops as soon as the total fits", () => {
+    const entries = [
+      { key: "c", keptAt: 300, size: 40 },
+      { key: "a", keptAt: 100, size: 40 },
+      { key: "b", keptAt: 200, size: 40 },
+    ];
+    expect(pickEvictions(entries, 120).length === 0, "already under the limit");
+    expect(pickEvictions(entries, 100).join() === "a", "one removal is enough");
+    expect(pickEvictions(entries, 70).join() === "a,b");
+    expect(pickEvictions(entries, 0).join() === "a,b,c", "everything when the limit is zero");
+    expect(entries[0].key === "c", "the list is not reordered");
+    expect(pickEvictions([], 10).length === 0);
+  });
+
+  check("offline: searching kept cards is case-insensitive, one per id, name order, at most 50", () => {
+    const answers = [
+      { data: [{ id: 1, name: "Dark Magician" }, { id: 2, name: "Blue-Eyes White Dragon" }] },
+      { data: [{ id: 1, name: "Dark Magician" }, { id: 3, name: "Dark Magician Girl" }] },
+      { error: "not a card list" },
+      null,
+      { data: [null, { name: 5 }, { id: 4, name: "Magician's Robe" }] },
+    ];
+    expect(searchKeptCards(answers, "magician").map((c) => c.name).join() === "Dark Magician,Dark Magician Girl,Magician's Robe");
+    expect(searchKeptCards(answers, "DARK").length === 2);
+    expect(searchKeptCards(answers, "zzz").length === 0);
+    expect(searchKeptCards([], "a").length === 0 && searchKeptCards(undefined, "a").length === 0);
+    const many = { data: Array.from({ length: 80 }, (_, i) => ({ id: i, name: "Card " + String(i).padStart(2, "0") })) };
+    const list = searchKeptCards([many], "card");
+    expect(list.length === 50 && list[0].name === "Card 00" && list[49].name === "Card 49");
+  });
+
+  check("offline: files are found in pages and stylesheets, same site only, plain addresses", () => {
+    const page = '<link rel="stylesheet" href="../shared/theme.css?v=2"><link rel="manifest" href="../manifest.webmanifest">' +
+      '<link rel="icon" href="https://cdn.example.com/x.png"><img src="../icons/icon.svg#a"><script src="a.js"></script>' +
+      '<script src="a.js"></script><script src="data:text/javascript,1"></script><a href="other.html">x</a>';
+    const found = discoverFiles(page, "https://site.test/app/collection/index.html");
+    expect(found.slice().sort().join() === ["https://site.test/app/collection/a.js", "https://site.test/app/icons/icon.svg", "https://site.test/app/manifest.webmanifest", "https://site.test/app/shared/theme.css"].join(), "scripts, links and pictures, same site, once each");
+    const css = `.a{background:url("cardback.png")} .b{background:url(img/b.jpg?x=1)} .c{background:url(data:image/png;base64,AAA)} .d{background:url(https://other.test/z.png)} .e{background:url( 'e.svg' )}`;
+    const urls = cssUrls(css, "https://site.test/app/shared/pack-reveal.css");
+    expect(urls.join() === "https://site.test/app/shared/cardback.png,https://site.test/app/shared/img/b.jpg,https://site.test/app/shared/e.svg");
+    expect(discoverFiles("<p>no files</p>", "https://site.test/x.html").length === 0);
+  });
+
+  check("offline: the version input is stable, order-independent and changes with any file", () => {
+    const a = versionInput({ "https://s/b.js": "h2", "https://s/a.js": "h1" });
+    const b = versionInput({ "https://s/a.js": "h1", "https://s/b.js": "h2" });
+    expect(a === b, "order of reading does not matter");
+    expect(versionInput({ "https://s/a.js": "h1", "https://s/b.js": "h3" }) !== a, "one changed file changes it");
+    expect(versionInput({ "https://s/a.js": "h1" }) !== a, "a missing file changes it");
+    expect(VERSION_LENGTH === 12);
+  });
+
   /* ---- Hand Test mode: free cards ---- */
 
   check("Hand Test: a selectable mode; profiles of it are created like the others", () => {

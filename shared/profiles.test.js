@@ -22,6 +22,7 @@ const source = [
   read("sentences.js"),
   read("backlog-synergy.js"),
   read("backlog-filter.js"),
+  read("offline-rules.js"),
   read("card-api.js"),
   read("pack-pool.js"),
   read("areas.js"),
