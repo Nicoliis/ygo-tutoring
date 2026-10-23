@@ -33,14 +33,14 @@
 
   .slot-grid {
     display: grid;
-    grid-template-columns: repeat(3, 63mm);
-    grid-template-rows: repeat(3, 88mm);
+    grid-template-columns: repeat(3, 59mm);
+    grid-template-rows: repeat(3, 86mm);
     gap: 0;
   }
 
   .slot {
-    width: 63mm;
-    height: 88mm;
+    width: 59mm;
+    height: 86mm;
     outline: 0.15mm dashed #888;
     outline-offset: -0.15mm;
     overflow: hidden;
