@@ -8,6 +8,12 @@
 
 **Input**: User description: "Duel Simulator board and menu redesign. (1) A new board layout: one grid of 7 columns by 5 rows, seen from my side. Letters: lowercase = the opponent's, uppercase = mine; p/P = playable zone (any card can be put there), d/D = deck, g/G = graveyard, e/E = extra deck, b/B = banished zone, S = shared card zone (a card zone that belongs to nobody), X = no cards here. The rows, top to bottom, are: \"dpppppe\", \"gpppppp\", \"bXSXSXB\", \"PPPPPPG\", \"EPPPPPD\". So each player has 11 playable zones (no more separate monster, spell, field and pendulum zones), the two shared zones are in the middle row, and the opponent's side is the same layout turned 180 degrees. (2) A new card menu that \"fans up\": when a card is chosen, a semicircle of round buttons opens above it, and choosing a button opens a further fanned menu from that button (submenus). Menu 1 has: play, move to, signal. \"Play\" opens: face up, face down. Choosing face up or face down opens: straight (attack position), sideways (defense position). After that the player chooses any zone of their own board for the card. \"Move to\" opens: graveyard, hand, deck, extra deck. \"Move to deck\" opens: on top, on bottom, shuffle. The deck pile has its own fanned menu: draw, mill. \"Signal\" opens: activate, target, attacks. This replaces the old list menu (normal summon, set, special summon and so on). Everything else of the simulator (private information, undo, reconnect, rematch, card details) stays as it is."
 
+## Clarifications
+
+### Session 2026-10-23
+
+- Q: Where does Banish go in the new menus? → A: In Move to, and a card can be banished face up or face down.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A single board with 11 playable zones per player and two shared zones (Priority: P1)
@@ -79,7 +85,7 @@ Choosing one of your cards opens a semicircle of round buttons that fans up abov
 
 ### User Story 4 - Move a card to the graveyard, hand, deck or extra deck (Priority: P1)
 
-**Move to** opens a fan with **Graveyard**, **Hand**, **Deck** and **Extra deck**. Graveyard, Hand and Extra deck act at once. **Deck** opens one more fan with **On top**, **On bottom** and **Shuffle** (the card goes into the deck and the deck is shuffled). The extra deck choice is offered for the cards that belong there.
+**Move to** opens a fan with **Graveyard**, **Banish**, **Hand**, **Deck** and **Extra deck**. Graveyard, Hand and Extra deck act at once. **Banish** opens one more fan with **Face up** and **Face down** (a face-down banished card is a card back for the opponent). **Deck** opens one more fan with **On top**, **On bottom** and **Shuffle** (the card goes into the deck and the deck is shuffled). The extra deck choice is offered for the cards that belong there.
 
 **Why this priority**: Without it cards cannot leave the board, so a duel cannot be played.
 
@@ -91,8 +97,9 @@ Choosing one of your cards opens a semicircle of round buttons that fans up abov
 2. **Given** a card on the board, **When** you choose Move to, then Hand, **Then** it returns to your hand: the opponent sees the count rise and no card on the board.
 3. **Given** a card, **When** you choose Move to, Deck, On top (or On bottom), **Then** it goes to that end of your deck and the opponent sees only the deck count rise.
 4. **Given** a card, **When** you choose Move to, Deck, Shuffle, **Then** it goes into the deck and the deck is shuffled; the opponent sees only the count and a log line.
-5. **Given** a card that does not belong to the extra deck, **When** the Move to fan opens, **Then** Extra deck is shown as unavailable (or not shown); for a card that belongs there it moves to the extra deck.
-6. **Given** a card in a shared zone that you put there, **When** it is moved to a hand, deck or extra deck, **Then** it goes to the owner's pile; **When** the other player moves it, **Then** it goes to its owner's pile and the owner is notified in the log.
+5. **Given** a card, **When** you choose Move to, Banish, Face up (or Face down), **Then** it goes to your banished zone, visible to both players if face up, a card back for the opponent if face down, and the log names it only when face up.
+6. **Given** a card that does not belong to the extra deck, **When** the Move to fan opens, **Then** Extra deck is shown as unavailable (or not shown); for a card that belongs there it moves to the extra deck.
+7. **Given** a card in a shared zone that you put there, **When** it is moved to a hand, deck or extra deck, **Then** it goes to the owner's pile; **When** the other player moves it, **Then** it goes to its owner's pile and the owner is notified in the log.
 
 ---
 
@@ -160,7 +167,7 @@ Private information, undo, reconnecting a duel, rematch, deck choice, the log an
 - **FR-008**: Play MUST lead to Face up / Face down, then to Straight / Sideways, then to a choice of any playable zone of the player's own board or a shared zone, with the zones that can receive the card highlighted; choosing a zone MUST place the card face-up or face-down, upright (attack position) or sideways (defense position).
 - **FR-009**: A face-up play MUST make the card visible to both players at that moment; a face-down play MUST show the opponent a card back and MUST NOT send the card's identity.
 - **FR-010**: Play MUST also be available for a card already on the board, so it can be flipped or turned in place (choosing its own zone) or moved to another zone.
-- **FR-011**: Move to MUST offer Graveyard, Hand, Deck and Extra deck; Graveyard, Hand and Extra deck MUST act at once; Deck MUST open On top, On bottom and Shuffle; Extra deck MUST be offered only for cards that belong to the extra deck.
+- **FR-011**: Move to MUST offer Graveyard, Banish, Hand, Deck and Extra deck; Graveyard, Hand and Extra deck MUST act at once; Banish MUST open Face up / Face down and a face-down banished card MUST NOT have its identity sent; Deck MUST open On top, On bottom and Shuffle; Extra deck MUST be offered only for cards that belong to the extra deck.
 - **FR-012**: The deck pile MUST open a fan with Draw and Mill: Draw takes the top card to the hand privately; Mill sends the top card to the graveyard face-up and visible; both MUST report an empty deck without moving anything.
 - **FR-013**: Signal MUST offer Activate, Target and Attacks; a signal MUST NOT move the card, MUST show a visible marker on it on both pages (and a log line naming the card only when it is visible), and the marker MUST go away after a short time or when a player removes it.
 - **FR-014**: The fan menus MUST be operable by mouse, touch and keyboard (arrow keys or Tab to move, Enter or Space to choose, Escape to close), MUST close when the player chooses elsewhere, MUST stay fully on screen (opening toward free space) and MUST have accessible names.
@@ -198,7 +205,6 @@ Private information, undo, reconnecting a duel, rematch, deck choice, the log an
 - Cards on the opponent's side are shown turned 180 degrees, as the opponent's side was before.
 - Both players can use the two shared zones; a card in a shared zone belongs to whoever put it there and goes back to that player's hand, deck or extra deck.
 - Flipping or turning a card already on the board is done with Play (choosing the same zone), since the new menu has no separate flip or position actions.
-- Banishing is not part of the described Move to fan; the banished zones stay on the board and can be reached through the Move to fan if it is extended (decision for the next step).
 - The deck's other actions of the earlier menu (search the deck, look at the top card, shuffle the deck) are not part of the described deck fan; whether they remain is a decision for the next step.
 - Revealing a hand card to the opponent was part of the earlier menu; where it lives in the new menu is a decision for the next step.
 - A signal is only informative (a marker and a log line); it moves nothing and checks no rule; Attacks does not choose a target in this version.
